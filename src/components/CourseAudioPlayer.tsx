@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Pause, Play, RotateCcw, Volume2, VolumeX } from 'lucide-react';
+import { Globe, Pause, Play, RotateCcw, Volume2, VolumeX } from 'lucide-react';
+import { WORLD_LANGUAGES } from '../data/i18n';
 
 interface CourseAudioPlayerProps {
   lang: string;
+  countryName?: string;
   speakerName: string;
   speakerRole: string;
   speakerAvatarUrl: string;
@@ -12,6 +14,26 @@ interface CourseAudioPlayerProps {
   customTriggerLabel?: string | null;
   onClearCustomTrigger?: () => void;
 }
+
+const BCP47_MAP: Record<string, string> = {
+  fr: 'fr-FR',
+  en: 'en-US',
+  es: 'es-ES',
+  de: 'de-DE',
+  pt: 'pt-PT',
+  it: 'it-IT',
+  pl: 'pl-PL',
+  bg: 'bg-BG',
+  da: 'da-DK',
+  nl: 'nl-NL',
+  tr: 'tr-TR',
+  ru: 'ru-RU',
+  ar: 'ar-SA',
+  zh: 'zh-CN',
+  ja: 'ja-JP',
+  ko: 'ko-KR',
+  hi: 'hi-IN',
+};
 
 export function speakNarration(
   text: string,
@@ -27,22 +49,7 @@ export function speakNarration(
   synth.cancel();
 
   const utterance = new SpeechSynthesisUtterance(text);
-  const langTag =
-    lang === 'fr'
-      ? 'fr-FR'
-      : lang === 'en'
-      ? 'en-US'
-      : lang === 'es'
-      ? 'es-ES'
-      : lang === 'de'
-      ? 'de-DE'
-      : lang === 'pt'
-      ? 'pt-PT'
-      : lang === 'it'
-      ? 'it-IT'
-      : lang === 'ar'
-      ? 'ar-SA'
-      : lang;
+  const langTag = BCP47_MAP[lang.toLowerCase()] || lang;
 
   utterance.lang = langTag;
   utterance.rate = rate;
@@ -50,8 +57,10 @@ export function speakNarration(
 
   const voices = synth.getVoices();
   const matchedVoice =
+    voices.find((v) => v.lang.toLowerCase() === langTag.toLowerCase()) ||
     voices.find((v) => v.lang.toLowerCase().startsWith(lang.toLowerCase())) ||
-    voices.find((v) => v.lang.toLowerCase().startsWith('fr'));
+    voices.find((v) => v.lang.toLowerCase().startsWith('en'));
+
   if (matchedVoice) {
     utterance.voice = matchedVoice;
   }
@@ -66,6 +75,7 @@ export function speakNarration(
 
 export const CourseAudioPlayer: React.FC<CourseAudioPlayerProps> = ({
   lang,
+  countryName,
   speakerName,
   speakerRole,
   speakerAvatarUrl,
@@ -75,14 +85,23 @@ export const CourseAudioPlayer: React.FC<CourseAudioPlayerProps> = ({
   customTriggerLabel,
   onClearCustomTrigger,
 }) => {
-  const isFr = lang !== 'en';
+  const isFr = lang === 'fr';
   const [isPlaying, setIsPlaying] = useState(false);
   const [rate, setRate] = useState<number>(1);
   const [showTranscript, setShowTranscript] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(true);
   const [avatarFailed, setAvatarFailed] = useState(false);
 
-  const activeText = customTriggerText || script;
+  const langObj =
+    WORLD_LANGUAGES.find((l) => l.code === lang) || WORLD_LANGUAGES[0];
+
+  const localizedPrefix = countryName
+    ? isFr
+      ? `Formation adaptée (${countryName} · ${langObj.nativeName}). `
+      : `Adapted training (${countryName} · ${langObj.nativeName}). `
+    : '';
+
+  const activeText = customTriggerText || `${localizedPrefix}${script}`;
   const activeLabel = customTriggerLabel || title;
 
   useEffect(() => {
@@ -94,9 +113,8 @@ export const CourseAudioPlayer: React.FC<CourseAudioPlayerProps> = ({
       window.speechSynthesis.cancel();
       setIsPlaying(false);
     };
-  }, [script]);
+  }, [script, lang, countryName]);
 
-  // Trigger audio immediately when user clicks "Écouter ce chapitre / cette image"
   useEffect(() => {
     if (!customTriggerText) return;
     const ok = speakNarration(
@@ -153,9 +171,7 @@ export const CourseAudioPlayer: React.FC<CourseAudioPlayerProps> = ({
                 referrerPolicy="no-referrer"
                 onError={() => setAvatarFailed(true)}
                 className={`w-12 h-12 rounded-xl object-cover border transition-transform duration-300 ${
-                  isPlaying
-                    ? 'border-blue-400 scale-105'
-                    : 'border-slate-700'
+                  isPlaying ? 'border-blue-400 scale-105' : 'border-slate-700'
                 }`}
               />
             ) : (
@@ -166,13 +182,19 @@ export const CourseAudioPlayer: React.FC<CourseAudioPlayerProps> = ({
           </div>
 
           <div className="min-w-0">
-            <div className="text-xs font-mono text-blue-300 truncate">
-              {speakerName} · {speakerRole}
+            <div className="text-xs font-mono text-blue-300 flex items-center gap-1.5 flex-wrap">
+              <span>
+                {speakerName} · {speakerRole}
+              </span>
+              <span className="text-emerald-400 inline-flex items-center gap-1">
+                <Globe className="w-3 h-3" />
+                {langObj.nativeName}
+                {countryName ? ` (${countryName})` : ''}
+              </span>
             </div>
             <div className="text-sm font-semibold text-white truncate mt-0.5">
               {activeLabel}
             </div>
-            {/* Speaking wave equalizer — moves ONLY while audio is playing */}
             <div className="flex items-end gap-1 h-4 mt-1.5" aria-hidden="true">
               {[0, 120, 240, 80, 200, 320, 140, 60].map((delay, i) => (
                 <span
@@ -186,11 +208,11 @@ export const CourseAudioPlayer: React.FC<CourseAudioPlayerProps> = ({
               <span className="ml-2 text-[11px] font-mono text-slate-300">
                 {isPlaying
                   ? isFr
-                    ? 'Explication vocale en cours…'
-                    : 'Voice narration active…'
+                    ? `Audio actif (${langObj.nativeName})…`
+                    : `Audio active (${langObj.nativeName})…`
                   : isFr
-                  ? 'Audio prêt à écouter'
-                  : 'Audio ready to play'}
+                  ? `Prêt en ${langObj.nativeName}`
+                  : `Ready in ${langObj.nativeName}`}
               </span>
             </div>
           </div>
@@ -277,9 +299,7 @@ export const CourseAudioPlayer: React.FC<CourseAudioPlayerProps> = ({
         {customTriggerText && (
           <button
             type="button"
-            onClick={() => {
-              handleStop();
-            }}
+            onClick={handleStop}
             className="text-xs text-slate-400 hover:text-white cursor-pointer"
           >
             {isFr ? 'Revenir au cours complet' : 'Return to Full Module Audio'}

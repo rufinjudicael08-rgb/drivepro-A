@@ -91,7 +91,7 @@ service cloud.firestore {
       && data.licenseCategory in ['A', 'B', 'C', 'D']
       && data.preferredLanguage is string && data.preferredLanguage.size() >= 2 && data.preferredLanguage.size() <= 10
       && data.currency is string && data.currency.size() >= 3 && data.currency.size() <= 10
-      && data.baseFeeEur is number && data.baseFeeEur in [200, 250, 300, 350]
+      && data.baseFeeEur is number && data.baseFeeEur in [200, 350, 500, 650]
       && data.convertedAmount is number && data.convertedAmount > 0 && data.convertedAmount <= 100000000
       && data.paymentMethod is string && data.paymentMethod.size() >= 2 && data.paymentMethod.size() <= 80
       && data.paymentStatus in ['pending', 'paid', 'verified']
@@ -112,12 +112,14 @@ service cloud.firestore {
       return data.keys().hasAll([
         'id', 'registrationId', 'userId', 'candidateName', 'senderName', 'senderPhone',
         'countryCode', 'currency', 'baseAmountEur', 'amountPaid', 'method',
-        'transactionRef', 'status', 'createdAt'
+        'transactionRef', 'verificationCode', 'receiptFileName', 'receiptThumbnail',
+        'status', 'createdAt'
       ])
       && data.keys().hasOnly([
         'id', 'registrationId', 'userId', 'candidateName', 'senderName', 'senderPhone',
         'countryCode', 'currency', 'baseAmountEur', 'amountPaid', 'method',
-        'transactionRef', 'status', 'createdAt'
+        'transactionRef', 'verificationCode', 'receiptFileName', 'receiptThumbnail',
+        'status', 'createdAt'
       ])
       && isValidId(data.id)
       && isValidId(data.registrationId)
@@ -127,10 +129,13 @@ service cloud.firestore {
       && data.senderPhone is string && data.senderPhone.size() <= 40
       && data.countryCode is string && data.countryCode.size() >= 2 && data.countryCode.size() <= 3
       && data.currency is string && data.currency.size() >= 3 && data.currency.size() <= 10
-      && data.baseAmountEur is number && data.baseAmountEur in [200, 250, 300, 350]
+      && data.baseAmountEur is number && data.baseAmountEur in [200, 350, 500, 650]
       && data.amountPaid is number && data.amountPaid > 0 && data.amountPaid <= 100000000
       && data.method is string && data.method.size() >= 2 && data.method.size() <= 80
-      && data.transactionRef is string && data.transactionRef.size() >= 4 && data.transactionRef.size() <= 80
+      && data.transactionRef is string && data.transactionRef.size() >= 6 && data.transactionRef.size() <= 80
+      && data.verificationCode is string && data.verificationCode.size() >= 4 && data.verificationCode.size() <= 40
+      && data.receiptFileName is string && data.receiptFileName.size() <= 120
+      && data.receiptThumbnail is string && data.receiptThumbnail.size() <= 90000
       && data.status in ['completed', 'refunded']
       && data.createdAt is timestamp;
     }

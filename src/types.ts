@@ -90,6 +90,9 @@ export interface PaymentLogRecord {
   amountPaid: number;
   method: string;
   transactionRef: string;
+  verificationCode: string;
+  receiptFileName: string;
+  receiptThumbnail: string;
   status: 'completed' | 'refunded';
   createdAt?: unknown;
 }

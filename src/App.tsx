@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore';
 import {
   ArrowRight,
+  Award,
   Building2,
   CarFront,
   CheckCircle2,
@@ -26,6 +27,7 @@ import {
   Phone,
   ShieldCheck,
   UserPlus,
+  Volume2,
 } from 'lucide-react';
 import { APP_MEDIA, HERO_SHOWCASE_GALLERY } from './assets/media';
 import { AgentAdminPortal } from './components/AgentAdminPortal';
@@ -33,6 +35,8 @@ import { AnimatedStageBackdrop } from './components/AnimatedStageBackdrop';
 import { AuthModal } from './components/AuthModal';
 import { CandidatePortal } from './components/CandidatePortal';
 import { CountrySelector } from './components/CountrySelector';
+import { DriveProLogo } from './components/DriveProLogo';
+import { LegalDocKey, LegalModal } from './components/LegalModals';
 import { RegistrationFlow } from './components/RegistrationFlow';
 import {
   CATEGORY_FEES_EUR,
@@ -66,6 +70,72 @@ import {
 type ViewTab = 'home' | 'enroll' | 'candidate' | 'agent';
 
 const TRACKING_SESSION_KEY = 'drivepro_tracking_ctx_v4';
+
+const HERO_COURSE_SLIDES = [
+  {
+    code: 'COURS 01',
+    titleFr: 'Signalisation & Panneau STOP',
+    titleEn: 'Road Signs & Mandatory STOP',
+    detailFr: 'Arrêt absolu devant la ligne · Explication audio multilingue',
+    detailEn: 'Full stop at the line · Multilingual voice guidance',
+    badge: 'STOP',
+  },
+  {
+    code: 'COURS 02',
+    titleFr: 'Giratoires & Priorité à Gauche',
+    titleEn: 'Roundabouts & Yield Rules',
+    detailFr: 'Placement dans la voie · Clignotant droit avant sortie',
+    detailEn: 'Lane positioning · Right turn signal before exit',
+    badge: '↻',
+  },
+  {
+    code: 'COURS 03',
+    titleFr: 'Autoroute & Distance de Sécurité',
+    titleEn: 'Highway & Safe Braking Distance',
+    detailFr: 'Règle des 2 secondes (90m) · Voie de dépassement',
+    detailEn: 'Two-second interval rule · Overtaking lane discipline',
+    badge: '130',
+  },
+  {
+    code: 'COURS 04',
+    titleFr: 'Conduite Urbaine & Piétons',
+    titleEn: 'Urban Driving & Pedestrians',
+    detailFr: 'Angles morts · Zones 30 & passages protégés',
+    detailEn: 'Blind spots · 30 km/h urban zones & crosswalks',
+    badge: '50',
+  },
+  {
+    code: 'COURS 05',
+    titleFr: 'QCM Officiel & Épreuves Physiques',
+    titleEn: 'Official Exam & Physical Tests',
+    detailFr: 'Correction complète + RDV examinateur agréé < 48h',
+    detailEn: 'Full corrections + certified physical test appointment < 48h',
+    badge: '48H',
+  },
+];
+
+const COMMUNITY_GALLERY_SLIDES = [
+  {
+    src: APP_MEDIA.bgTheoryStudents,
+    captionFr: 'Salle de préparation Code Audio multilingue',
+    captionEn: 'Multilingual Audio Theory Classroom',
+  },
+  {
+    src: APP_MEDIA.theoryClassroomHub,
+    captionFr: 'Sessions interactives QCM & Correction détaillée',
+    captionEn: 'Interactive Practice Exam & Full Corrections',
+  },
+  {
+    src: APP_MEDIA.bgInstructorBriefing,
+    captionFr: 'Accompagnement physique avant épreuve pratique',
+    captionEn: 'In-Person Coaching Before Physical Driving Test',
+  },
+  {
+    src: APP_MEDIA.bgStudentSuccess,
+    captionFr: 'Remise officielle du permis après épreuves physiques',
+    captionEn: 'Official License Issuance After Physical Tests',
+  },
+];
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -119,7 +189,6 @@ export default function App() {
   );
   const [lang, setLang] = useState<Language>('fr');
   const [category, setCategory] = useState<LicenseCategory>('B');
-  const [autoDetected, setAutoDetected] = useState(false);
 
   // Social attribution captured from ?ref=...&src=...&country=...
   const [referralCode, setReferralCode] = useState<string>('');
@@ -134,21 +203,25 @@ export default function App() {
   const [adminVerifyNotice, setAdminVerifyNotice] = useState<string | null>(null);
   const [adminVerifySending, setAdminVerifySending] = useState(false);
 
-  const [myRegistration, setMyRegistration] =
-    useState<RegistrationRecord | null>(null);
+  // Multi-permit dossiers & payments for the authenticated user
+  const [myRegistrations, setMyRegistrations] = useState<RegistrationRecord[]>([]);
+  const [activeRegId, setActiveRegId] = useState<string | null>(null);
+  const [myPayments, setMyPayments] = useState<PaymentLogRecord[]>([]);
   const [myQuizAttempts, setMyQuizAttempts] = useState<QuizAttemptRecord[]>([]);
 
   // Creator/Admin-only real-time collections
-  const [allRegistrations, setAllRegistrations] = useState<
-    RegistrationRecord[]
-  >([]);
+  const [allRegistrations, setAllRegistrations] = useState<RegistrationRecord[]>([]);
   const [allPayments, setAllPayments] = useState<PaymentLogRecord[]>([]);
   const [socialLinks, setSocialLinks] = useState<SocialLinkRecord[]>([]);
 
-  // Animated showcase slides in Hero section (using Vite-bundled media imports)
+  // Animated carousels in Hero & Lower Classroom Gallery
   const [heroSlideIdx, setHeroSlideIdx] = useState(0);
+  const [communitySlideIdx, setCommunitySlideIdx] = useState(0);
   const [heroImgFailed, setHeroImgFailed] = useState(false);
   const [classImgFailed, setClassImgFailed] = useState(false);
+
+  // Corporate Legal Footer Modal
+  const [legalDocOpen, setLegalDocOpen] = useState<LegalDocKey | null>(null);
 
   const isCreatorAdmin =
     user !== null && user.emailVerified && user.email === ADMIN_EMAIL;
@@ -160,12 +233,20 @@ export default function App() {
     }
   }, [activeView, isCreatorAdmin]);
 
-  // Cycle hero right-hand photography showcase smoothly
+  // Cycle hero showcase + lower training showcase smoothly
   useEffect(() => {
-    const interval = setInterval(() => {
+    const heroTimer = setInterval(() => {
       setHeroSlideIdx((prev) => (prev + 1) % HERO_SHOWCASE_GALLERY.length);
-    }, 5200);
-    return () => clearInterval(interval);
+    }, 4800);
+    const communityTimer = setInterval(() => {
+      setCommunitySlideIdx(
+        (prev) => (prev + 1) % COMMUNITY_GALLERY_SLIDES.length
+      );
+    }, 4200);
+    return () => {
+      clearInterval(heroTimer);
+      clearInterval(communityTimer);
+    };
   }, []);
 
   useEffect(() => {
@@ -186,7 +267,6 @@ export default function App() {
       savedCtx = null;
     }
 
-    // Parse URL referral params (?ref=CODE&src=tiktok&country=BJ)
     const params = new URLSearchParams(window.location.search);
     const refParam = params.get('ref');
     const srcParam = params.get('src');
@@ -251,7 +331,6 @@ export default function App() {
             const detected = getCountryByCode(data.country_code);
             setSelectedCountry(detected);
             setLang(detected.defaultLang);
-            setAutoDetected(true);
           }
         })
         .catch(() => {
@@ -274,11 +353,13 @@ export default function App() {
     return () => unsubAuth();
   }, []);
 
-  // Subscribe to Candidate's own profile, registration, and quiz attempts
+  // Subscribe to Candidate's own profile, registrations, payments & quiz attempts
   useEffect(() => {
     if (!authReady || !user) {
       setUserProfile(null);
-      setMyRegistration(null);
+      setMyRegistrations([]);
+      setActiveRegId(null);
+      setMyPayments([]);
       setMyQuizAttempts([]);
       return;
     }
@@ -291,7 +372,7 @@ export default function App() {
         }
       },
       () => {
-        // Ignore profile snapshot errors if user signed up before profile doc existed
+        // Ignore profile snapshot errors
       }
     );
 
@@ -304,14 +385,37 @@ export default function App() {
       regQuery,
       (snapshot) => {
         if (snapshot.empty) {
-          setMyRegistration(null);
+          setMyRegistrations([]);
         } else {
-          const docData = snapshot.docs[0].data() as RegistrationRecord;
-          setMyRegistration(docData);
+          const list = snapshot.docs.map(
+            (d) => d.data() as RegistrationRecord
+          );
+          setMyRegistrations(list);
+          setActiveRegId((prev) => {
+            if (prev === 'NEW') return 'NEW';
+            if (prev && list.some((r) => r.id === prev)) return prev;
+            return list[0].id;
+          });
         }
       },
       (error) => {
         handleFirestoreError(error, OperationType.GET, 'registrations');
+      }
+    );
+
+    const payQuery = query(
+      collection(db, 'payments'),
+      where('userId', '==', user.uid)
+    );
+
+    const unsubPay = onSnapshot(
+      payQuery,
+      (snapshot) => {
+        const list = snapshot.docs.map((d) => d.data() as PaymentLogRecord);
+        setMyPayments(list);
+      },
+      (error) => {
+        handleFirestoreError(error, OperationType.GET, 'payments');
       }
     );
 
@@ -334,6 +438,7 @@ export default function App() {
     return () => {
       unsubProfile();
       unsubReg();
+      unsubPay();
       unsubQuiz();
     };
   }, [authReady, user]);
@@ -401,7 +506,6 @@ export default function App() {
   const handleSelectCountry = (country: CountryConfig) => {
     setSelectedCountry(country);
     setLang(country.defaultLang);
-    setAutoDetected(false);
   };
 
   const openAuthModal = async (mode: 'register' | 'login' = 'register') => {
@@ -445,6 +549,35 @@ export default function App() {
     setActiveView('enroll');
   };
 
+  const activeRegistration: RegistrationRecord | null =
+    activeRegId === 'NEW'
+      ? null
+      : myRegistrations.find((r) => r.id === activeRegId) ||
+        myRegistrations[0] ||
+        null;
+
+  const activeCandidatePayment: PaymentLogRecord | null =
+    activeRegistration
+      ? myPayments.find(
+          (p) =>
+            p.id === activeRegistration.latestPaymentId ||
+            p.registrationId === activeRegistration.id
+        ) || null
+      : null;
+
+  const handleStartNewPermit = (suggestedCat?: LicenseCategory) => {
+    const enrolled = new Set(myRegistrations.map((r) => r.licenseCategory));
+    const nextCat =
+      suggestedCat && !enrolled.has(suggestedCat)
+        ? suggestedCat
+        : (['B', 'C', 'A', 'D'] as LicenseCategory[]).find(
+            (c) => !enrolled.has(c)
+          ) || 'B';
+    setCategory(nextCat);
+    setActiveRegId('NEW');
+    setActiveView('enroll');
+  };
+
   const t = getTranslations(lang);
   const isEn = lang === 'en';
   const baseEur = CATEGORY_FEES_EUR[category];
@@ -455,9 +588,9 @@ export default function App() {
     lang
   );
   const isCandidateUnlocked =
-    myRegistration !== null &&
-    (myRegistration.paymentStatus === 'paid' ||
-      myRegistration.paymentStatus === 'verified');
+    activeRegistration !== null &&
+    (activeRegistration.paymentStatus === 'paid' ||
+      activeRegistration.paymentStatus === 'verified');
 
   const navItems: { id: ViewTab; label: string }[] = [
     { id: 'home', label: t.navHome },
@@ -470,6 +603,9 @@ export default function App() {
     userProfile?.fullName?.split(' ')[0] ||
     user?.displayName?.split(' ')[0] ||
     t.navSignOut;
+
+  const currentHeroCourse =
+    HERO_COURSE_SLIDES[heroSlideIdx] || HERO_COURSE_SLIDES[0];
 
   return (
     <ErrorBoundary>
@@ -487,9 +623,10 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setActiveView('home')}
-                className="font-display text-lg font-extrabold tracking-tight text-slate-900 whitespace-nowrap shrink-0 cursor-pointer"
+                className="cursor-pointer whitespace-nowrap shrink-0"
+                aria-label="DrivePro Academy Accueil"
               >
-                Drive<span className="text-blue-700">Pro</span> Academy
+                <DriveProLogo size="md" />
               </button>
 
               <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
@@ -562,8 +699,8 @@ export default function App() {
             </div>
           </header>
 
-          <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-            {/* Creator Email Verification Reminder ONLY when signed in as ADMIN_EMAIL before clicking email link */}
+          <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
+            {/* Creator Email Verification Reminder */}
             {user && user.email === ADMIN_EMAIL && !user.emailVerified && (
               <div className="bg-amber-50 border border-amber-300 text-amber-950 rounded-xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
                 <div className="space-y-1">
@@ -603,10 +740,11 @@ export default function App() {
               </div>
             )}
 
-            {/* Global Automatic Adaptation & Language Selector Bar ONLY */}
+            {/* Elevated Country & Language Selector Bar ONLY (Drops cleanly ABOVE everything via z-40 / z-[70]) */}
             <CountrySelector
+              selectedCountry={selectedCountry}
               lang={lang}
-              autoDetected={autoDetected}
+              onSelectCountry={handleSelectCountry}
               onChangeLang={setLang}
             />
 
@@ -676,32 +814,83 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Animated Bundled Multi-Photo Showcase */}
-                  <div className="lg:col-span-6 relative rounded-xl overflow-hidden border border-slate-200/80 bg-slate-900 min-h-[320px] shadow-lg">
+                  {/* Animated Course Showcase Carousel in Hero Right Column */}
+                  <div className="lg:col-span-6 relative rounded-xl overflow-hidden border border-slate-200/80 bg-slate-900 min-h-[340px] shadow-lg flex flex-col justify-end">
                     {!heroImgFailed ? (
                       <>
                         {HERO_SHOWCASE_GALLERY.map((imgSrc, idx) => (
                           <img
                             key={imgSrc}
                             src={imgSrc}
-                            alt="DrivePro Academy — Formation conduite internationale et examen officiel"
+                            alt={
+                              isEn
+                                ? currentHeroCourse.titleEn
+                                : currentHeroCourse.titleFr
+                            }
                             referrerPolicy="no-referrer"
                             onError={() => setHeroImgFailed(true)}
-                            className={`absolute inset-0 w-full h-full object-cover transition-all duration-[1800ms] ease-in-out ${
+                            className={`absolute inset-0 w-full h-full object-cover transition-all duration-[1400ms] ease-in-out ${
                               idx === heroSlideIdx
                                 ? 'opacity-100 scale-105'
                                 : 'opacity-0 scale-100'
                             }`}
                           />
                         ))}
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent pointer-events-none" />
-                        <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between text-white text-xs">
-                          <span className="font-semibold">
-                            DrivePro Academy · Formation Certifiée
-                          </span>
-                          <span className="font-mono tabular-nums opacity-80">
-                            0{heroSlideIdx + 1} / 0{HERO_SHOWCASE_GALLERY.length}
-                          </span>
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/35 to-transparent pointer-events-none" />
+
+                        {/* Animated Mini Interactive Course Card Overlay */}
+                        <div className="relative z-10 p-5 sm:p-6 space-y-4">
+                          <div className="bg-slate-950/80 backdrop-blur-md border border-slate-700/80 rounded-xl p-4 flex items-center justify-between gap-4 text-white">
+                            <div className="flex items-center gap-3.5 min-w-0">
+                              <div className="w-12 h-12 rounded-xl bg-red-600 border-2 border-white flex items-center justify-center font-display font-extrabold text-sm shrink-0 shadow">
+                                {currentHeroCourse.badge}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="text-[11px] font-mono text-blue-300 font-semibold flex items-center gap-1.5">
+                                  <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
+                                  <span>{currentHeroCourse.code} · AUDIO ACTIF</span>
+                                </div>
+                                <div className="text-sm sm:text-base font-bold truncate mt-0.5">
+                                  {isEn
+                                    ? currentHeroCourse.titleEn
+                                    : currentHeroCourse.titleFr}
+                                </div>
+                                <div className="text-xs text-slate-300 truncate">
+                                  {isEn
+                                    ? currentHeroCourse.detailEn
+                                    : currentHeroCourse.detailFr}
+                                </div>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setActiveView('enroll')}
+                              className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg whitespace-nowrap shrink-0 cursor-pointer"
+                            >
+                              {isEn ? 'Open' : 'Voir'}
+                            </button>
+                          </div>
+
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-1.5">
+                              {HERO_SHOWCASE_GALLERY.map((_, idx) => (
+                                <button
+                                  key={idx}
+                                  type="button"
+                                  onClick={() => setHeroSlideIdx(idx)}
+                                  aria-label={`Slide ${idx + 1}`}
+                                  className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                                    idx === heroSlideIdx
+                                      ? 'w-7 bg-blue-400'
+                                      : 'w-2 bg-white/40 hover:bg-white/70'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-xs font-mono text-white/80 tabular-nums">
+                              0{heroSlideIdx + 1} / 0{HERO_SHOWCASE_GALLERY.length}
+                            </span>
+                          </div>
                         </div>
                       </>
                     ) : (
@@ -715,7 +904,7 @@ export default function App() {
                   </div>
                 </section>
 
-                {/* Full-Width 4-Column KPI / Tariff Strip (200 € / 250 € / 300 €) */}
+                {/* Full-Width 4-Column Tariff Strip (200 € / 350 € / 500 €) */}
                 <section className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {[
                     {
@@ -723,34 +912,34 @@ export default function App() {
                       accent: 'text-blue-700',
                       titleFr: 'Permis A (Moto) · 200 €',
                       titleEn: 'Permit A (Moto) · €200',
-                      descFr: 'Tarif d’inscription ajusté automatiquement à votre devise.',
-                      descEn: 'Registration fee auto-converted to your local currency.',
+                      descFr: 'Paiement direct via TapTap Send · Dossier complet agréé.',
+                      descEn: 'Direct TapTap Send checkout · Complete accredited dossier.',
                     },
                     {
-                      metric: `${formatLocalCurrency(convertEurFee(250, selectedCountry), selectedCountry, lang)}`,
+                      metric: `${formatLocalCurrency(convertEurFee(350, selectedCountry), selectedCountry, lang)}`,
                       accent: 'text-slate-900',
-                      titleFr: 'Permis B (Voiture) · 250 €',
-                      titleEn: 'Permit B (Car) · €250',
-                      descFr: 'Paiement sécurisé par TapTap Send ou moyen local au choix.',
-                      descEn: 'Secure payment via TapTap Send or local payment rail.',
+                      titleFr: 'Permis B (Voiture) · 350 €',
+                      titleEn: 'Permit B (Car) · €350',
+                      descFr: 'Réinscription facile après Permis A · Cours audio toutes langues.',
+                      descEn: 'Easy re-enrollment after Permit A · Audio courses in all languages.',
                     },
                     {
-                      metric: `${formatLocalCurrency(convertEurFee(300, selectedCountry), selectedCountry, lang)}`,
+                      metric: `${formatLocalCurrency(convertEurFee(500, selectedCountry), selectedCountry, lang)}`,
                       accent: 'text-emerald-700',
-                      titleFr: 'Permis C (Poids Lourd) · 300 €',
-                      titleEn: 'Permit C (Truck) · €300',
-                      descFr: 'Dossier à fournir avec CNI, cours audio illustrés et QCM.',
-                      descEn: 'Dossier with ID card, illustrated audio courses & quiz.',
+                      titleFr: 'Permis C (Poids Lourd) · 500 €',
+                      titleEn: 'Permit C (Truck) · €500',
+                      descFr: 'Facture officielle & reçu TapTap Send générés immédiatement.',
+                      descEn: 'Official invoice & TapTap Send receipt generated instantly.',
                     },
                     {
                       metric: '48h · Physique',
                       accent: 'text-blue-700',
-                      titleFr: 'Cours Audio & Épreuves Physiques',
-                      titleEn: 'Audio Courses & Physical Tests',
+                      titleFr: 'QCM → Épreuves Physiques',
+                      titleEn: 'Quiz → Physical Tests',
                       descFr:
-                        'Réussir le QCM débloque le contact DrivePro Academy pour fixer vos épreuves physiques.',
+                        'Reprenez l’examen ou passez à l’étape suivante pour fixer vos épreuves physiques.',
                       descEn:
-                        'Passing the quiz unlocks DrivePro Academy contact to book your final physical tests.',
+                        'Retake quiz or proceed to next step for corrections and physical test booking.',
                     },
                   ].map((item) => (
                     <div
@@ -772,17 +961,54 @@ export default function App() {
                   ))}
                 </section>
 
-                {/* Asymmetric Architecture Overview */}
+                {/* Lower Animated Multi-Image Community Classroom + Résumé de la plateforme */}
                 <section className="grid lg:grid-cols-12 gap-6 items-stretch">
-                  <div className="lg:col-span-5 rounded-xl overflow-hidden border border-slate-200/80 bg-slate-900 min-h-[260px] shadow-md">
+                  <div className="lg:col-span-5 relative rounded-xl overflow-hidden border border-slate-200/80 bg-slate-900 min-h-[290px] shadow-md flex flex-col justify-end">
                     {!classImgFailed ? (
-                      <img
-                        src={APP_MEDIA.bgTheoryStudents}
-                        alt="DrivePro Academy digital audio-visual theory classroom"
-                        referrerPolicy="no-referrer"
-                        onError={() => setClassImgFailed(true)}
-                        className="w-full h-full object-cover"
-                      />
+                      <>
+                        {COMMUNITY_GALLERY_SLIDES.map((slide, idx) => (
+                          <img
+                            key={slide.src}
+                            src={slide.src}
+                            alt={isEn ? slide.captionEn : slide.captionFr}
+                            referrerPolicy="no-referrer"
+                            onError={() => setClassImgFailed(true)}
+                            className={`absolute inset-0 w-full h-full object-cover transition-all duration-[1400ms] ease-in-out ${
+                              idx === communitySlideIdx
+                                ? 'opacity-100 scale-105'
+                                : 'opacity-0 scale-100'
+                            }`}
+                          />
+                        ))}
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent pointer-events-none" />
+                        <div className="relative z-10 p-5 space-y-2.5 text-white">
+                          <div className="text-xs font-mono text-emerald-300 font-semibold">
+                            {isEn
+                              ? 'ANIMATED ACADEMY SUMMARY · LIVE SCENES'
+                              : 'RÉSUMÉ EN IMAGES ANIMÉES · DRIVEPRO ACADEMY'}
+                          </div>
+                          <div className="text-sm font-bold">
+                            {isEn
+                              ? COMMUNITY_GALLERY_SLIDES[communitySlideIdx].captionEn
+                              : COMMUNITY_GALLERY_SLIDES[communitySlideIdx].captionFr}
+                          </div>
+                          <div className="flex items-center gap-1.5 pt-1">
+                            {COMMUNITY_GALLERY_SLIDES.map((_, idx) => (
+                              <button
+                                key={idx}
+                                type="button"
+                                onClick={() => setCommunitySlideIdx(idx)}
+                                aria-label={`Scène ${idx + 1}`}
+                                className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                                  idx === communitySlideIdx
+                                    ? 'w-6 bg-emerald-400'
+                                    : 'w-2 bg-white/40 hover:bg-white/70'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </>
                     ) : (
                       <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center text-white">
                         <GraduationCap className="w-10 h-10 text-blue-400 mb-2" />
@@ -816,39 +1042,39 @@ export default function App() {
                         {[
                           {
                             num: '01.',
-                            titleFr: 'Dossier à fournir',
-                            titleEn: 'Required Dossier & ID',
+                            titleFr: 'Dossier à fournir & Réinscription',
+                            titleEn: 'Dossier & Multi-Permit Enrollment',
                             textFr:
-                              'Créez votre compte (Nom, E-mail, Téléphone), puis complétez votre adresse et pièce d’identité obligatoire.',
+                              'Créez votre compte (Nom, E-mail, Téléphone). Déjà détenteur du Permis A ? Inscrivez-vous au Permis B ou C en 1 clic.',
                             textEn:
-                              'Create your account (Name, Email, Phone), then add your residential address and government ID.',
+                              'Create your account (Name, Email, Phone). Already hold Permit A? Re-enroll easily for Permit B or C.',
                           },
                           {
                             num: '02.',
-                            titleFr: 'Paiement & Moyens Locaux',
-                            titleEn: 'Payment & Local Rails',
+                            titleFr: 'Paiement TapTap Send Vérifié',
+                            titleEn: 'Verified TapTap Send Checkout',
                             textFr:
-                              'Choisissez votre pays de paiement et réglez via TapTap Send ou votre moyen local (Cartes, SEPA, Mobile Money).',
+                              'Payez via le lien officiel TapTap Send avec votre code déclencheur et capture de reçu pour recevoir votre facture officielle.',
                             textEn:
-                              'Select your payment country and pay securely via TapTap Send or local card, bank, and Mobile Money rails.',
+                              'Pay via official TapTap Send link with your trigger code and receipt upload to receive your official invoice.',
                           },
                           {
                             num: '03.',
-                            titleFr: 'Cours Illustrés + Explications Audio',
-                            titleEn: 'Illustrated Audio Courses & QCM',
+                            titleFr: 'Cours Audio Adaptés au Pays & Langue',
+                            titleEn: 'Audio Adapted to Country & Language',
                             textFr:
-                              '5 modules séquentiels avec photos réelles, animations et voix audio intégrée pour bien comprendre chaque règle.',
+                              'Changez de pays ou de langue en haut : la voix audio des 5 cours s’adapte automatiquement à votre langue.',
                             textEn:
-                              '5 sequential modules with real-road visuals, interactive diagrams, and spoken audio guidance.',
+                              'Switch country or language at the top bar and the audio player adapts to your chosen locale.',
                           },
                           {
                             num: '04.',
-                            titleFr: 'QCM Réussi → RDV Épreuves Physiques',
-                            titleEn: 'Quiz Passed → Physical Test Booking',
+                            titleFr: 'QCM → Correction & Épreuves Physiques',
+                            titleEn: 'Quiz → Corrections & Physical Tests',
                             textFr:
-                              'Une fois le QCM validé (≥ 75 %), les coordonnées directes DrivePro Academy se débloquent pour fixer vos épreuves physiques.',
+                              'Reprenez l’examen ou cliquez sur Passer à l’étape suivante pour recevoir la correction complète et le contact RDV physique.',
                             textEn:
-                              'Once you pass the quiz (≥ 75%), direct DrivePro Academy contact unlocks to schedule your physical tests.',
+                              'Retake quiz or proceed to next step for complete exam corrections and physical test scheduling.',
                           },
                         ].map((step) => (
                           <div key={step.num} className="space-y-1">
@@ -906,10 +1132,14 @@ export default function App() {
                 onChangeCountry={handleSelectCountry}
                 user={user}
                 userProfile={userProfile}
-                registration={myRegistration}
+                registration={activeRegistration}
+                allMyRegistrations={myRegistrations}
+                latestPayment={activeCandidatePayment}
                 referralCode={referralCode}
                 referralPlatform={referralPlatform}
                 onSignIn={() => openAuthModal('register')}
+                onSelectRegistration={(regId) => setActiveRegId(regId)}
+                onStartNewPermit={handleStartNewPermit}
                 onOpenCandidatePortal={() => setActiveView('candidate')}
               />
             )}
@@ -918,9 +1148,14 @@ export default function App() {
             {activeView === 'candidate' && (
               <CandidatePortal
                 lang={lang}
+                countryName={isEn ? selectedCountry.nameEn : selectedCountry.nameFr}
                 user={user}
-                registration={myRegistration}
+                registration={activeRegistration}
+                allMyRegistrations={myRegistrations}
+                latestPayment={activeCandidatePayment}
                 quizAttempts={myQuizAttempts}
+                onSelectRegistration={(regId) => setActiveRegId(regId)}
+                onReEnrollAnotherPermit={() => handleStartNewPermit()}
                 onGoToRegistration={() => setActiveView('enroll')}
               />
             )}
@@ -939,85 +1174,147 @@ export default function App() {
             )}
           </main>
 
-          {/* Complete Official Footer with HQ Contact, Accreditation & Centre Code */}
+          {/* Complete Official Corporate & Legal Footer with Trust Badges */}
           <footer className="bg-slate-900 text-slate-300 border-t border-slate-800 mt-12">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid md:grid-cols-12 gap-6 items-center text-xs">
-              <div className="md:col-span-6 space-y-2">
-                <div className="font-display text-base font-bold text-white">
-                  Drive<span className="text-blue-400">Pro</span> Academy ·{' '}
-                  <span className="text-emerald-400 font-mono text-xs">
-                    v4.1.0
-                  </span>
-                </div>
-                <div className="flex items-start gap-2 text-slate-300">
-                  <Building2 className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
-                  <span>
-                    {PARIS_HQ_CONTACT.addressFr} · Agrément officiel{' '}
-                    <span className="font-mono text-white font-semibold">
-                      {PARIS_HQ_CONTACT.accreditation}
-                    </span>{' '}
-                    · Code Centre{' '}
-                    <span className="font-mono text-white font-semibold">
-                      +103 · Paris 75008
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8 text-xs">
+              <div className="grid md:grid-cols-12 gap-8 items-start">
+                <div className="md:col-span-5 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <DriveProLogo dark size="sm" />
+                    <span className="text-emerald-400 font-mono text-xs font-semibold">
+                      v4.2.0
                     </span>
-                  </span>
+                  </div>
+                  <div className="flex items-start gap-2 text-slate-300 leading-relaxed">
+                    <Building2 className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                    <span>
+                      Siège social Paris : {PARIS_HQ_CONTACT.addressFr} · Agrément{' '}
+                      <span className="font-mono text-white font-semibold">
+                        {PARIS_HQ_CONTACT.accreditation}
+                      </span>{' '}
+                      · Code Centre{' '}
+                      <span className="font-mono text-white font-semibold">
+                        +103 · Paris 75008
+                      </span>
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                    <a
+                      href={`tel:${PARIS_HQ_CONTACT.phone}`}
+                      className="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-mono font-semibold whitespace-nowrap transition-colors"
+                    >
+                      <Phone className="w-3.5 h-3.5 text-blue-400" />
+                      <span>{PARIS_HQ_CONTACT.displayPhone}</span>
+                    </a>
+                    <a
+                      href={PARIS_HQ_CONTACT.whatsappUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold whitespace-nowrap transition-colors"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      <span>WhatsApp Direct</span>
+                    </a>
+                  </div>
                 </div>
-                <div className="text-slate-400">
-                  {isEn
-                    ? 'Accredited International Driving & Code Training Center.'
-                    : 'Centre international agréé de formation au Code de la Route et à la conduite.'}
+
+                {/* Official Legal & Policy Links */}
+                <div className="md:col-span-4 space-y-2.5">
+                  <div className="text-white font-bold text-xs uppercase tracking-wider">
+                    {isEn ? 'Legal & Compliance' : 'Informations Légales & Conformité'}
+                  </div>
+                  <div className="grid grid-cols-2 gap-y-2 gap-x-4">
+                    {(
+                      [
+                        { key: 'politique', labelFr: 'Politique d’utilisation', labelEn: 'Usage Policy' },
+                        { key: 'conditions', labelFr: 'Conditions d’utilisation', labelEn: 'Terms of Service' },
+                        { key: 'confidentialite', labelFr: 'Confidentialité (RGPD)', labelEn: 'Privacy Policy' },
+                        { key: 'cookies', labelFr: 'Préférence de cookies', labelEn: 'Cookie Preferences' },
+                        { key: 'securite', labelFr: 'Sécurité & Paiement', labelEn: 'Payment Security' },
+                        { key: 'contact', labelFr: 'Contact & Siège Paris', labelEn: 'Contact & Paris HQ' },
+                      ] as const
+                    ).map((item) => (
+                      <button
+                        key={item.key}
+                        type="button"
+                        onClick={() => setLegalDocOpen(item.key)}
+                        className="text-left text-slate-300 hover:text-white hover:underline cursor-pointer"
+                      >
+                        {isEn ? item.labelEn : item.labelFr}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Official Trust & Certification SVG Badges */}
+                <div className="md:col-span-3 space-y-2.5">
+                  <div className="text-white font-bold text-xs uppercase tracking-wider">
+                    {isEn ? 'Official Certifications' : 'Certifications & Sécurité'}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div className="bg-slate-800/80 border border-slate-700 rounded-lg p-2.5 flex items-center gap-2">
+                      <Award className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span className="text-[11px] font-semibold text-white">
+                        Agréé État FR
+                      </span>
+                    </div>
+                    <div className="bg-slate-800/80 border border-slate-700 rounded-lg p-2.5 flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-blue-400 shrink-0" />
+                      <span className="text-[11px] font-semibold text-white">
+                        TapTap Vérifié
+                      </span>
+                    </div>
+                    <div className="bg-slate-800/80 border border-slate-700 rounded-lg p-2.5 flex items-center gap-2">
+                      <Lock className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span className="text-[11px] font-semibold text-white">
+                        SSL 256-bit
+                      </span>
+                    </div>
+                    <div className="bg-slate-800/80 border border-slate-700 rounded-lg p-2.5 flex items-center gap-2">
+                      <Building2 className="w-4 h-4 text-blue-400 shrink-0" />
+                      <span className="text-[11px] font-semibold text-white">
+                        Centre +103
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="md:col-span-4 flex flex-wrap items-center gap-3">
-                <a
-                  href={`tel:${PARIS_HQ_CONTACT.phone}`}
-                  className="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-mono font-semibold whitespace-nowrap transition-colors"
-                >
-                  <Phone className="w-3.5 h-3.5 text-blue-400" />
-                  <span>{PARIS_HQ_CONTACT.displayPhone}</span>
-                </a>
-                <a
-                  href={PARIS_HQ_CONTACT.whatsappUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold whitespace-nowrap transition-colors"
-                >
-                  <MessageCircle className="w-3.5 h-3.5" />
-                  <span>WhatsApp Direct</span>
-                </a>
-              </div>
-
-              <div className="md:col-span-2 flex flex-wrap md:justify-end items-center gap-4 text-slate-300">
-                <button
-                  type="button"
-                  onClick={() => setActiveView('enroll')}
-                  className="hover:text-white cursor-pointer"
-                >
-                  {t.navEnroll}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveView('candidate')}
-                  className="hover:text-white cursor-pointer"
-                >
-                  {t.navCandidate}
-                </button>
-                {isCreatorAdmin && (
+              <div className="border-t border-slate-800 pt-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[11px] text-slate-400">
+                <div>
+                  © {new Date().getFullYear()} DrivePro Academy International · Tous droits réservés.
+                </div>
+                <div className="flex flex-wrap items-center gap-4">
                   <button
                     type="button"
-                    onClick={() => setActiveView('agent')}
-                    className="text-blue-400 hover:text-blue-300 font-semibold cursor-pointer"
+                    onClick={() => setActiveView('enroll')}
+                    className="hover:text-white cursor-pointer"
                   >
-                    {t.navAgent}
+                    {t.navEnroll}
                   </button>
-                )}
+                  <button
+                    type="button"
+                    onClick={() => setActiveView('candidate')}
+                    className="hover:text-white cursor-pointer"
+                  >
+                    {t.navCandidate}
+                  </button>
+                  {isCreatorAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveView('agent')}
+                      className="text-blue-400 hover:text-blue-300 font-semibold cursor-pointer"
+                    >
+                      {t.navAgent}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </footer>
         </div>
 
-        {/* Name, Email, Phone & Password Account Modal (Replaces Google Login) */}
+        {/* Name, Email, Phone & Password Account Modal */}
         <AuthModal
           isOpen={authModalOpen}
           initialMode={authModalMode}
@@ -1029,6 +1326,13 @@ export default function App() {
               setUserProfile(profile);
             }
           }}
+        />
+
+        {/* Corporate & Legal Footer Modal */}
+        <LegalModal
+          activeDoc={legalDocOpen}
+          lang={lang}
+          onClose={() => setLegalDocOpen(null)}
         />
       </div>
     </ErrorBoundary>

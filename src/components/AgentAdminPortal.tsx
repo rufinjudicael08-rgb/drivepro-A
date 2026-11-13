@@ -8,6 +8,7 @@ import {
   updateDoc,
 } from 'firebase/firestore';
 import {
+  Ban,
   Check,
   CheckCircle2,
   Copy,
@@ -18,6 +19,7 @@ import {
   Globe,
   Link2,
   Lock,
+  Receipt,
   Search,
   Share2,
   ShieldAlert,
@@ -87,11 +89,13 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
   const [creatingLink, setCreatingLink] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Admin Console filters & ID preview modal
+  // Admin Console filters, ID & TapTap Receipt preview modals
   const [searchQuery, setSearchQuery] = useState('');
   const [platformFilter, setPlatformFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [previewIdReg, setPreviewIdReg] = useState<RegistrationRecord | null>(null);
+  const [previewReceiptPayment, setPreviewReceiptPayment] =
+    useState<PaymentLogRecord | null>(null);
   const [copiedDomain, setCopiedDomain] = useState(false);
 
   const appOrigin =
@@ -166,6 +170,24 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
         dossierStatus: 'practical_ready',
         updatedAt: serverTimestamp(),
       });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `registrations/${reg.id}`);
+    }
+  };
+
+  const handleRejectFakePayment = async (reg: RegistrationRecord) => {
+    if (!isAdmin) return;
+    try {
+      await updateDoc(doc(db, 'registrations', reg.id), {
+        paymentStatus: 'pending',
+        dossierStatus: 'locked',
+        updatedAt: serverTimestamp(),
+      });
+      if (reg.latestPaymentId) {
+        await updateDoc(doc(db, 'payments', reg.latestPaymentId), {
+          status: 'refunded',
+        });
+      }
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `registrations/${reg.id}`);
     }
@@ -795,6 +817,24 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
                               {reg.idCardFileName || '—'}
                             </span>
                           )}
+                          {(() => {
+                            const linkedPay = payments.find(
+                              (p) =>
+                                p.id === reg.latestPaymentId ||
+                                p.registrationId === reg.id
+                            );
+                            if (!linkedPay) return null;
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => setPreviewReceiptPayment(linkedPay)}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded hover:bg-emerald-100 cursor-pointer"
+                              >
+                                <Receipt className="w-3 h-3" />
+                                <span>{isEn ? 'TapTap Receipt' : 'Voir Reçu'}</span>
+                              </button>
+                            );
+                          })()}
                         </div>
                       </td>
                       <td className="py-3 px-4 text-xs text-slate-700">
@@ -852,22 +892,35 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
                         </select>
                       </td>
                       <td className="py-3 px-4 text-right">
-                        {reg.paymentStatus !== 'verified' ? (
-                          <button
-                            type="button"
-                            onClick={() => handleVerifyCandidate(reg)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-md whitespace-nowrap cursor-pointer"
-                          >
-                            <UserCheck className="w-3.5 h-3.5" />
-                            <span>
-                              {isEn ? 'Verify Ready' : 'Valider Pratique'}
+                        <div className="inline-flex flex-wrap items-center justify-end gap-1.5">
+                          {reg.paymentStatus !== 'verified' ? (
+                            <button
+                              type="button"
+                              onClick={() => handleVerifyCandidate(reg)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-md whitespace-nowrap cursor-pointer"
+                            >
+                              <UserCheck className="w-3.5 h-3.5" />
+                              <span>
+                                {isEn ? 'Confirm Real' : 'Confirmer Réel'}
+                              </span>
+                            </button>
+                          ) : (
+                            <span className="text-xs text-emerald-700 font-mono font-bold">
+                              OK
                             </span>
-                          </button>
-                        ) : (
-                          <span className="text-xs text-slate-400 font-mono">
-                            OK
-                          </span>
-                        )}
+                          )}
+                          {reg.paymentStatus !== 'pending' && (
+                            <button
+                              type="button"
+                              onClick={() => handleRejectFakePayment(reg)}
+                              className="inline-flex items-center gap-1 px-2 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-semibold rounded-md whitespace-nowrap cursor-pointer"
+                              title={isEn ? 'Reject fake receipt & relock' : 'Rejeter (faux reçu) & reverrouiller'}
+                            >
+                              <Ban className="w-3.5 h-3.5" />
+                              <span>{isEn ? 'Reject' : 'Rejeter'}</span>
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -877,18 +930,19 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
           </table>
         </div>
 
-        {/* Payment Logs Preview (Includes Sender Name & Phone) */}
+        {/* Payment Logs Preview (Includes Sender Name, Trigger Code & TapTap Receipt Screenshot) */}
         <div className="space-y-3 pt-2">
           <h3 className="text-sm font-semibold text-slate-900">
             {isEn
               ? `Recent Payment Audit Logs (${payments.length})`
-              : `Journal des paiements récents (${payments.length})`}
+              : `Journal des paiements TapTap Send (${payments.length})`}
           </h3>
           <div className="border border-slate-200 rounded-xl overflow-x-auto bg-white">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-500">
                 <tr>
                   <th className="py-2.5 px-4 font-semibold">Ref. Transaction</th>
+                  <th className="py-2.5 px-4 font-semibold">Code Déclencheur</th>
                   <th className="py-2.5 px-4 font-semibold">
                     {isEn ? 'Candidate' : 'Candidat'}
                   </th>
@@ -896,7 +950,7 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
                     {isEn ? 'Sender Details' : 'Expéditeur paiement'}
                   </th>
                   <th className="py-2.5 px-4 font-semibold">
-                    {isEn ? 'Method' : 'Méthode'}
+                    {isEn ? 'Receipt Proof' : 'Reçu TapTap'}
                   </th>
                   <th className="py-2.5 px-4 font-semibold text-right">
                     {isEn ? 'Amount' : 'Montant'}
@@ -910,7 +964,7 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
                 {payments.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={7}
                       className="py-6 px-4 text-center text-slate-500"
                     >
                       {isEn
@@ -922,7 +976,15 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
                   payments.slice(0, 12).map((p) => (
                     <tr key={p.id}>
                       <td className="py-2.5 px-4 font-mono text-slate-800">
-                        {p.transactionRef}
+                        <div>{p.transactionRef}</div>
+                        {p.status === 'refunded' && (
+                          <span className="text-[10px] font-bold text-red-700">
+                            REJETÉ / BLOQUÉ
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-4 font-mono font-semibold text-blue-700">
+                        {p.verificationCode || '—'}
                       </td>
                       <td className="py-2.5 px-4 font-medium text-slate-900">
                         {p.candidateName} ({p.countryCode})
@@ -933,7 +995,16 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
                           {p.senderPhone || '—'}
                         </div>
                       </td>
-                      <td className="py-2.5 px-4 text-slate-600">{p.method}</td>
+                      <td className="py-2.5 px-4">
+                        <button
+                          type="button"
+                          onClick={() => setPreviewReceiptPayment(p)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 rounded hover:bg-emerald-100 cursor-pointer"
+                        >
+                          <Receipt className="w-3 h-3" />
+                          <span>{isEn ? 'Inspect' : 'Voir Reçu'}</span>
+                        </button>
+                      </td>
                       <td className="py-2.5 px-4 text-right font-mono tabular-nums font-semibold text-slate-900">
                         {p.amountPaid} {p.currency}
                       </td>
@@ -1004,6 +1075,70 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
                   {isEn ? 'Phone / Email: ' : 'Téléphone / Email : '}
                 </span>
                 {previewIdReg.phone} · {previewIdReg.email}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TapTap Send Receipt Proof Screenshot Modal */}
+      {previewReceiptPayment && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="bg-white rounded-xl border border-slate-200 max-w-lg w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-base font-semibold text-slate-900">
+                  {isEn ? 'TapTap Send Receipt Proof' : 'Justificatif Reçu TapTap Send'}
+                </h3>
+                <p className="text-xs font-mono text-slate-600 mt-0.5">
+                  {previewReceiptPayment.transactionRef} · Code{' '}
+                  {previewReceiptPayment.verificationCode || '—'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewReceiptPayment(null)}
+                className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 cursor-pointer"
+                aria-label="Fermer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {previewReceiptPayment.receiptThumbnail ? (
+              <img
+                src={previewReceiptPayment.receiptThumbnail}
+                alt={`Reçu TapTap Send ${previewReceiptPayment.candidateName}`}
+                referrerPolicy="no-referrer"
+                className="w-full max-h-80 object-contain rounded-lg border border-slate-200 bg-slate-50"
+              />
+            ) : (
+              <div className="p-6 text-center text-xs text-slate-500 bg-slate-50 rounded-lg">
+                <Receipt className="w-5 h-5 mx-auto mb-1 text-slate-400" />
+                {previewReceiptPayment.receiptFileName ||
+                  (isEn
+                    ? 'No image preview uploaded.'
+                    : 'Aucun aperçu miniature disponible.')}
+              </div>
+            )}
+
+            <div className="text-xs text-slate-600 bg-slate-50 rounded-lg p-3 space-y-1">
+              <div>
+                <span className="font-semibold text-slate-800">
+                  {isEn ? 'Candidate: ' : 'Candidat : '}
+                </span>
+                {previewReceiptPayment.candidateName} ({previewReceiptPayment.amountPaid}{' '}
+                {previewReceiptPayment.currency})
+              </div>
+              <div>
+                <span className="font-semibold text-slate-800">
+                  {isEn ? 'TapTap Sender: ' : 'Expéditeur TapTap : '}
+                </span>
+                {previewReceiptPayment.senderName} · {previewReceiptPayment.senderPhone}
               </div>
             </div>
           </div>

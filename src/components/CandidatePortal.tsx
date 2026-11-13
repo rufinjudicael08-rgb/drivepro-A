@@ -7,9 +7,11 @@ import {
   BookOpen,
   CheckCircle2,
   Clock,
+  FileText,
   Lock,
   MessageCircle,
   Phone,
+  PlusCircle,
   RotateCcw,
   ShieldCheck,
   Volume2,
@@ -26,15 +28,26 @@ import {
 import { formatLocalCurrency, getCountryByCode } from '../data/countries';
 import { getTranslations } from '../data/i18n';
 import { db, handleFirestoreError, OperationType } from '../firebase';
-import { Language, QuizAttemptRecord, RegistrationRecord } from '../types';
+import {
+  Language,
+  PaymentLogRecord,
+  QuizAttemptRecord,
+  RegistrationRecord,
+} from '../types';
 import { CourseAnimation } from './CourseAnimations';
 import { CourseAudioPlayer } from './CourseAudioPlayer';
+import { InvoiceReceiptModal } from './InvoiceReceiptModal';
 
 interface CandidatePortalProps {
   lang: Language;
+  countryName?: string;
   user: User | null;
   registration: RegistrationRecord | null;
+  allMyRegistrations?: RegistrationRecord[];
+  latestPayment?: PaymentLogRecord | null;
   quizAttempts: QuizAttemptRecord[];
+  onSelectRegistration?: (regId: string) => void;
+  onReEnrollAnotherPermit?: () => void;
   onGoToRegistration: () => void;
 }
 
@@ -146,9 +159,14 @@ const RoadSignIllustration: React.FC<{ type?: QuizQuestion['signType'] }> = ({
 
 export const CandidatePortal: React.FC<CandidatePortalProps> = ({
   lang,
+  countryName,
   user,
   registration,
+  allMyRegistrations = [],
+  latestPayment = null,
   quizAttempts,
+  onSelectRegistration,
+  onReEnrollAnotherPermit,
   onGoToRegistration,
 }) => {
   const t = getTranslations(lang);
@@ -170,9 +188,11 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [quizFinished, setQuizFinished] = useState(false);
+  const [proceedNextStep, setProceedNextStep] = useState(false);
   const [savingQuiz, setSavingQuiz] = useState(false);
   const [savingModule, setSavingModule] = useState(false);
   const [imgFailed, setImgFailed] = useState(false);
+  const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
 
   useEffect(() => {
     if (registration?.completedModuleIds) {
@@ -252,7 +272,10 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
     completedModules.includes(m.id)
   );
   const quizPassed = registration.quizBestScore >= 75;
-  const practicalUnlocked = allModulesCompleted && quizPassed;
+  const practicalUnlocked =
+    (allModulesCompleted && quizPassed) ||
+    proceedNextStep ||
+    (allModulesCompleted && quizAttempts.length > 0);
 
   const handleCompleteModule = async (modId: string, index: number) => {
     if (!isModuleUnlocked(index)) return;
@@ -332,6 +355,7 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
     setAnswers({});
     setCurrentIndex(0);
     setQuizFinished(false);
+    setProceedNextStep(false);
     setQuizStarted(true);
   };
 
@@ -364,6 +388,57 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
 
   return (
     <section className="space-y-6">
+      {/* Multi-Permit Dossier Selector + Invoice & Re-enrollment Bar */}
+      <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-sm">
+        <div className="flex flex-wrap items-center gap-2">
+          {allMyRegistrations.map((r) => {
+            const active = r.id === registration.id;
+            return (
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => onSelectRegistration?.(r.id)}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${
+                  active
+                    ? 'bg-blue-700 text-white border-blue-700'
+                    : 'bg-slate-50 text-slate-800 border-slate-300 hover:bg-slate-100'
+                }`}
+              >
+                {isEn ? 'Permit' : 'Permis'} {r.licenseCategory} (#{r.queueNumber})
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setInvoiceModalOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg whitespace-nowrap cursor-pointer"
+          >
+            <FileText className="w-3.5 h-3.5 text-emerald-400" />
+            <span>
+              {isEn ? 'Invoice & Official Receipt' : 'Ma Facture & Reçu Officiel'}
+            </span>
+          </button>
+
+          {onReEnrollAnotherPermit && allMyRegistrations.length < 4 && (
+            <button
+              type="button"
+              onClick={onReEnrollAnotherPermit}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 text-xs font-bold rounded-lg whitespace-nowrap cursor-pointer"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>
+                {isEn
+                  ? 'Re-enroll for Another Permit'
+                  : 'Réinscription (Passer un autre permis B/C)'}
+              </span>
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Candidate Metrics Summary Strip */}
       <div className="bg-white/95 backdrop-blur border border-slate-200 rounded-xl p-5 md:p-6 grid grid-cols-2 lg:grid-cols-4 gap-6 shadow-sm">
         <div>
@@ -659,6 +734,7 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                 {/* Built-In Instructor Voice Audio Explanation Player */}
                 <CourseAudioPlayer
                   lang={lang}
+                  countryName={countryName || registration.countryName}
                   speakerName={activeModule.speakerName}
                   speakerRole={
                     isEn ? activeModule.speakerRoleEn : activeModule.speakerRoleFr
@@ -994,110 +1070,162 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                       className={`p-6 rounded-xl border flex flex-col lg:flex-row lg:items-center justify-between gap-5 ${
                         currentScorePct >= 75
                           ? 'bg-emerald-50 border-emerald-200'
-                          : 'bg-amber-50 border-amber-200'
+                          : 'bg-blue-50 border-blue-200'
                       }`}
                     >
                       <div className="space-y-2 max-w-2xl">
-                        <div className="text-sm font-semibold text-slate-900">
+                        <div className="text-sm font-bold text-slate-900">
                           {currentScorePct >= 75
                             ? isEn
-                              ? 'Theory Exam Passed — Physical Test Coordinator Contact Unlocked!'
-                              : 'QCM réussi ! Prochaine étape : les épreuves physiques finales'
+                              ? 'Quiz Completed Successfully! Choose your next step'
+                              : 'Examen terminé avec succès ! Choisissez votre suite rapide'
                             : isEn
-                            ? 'Below 75% Threshold — Review Corrections & Retry'
-                            : 'Score inférieur à 75 % — Révisez le corrigé et recommencez'}
+                            ? 'Quiz Completed — You have a second chance or can proceed with corrections'
+                            : 'Examen terminé — Vous pouvez reprendre ou passer directement à l’étape suivante'}
                         </div>
                         <div className="text-2xl font-mono font-bold tabular-nums text-slate-900">
                           {correctCount} / {OFFICIAL_QUIZ_BANK.length} ({currentScorePct}%)
                         </div>
-                        {currentScorePct >= 75 && (
-                          <p className="text-xs text-slate-700 leading-relaxed">
-                            {isEn
-                              ? `To receive your official driving license, you must now pass brief in-person physical tests. Contact your coordinator directly at ${PARIS_HQ_CONTACT.displayPhone} or on WhatsApp to book your appointment and collect your license.`
-                              : `Pour obtenir votre permis proprement dit, il vous reste à passer quelques épreuves physiques officielles. Contactez dès maintenant votre responsable au ${PARIS_HQ_CONTACT.displayPhone} (appel ou WhatsApp) pour fixer votre rendez-vous, achever les épreuves physiques et récupérer votre permis.`}
-                          </p>
-                        )}
+                        <p className="text-xs text-slate-700 leading-relaxed">
+                          {isEn
+                            ? 'Simple & fast: click "Retake Exams" for another chance, OR click "Proceed to Next Step" to get full exam corrections AND your coordinator contact for physical tests.'
+                            : 'Simple et rapide : cliquez sur « Reprendre les examens » pour refaire le test, OU cliquez sur « Passer à l’étape suivante » pour recevoir la correction complète des examens ET le contact direct pour vos épreuves physiques.'}
+                        </p>
                       </div>
-                      <div className="flex flex-wrap gap-2 shrink-0">
-                        {currentScorePct >= 75 && (
-                          <>
-                            <a
-                              href={`${PARIS_HQ_CONTACT.whatsappUrl}?text=${whatsappText}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg whitespace-nowrap"
-                            >
-                              <MessageCircle className="w-4 h-4" />
-                              <span>
-                                {isEn
-                                  ? 'Book Appointment on WhatsApp'
-                                  : 'Fixer mon RDV sur WhatsApp'}
-                              </span>
-                            </a>
-                            <button
-                              type="button"
-                              onClick={() => setActiveTab('instructor')}
-                              className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold rounded-lg whitespace-nowrap cursor-pointer"
-                            >
-                              <Phone className="w-4 h-4" />
-                              <span>
-                                {isEn
-                                  ? 'Open Physical Test Contact'
-                                  : 'Voir les coordonnées complètes'}
-                              </span>
-                            </button>
-                          </>
-                        )}
+
+                      <div className="flex flex-wrap gap-2.5 shrink-0">
                         <button
                           type="button"
                           onClick={handleResetQuiz}
-                          className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg whitespace-nowrap cursor-pointer"
+                          className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-lg whitespace-nowrap cursor-pointer"
                         >
                           <RotateCcw className="w-4 h-4" />
-                          <span>{t.quizRetryBtn}</span>
+                          <span>
+                            {isEn ? 'Retake Exams' : 'Reprendre les examens'}
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setProceedNextStep(true)}
+                          className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg whitespace-nowrap cursor-pointer"
+                        >
+                          <ArrowRight className="w-4 h-4" />
+                          <span>
+                            {isEn
+                              ? 'Proceed to Next Step (Corrections & Physical Tests)'
+                              : 'Passer à l’étape suivante (Correction & Épreuves physiques)'}
+                          </span>
                         </button>
                       </div>
                     </div>
 
-                    <div className="divide-y divide-slate-200 border border-slate-200 rounded-xl overflow-hidden">
-                      {OFFICIAL_QUIZ_BANK.map((q, idx) => {
-                        const userChoice = answers[q.id];
-                        const isCorrect = userChoice === q.correctIndex;
-                        const opts = isEn ? q.optionsEn : q.optionsFr;
-                        return (
-                          <div key={q.id} className="p-4 md:p-5 bg-white space-y-2">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="text-sm font-semibold text-slate-900">
-                                <span className="font-mono text-slate-400 mr-2">
-                                  {String(idx + 1).padStart(2, '0')}.
-                                </span>
-                                {isEn ? q.questionEn : q.questionFr}
-                              </div>
-                              {isCorrect ? (
-                                <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 shrink-0">
-                                  <CheckCircle2 className="w-4 h-4" />
-                                  {isEn ? 'Correct' : 'Correct'}
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 text-xs font-semibold text-red-700 shrink-0">
-                                  <XCircle className="w-4 h-4" />
-                                  {isEn ? 'Incorrect' : 'Incorrect'}
-                                </span>
-                              )}
+                    {/* Sent automatically upon "Passer à l'étape suivante" OR score >= 75% */}
+                    {(proceedNextStep || currentScorePct >= 75) && (
+                      <div className="bg-slate-900 text-white rounded-xl p-6 space-y-4 border border-slate-800">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                          <div className="space-y-1">
+                            <div className="text-xs font-mono text-emerald-400 font-bold">
+                              {isEn
+                                ? 'PHYSICAL TEST COORDINATOR ASSIGNED · DRIVEPRO ACADEMY'
+                                : 'RESPONSABLE ASSIGNÉ POUR VOS ÉPREUVES PHYSIQUES · DRIVEPRO ACADEMY'}
                             </div>
-                            <div className="text-xs text-slate-600">
-                              <span className="font-semibold text-slate-800">
-                                {isEn ? 'Correct answer:' : 'Bonne réponse :'}{' '}
-                              </span>
-                              {opts[q.correctIndex]}
-                            </div>
-                            <p className="text-xs text-slate-600 bg-slate-50 p-3 rounded-lg">
-                              {isEn ? q.explanationEn : q.explanationFr}
+                            <h4 className="text-lg font-bold">
+                              {assignedInstructor.name} · {PARIS_HQ_CONTACT.displayPhone}
+                            </h4>
+                            <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
+                              {isEn
+                                ? 'To receive your driving license, contact DrivePro Academy directly below to schedule your final physical driving tests. Review all exam corrections right underneath.'
+                                : 'Pour obtenir votre permis proprement dit, contactez directement ce responsable par appel ou WhatsApp pour fixer votre rendez-vous et achever vos épreuves physiques. Retrouvez aussi votre correction complète ci-dessous.'}
                             </p>
                           </div>
-                        );
-                      })}
-                    </div>
+
+                          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                            <a
+                              href={`tel:${PARIS_HQ_CONTACT.phone}`}
+                              className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg whitespace-nowrap"
+                            >
+                              <Phone className="w-4 h-4" />
+                              <span>{PARIS_HQ_CONTACT.displayPhone}</span>
+                            </a>
+                            <a
+                              href={`${PARIS_HQ_CONTACT.whatsappUrl}?text=${whatsappText}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg whitespace-nowrap"
+                            >
+                              <MessageCircle className="w-4 h-4" />
+                              <span>{t.instructorWhatsappBtn}</span>
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => setActiveTab('instructor')}
+                              className="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-slate-900 hover:bg-slate-100 text-xs font-bold rounded-lg whitespace-nowrap cursor-pointer"
+                            >
+                              <span>
+                                {isEn ? 'Full Physical Guide' : 'Fiche Épreuves Physiques →'}
+                              </span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Detailed Exam Corrections (always shown when finished or proceeding) */}
+                    {(proceedNextStep || currentScorePct >= 75) && (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-base font-bold text-slate-900">
+                            {isEn
+                              ? 'Detailed Exam Corrections'
+                              : 'Correction complète des 12 questions de l’examen'}
+                          </h4>
+                          <span className="text-xs font-mono text-slate-500">
+                            {correctCount}/{OFFICIAL_QUIZ_BANK.length}
+                          </span>
+                        </div>
+                        <div className="divide-y divide-slate-200 border border-slate-200 rounded-xl overflow-hidden">
+                          {OFFICIAL_QUIZ_BANK.map((q, idx) => {
+                            const userChoice = answers[q.id];
+                            const isCorrect = userChoice === q.correctIndex;
+                            const opts = isEn ? q.optionsEn : q.optionsFr;
+                            return (
+                              <div key={q.id} className="p-4 md:p-5 bg-white space-y-2">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="text-sm font-semibold text-slate-900">
+                                    <span className="font-mono text-slate-400 mr-2">
+                                      {String(idx + 1).padStart(2, '0')}.
+                                    </span>
+                                    {isEn ? q.questionEn : q.questionFr}
+                                  </div>
+                                  {isCorrect ? (
+                                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 shrink-0">
+                                      <CheckCircle2 className="w-4 h-4" />
+                                      {isEn ? 'Correct' : 'Correct'}
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-red-700 shrink-0">
+                                      <XCircle className="w-4 h-4" />
+                                      {isEn ? 'Incorrect' : 'Incorrect'}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-xs text-slate-600">
+                                  <span className="font-semibold text-slate-800">
+                                    {isEn ? 'Correct answer:' : 'Bonne réponse :'}{' '}
+                                  </span>
+                                  <span className="font-semibold text-emerald-800">
+                                    {opts[q.correctIndex]}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-slate-700 bg-slate-50 p-3 rounded-lg">
+                                  {isEn ? q.explanationEn : q.explanationFr}
+                                </p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </>
@@ -1106,7 +1234,7 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
         </div>
       )}
 
-      {/* Tab 3: Physical Tests & Direct Coordinator Contact (Locked until ALL courses + Quiz >= 75%) */}
+      {/* Tab 3: Physical Tests & Direct Coordinator Contact */}
       {activeTab === 'instructor' && (
         <div className="bg-white/95 backdrop-blur border border-slate-200 rounded-xl p-6 md:p-8 space-y-6 shadow-sm">
           {!practicalUnlocked ? (
@@ -1116,13 +1244,13 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
               </div>
               <h3 className="text-xl font-semibold text-slate-900">
                 {isEn
-                  ? 'Physical Exam Appointment Locked Until Theory Quiz Is Passed'
-                  : 'Rendez-vous épreuves physiques verrouillé jusqu’à la réussite du QCM'}
+                  ? 'Finish Courses & Quiz to Unlock Physical Exam Contact'
+                  : 'Terminez les cours et le QCM pour débloquer votre responsable'}
               </h3>
               <p className="text-sm text-slate-600 leading-relaxed">
                 {isEn
-                  ? `Complete all 5 sequential audio modules (${completedModules.length}/5 done) and score at least 75% on the Official Quiz (current best: ${registration.quizBestScore}%) to unlock the coordinator’s direct phone and WhatsApp so you can book your physical driving tests and receive your license.`
-                  : `Vous devez d’abord valider les 5 modules audio séquentiels (${completedModules.length}/5 validés) puis réussir le QCM officiel à 75 % minimum (meilleur score actuel : ${registration.quizBestScore} %). Les coordonnées directes pour fixer votre rendez-vous d’épreuves physiques et récupérer votre permis apparaîtront ici dès votre réussite.`}
+                  ? `Validate the 5 sequential audio courses (${completedModules.length}/5 done) and complete the Quiz, then click "Proceed to Next Step" to unlock your physical driving test contact.`
+                  : `Validez d’abord les 5 cours audio (${completedModules.length}/5 validés) puis passez le QCM et cliquez sur « Passer à l’étape suivante ».`}
               </p>
               <button
                 type="button"
@@ -1139,17 +1267,46 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                 <span>{t.instructorUnlockedTitle}</span>
               </div>
 
-              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 space-y-2">
-                <div className="text-base font-bold text-emerald-950">
-                  {isEn
-                    ? 'Final Step to Obtain Your License: Pass Your Physical Tests'
-                    : 'Dernière étape pour retirer votre permis officiel : les épreuves physiques'}
-                </div>
-                <p className="text-[15px] text-emerald-900 leading-relaxed">
-                  {isEn
-                    ? 'You have successfully validated your theory preparation. To receive your actual driving license, you must complete a short series of in-person physical tests. Contact DrivePro Academy below via direct phone call or WhatsApp to fix your appointment date, pass the physical tests, and receive your license.'
-                    : 'Félicitations pour votre réussite au QCM ! Pour obtenir votre permis de conduire proprement dit, vous devez maintenant passer quelques épreuves physiques pratiques avec notre examinateur. Contactez DrivePro Academy ci-dessous par appel direct ou WhatsApp pour fixer votre rendez-vous, achever les épreuves physiques et prendre votre permis.'}
-                </p>
+              {/* Simplified 3-step physical exam checklist */}
+              <div className="grid sm:grid-cols-3 gap-4">
+                {[
+                  {
+                    n: '01',
+                    titleFr: 'Appelez ou écrivez',
+                    descFr: `Contactez ${assignedInstructor.name} au ${PARIS_HQ_CONTACT.displayPhone} ou sur WhatsApp.`,
+                    titleEn: 'Call or Message',
+                    descEn: `Contact ${assignedInstructor.name} on ${PARIS_HQ_CONTACT.displayPhone} or WhatsApp.`,
+                  },
+                  {
+                    n: '02',
+                    titleFr: 'Fixez votre créneau',
+                    descFr: 'Choisissez la date rapide des épreuves physiques avec votre numéro de dossier.',
+                    titleEn: 'Fix Your Slot',
+                    descEn: 'Pick your quick physical exam appointment using your dossier number.',
+                  },
+                  {
+                    n: '03',
+                    titleFr: 'Épreuves & Permis',
+                    descFr: 'Passez les épreuves pratiques et récupérez votre permis officiel.',
+                    titleEn: 'Tests & License',
+                    descEn: 'Complete physical tests and receive your official driving license.',
+                  },
+                ].map((item) => (
+                  <div
+                    key={item.n}
+                    className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-4 space-y-1"
+                  >
+                    <div className="text-xs font-mono font-bold text-emerald-800">
+                      {item.n}
+                    </div>
+                    <div className="text-sm font-bold text-slate-900">
+                      {isEn ? item.titleEn : item.titleFr}
+                    </div>
+                    <p className="text-xs text-slate-700 leading-relaxed">
+                      {isEn ? item.descEn : item.descFr}
+                    </p>
+                  </div>
+                ))}
               </div>
 
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border border-slate-200 rounded-xl p-6 bg-slate-50/80">
@@ -1209,6 +1366,16 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
             </>
           )}
         </div>
+      )}
+
+      {registration && (
+        <InvoiceReceiptModal
+          isOpen={invoiceModalOpen}
+          lang={lang}
+          registration={registration}
+          payment={latestPayment}
+          onClose={() => setInvoiceModalOpen(false)}
+        />
       )}
     </section>
   );

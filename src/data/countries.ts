@@ -2,30 +2,31 @@ import { CountryConfig, LicenseCategory, PaymentMethodOption } from '../types';
 
 export const CATEGORY_FEES_EUR: Record<LicenseCategory, number> = {
   A: 200,
-  B: 250,
-  C: 300,
-  D: 350,
+  B: 350,
+  C: 500,
+  D: 650,
 };
 
 export function getCategoryFeeEur(category: LicenseCategory): number {
-  return CATEGORY_FEES_EUR[category] ?? 250;
+  return CATEGORY_FEES_EUR[category] ?? 350;
 }
 
 export const TAPTAP_SEND_CHECKOUT = {
-  paymentLinkUrl: 'https://www.taptapsend.com/send-money',
-  destinationCountryFr: 'Bénin · Transfert International Sécurisé',
-  destinationCountryEn: 'Benin · Secure International Transfer',
-  recipientLabel: 'DrivePro Academy · Compte Officiel Agréé',
+  paymentLinkUrlFr: 'https://www.taptapsend.com/fr',
+  paymentLinkUrlEn: 'https://www.taptapsend.com/en',
+  destinationCountryFr: 'Transfert International Sécurisé · TapTap Send',
+  destinationCountryEn: 'Secure International Transfer · TapTap Send',
+  recipientLabel: 'DrivePro Academy · Service Paiements Agréé',
   linkReference: 'DP-TTS-OFFICIAL',
 };
 
 export const PAYMENT_TAPTAP_SEND: PaymentMethodOption = {
   id: 'taptap_send',
-  labelFr: 'TapTap Send (Lien direct · Prioritaire)',
-  labelEn: 'TapTap Send (Direct Link · Priority)',
+  labelFr: 'TapTap Send (Paiement Officiel Unique)',
+  labelEn: 'TapTap Send (Official Payment)',
   category: 'taptap_send',
-  hintFr: 'Paiement instantané via notre lien direct · Saisissez simplement vos coordonnées',
-  hintEn: 'Instant transfer via our direct link · Enter only your sender details',
+  hintFr: 'Ouvrez TapTap Send, effectuez le transfert puis saisissez votre ID de reçu et votre capture.',
+  hintEn: 'Open TapTap Send, send your transfer, then enter your receipt ID and proof.',
 };
 
 const PAYMENT_CARD: PaymentMethodOption = {
