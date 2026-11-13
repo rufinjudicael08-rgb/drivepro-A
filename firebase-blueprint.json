@@ -303,7 +303,7 @@
         },
         "platform": {
           "type": "string",
-          "enum": ["TikTok", "Facebook", "Instagram"]
+          "enum": ["TikTok", "Facebook", "Instagram", "LinkedIn"]
         },
         "campaignName": {
           "type": "string",

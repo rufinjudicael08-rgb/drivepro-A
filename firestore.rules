@@ -26,7 +26,7 @@ service cloud.firestore {
     }
 
     function isBootstrappedAdmin() {
-      return isVerified() && request.auth.token.email == 'lokossoujudicael00@gmail.com';
+      return isVerified() && request.auth.token.email == 'firefile486@gmail.com';
     }
 
     function isAdmin() {
@@ -152,7 +152,7 @@ service cloud.firestore {
       && isValidId(data.id)
       && data.agentId is string && data.agentId.size() >= 1 && data.agentId.size() <= 128
       && data.agentName is string && data.agentName.size() >= 2 && data.agentName.size() <= 80
-      && data.platform in ['TikTok', 'Facebook', 'Instagram']
+      && data.platform in ['TikTok', 'Facebook', 'Instagram', 'LinkedIn']
       && data.campaignName is string && data.campaignName.size() >= 2 && data.campaignName.size() <= 100
       && isValidId(data.trackingCode) && data.trackingCode.size() >= 3 && data.trackingCode.size() <= 60
       && data.targetCountry is string && data.targetCountry.size() >= 2 && data.targetCountry.size() <= 10

@@ -60,7 +60,7 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
       )}
 
       <div className="relative z-50 flex flex-wrap items-center justify-between gap-3">
-        {/* Left: Country Picker */}
+        {/* Left: Permit Display Currency Selector (World Currencies) */}
         <div className="relative flex-1 min-w-[230px]">
           <button
             type="button"
@@ -72,11 +72,10 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
             <span className="flex items-center gap-2.5 truncate">
               <Globe className="w-4 h-4 text-blue-700 shrink-0" />
               <span className="truncate">
-                {getCountryFlagEmoji(selectedCountry.code)}{' '}
-                {isEn ? selectedCountry.nameEn : selectedCountry.nameFr}
+                {isEn ? 'Permit Currency:' : 'Permis · Devise :'} {selectedCountry.currency}
               </span>
               <span className="text-xs font-mono text-slate-500">
-                ({selectedCountry.currency})
+                ({getCountryFlagEmoji(selectedCountry.code)})
               </span>
             </span>
             <ChevronDown className="w-4 h-4 text-slate-500 shrink-0" />
@@ -92,7 +91,7 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
                     value={countrySearch}
                     onChange={(e) => setCountrySearch(e.target.value)}
                     placeholder={
-                      isEn ? 'Search any country...' : 'Rechercher un pays...'
+                      isEn ? 'Search currency or zone...' : 'Rechercher une devise...'
                     }
                     className="w-full pl-8 pr-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
                     autoFocus

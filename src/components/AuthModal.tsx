@@ -194,11 +194,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     setSubmitting(true);
     try {
+      auth.languageCode = lang === 'en' ? 'en' : 'fr';
       await sendPasswordResetEmail(auth, email.trim());
       setInfoMsg(
         isEn
-          ? 'Password reset email sent! Check your inbox.'
-          : 'E-mail de réinitialisation envoyé ! Vérifiez votre boîte de réception (et vos Spams).'
+          ? 'Reset link sent under Drive Academy! Check your inbox and Spam folder.'
+          : 'E-mail de réinitialisation envoyé par Drive Academy ! Vérifiez votre boîte de réception (et vos Spams).'
       );
     } catch (err) {
       setErrorMsg(translateAuthErrorFr(err));
@@ -217,8 +218,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         {/* Header */}
         <div className="bg-slate-900 text-white px-6 py-5 flex items-start justify-between gap-4">
           <div className="space-y-1">
-            <div className="text-xs font-mono text-blue-400 font-semibold">
-              DrivePro Academy · {isEn ? 'Candidate Account' : 'Compte Personnel'}
+            <div className="text-xs font-mono text-amber-300 font-semibold">
+              Drive Academy · {isEn ? 'Candidate Account' : 'Compte Personnel'}
             </div>
             <h2 className="font-display text-xl font-bold">
               {mode === 'register'
@@ -474,6 +475,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   placeholder="exemple@gmail.com"
                   className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
                 />
+                <p className="text-[11px] text-slate-500 pt-1">
+                  {isEn
+                    ? 'The password reset link is sent automatically on behalf of Drive Academy.'
+                    : 'Le lien de réinitialisation est envoyé au nom de « Drive Academy ».'}
+                </p>
               </div>
 
               <div className="flex items-center justify-between gap-3">

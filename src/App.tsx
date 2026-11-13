@@ -19,6 +19,7 @@ import {
   Building2,
   CarFront,
   CheckCircle2,
+  Clock,
   GraduationCap,
   Lock,
   MailCheck,
@@ -37,6 +38,7 @@ import { CandidatePortal } from './components/CandidatePortal';
 import { CountrySelector } from './components/CountrySelector';
 import { DriveProLogo } from './components/DriveProLogo';
 import { LegalDocKey, LegalModal } from './components/LegalModals';
+import { PartnerLogos, SocialAccountsStrip } from './components/PartnerLogos';
 import { RegistrationFlow } from './components/RegistrationFlow';
 import {
   CATEGORY_FEES_EUR,
@@ -278,6 +280,7 @@ export default function App() {
       if (lower === 'tiktok') return 'TikTok';
       if (lower === 'facebook') return 'Facebook';
       if (lower === 'instagram') return 'Instagram';
+      if (lower === 'linkedin') return 'LinkedIn';
       return srcVal;
     };
 
@@ -291,6 +294,8 @@ export default function App() {
           ? 'IG_BIO'
           : resolvedPlatform === 'Facebook'
           ? 'FB_BIO'
+          : resolvedPlatform === 'LinkedIn'
+          ? 'LINKEDIN_BIO'
           : '');
       setReferralCode(resolvedRef);
       setReferralPlatform(resolvedPlatform);
@@ -750,30 +755,36 @@ export default function App() {
 
             {/* HOME VIEW */}
             {activeView === 'home' && (
-              <div className="space-y-10">
-                <section className="grid lg:grid-cols-12 gap-8 items-stretch">
-                  <div className="lg:col-span-6 bg-white/95 backdrop-blur border border-slate-200 rounded-xl p-7 md:p-10 flex flex-col justify-between gap-6 shadow-lg">
+              <div className="space-y-8">
+                <section className="grid lg:grid-cols-12 gap-7 items-stretch">
+                  <div className="lg:col-span-6 bg-white/95 backdrop-blur border border-slate-200 rounded-2xl p-7 md:p-9 flex flex-col justify-between gap-6 shadow-lg">
                     <div className="space-y-4">
-                      <div className="flex items-start gap-2 text-xs font-semibold text-blue-800">
-                        <MapPin className="w-4 h-4 text-blue-700 shrink-0 mt-0.5" />
-                        <span>{t.hqLabel}</span>
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-semibold">
+                        <span className="inline-flex items-center gap-1.5 text-blue-800">
+                          <MapPin className="w-4 h-4 text-blue-700 shrink-0" />
+                          <span>Résumé en images animées · Driv&apos; Academy</span>
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 text-emerald-700 font-mono font-bold">
+                          <Clock className="w-3.5 h-3.5 shrink-0" />
+                          <span>Ouvert 24h/24 · 5j/7</span>
+                        </span>
                       </div>
                       <h1
-                        className="font-display text-3xl sm:text-4xl lg:text-[2.85rem] font-extrabold tracking-tight text-slate-900 leading-[1.1]"
+                        className="font-display text-3xl sm:text-4xl lg:text-[2.75rem] font-extrabold tracking-tight text-slate-900 leading-[1.12]"
                         style={{ textWrap: 'balance' }}
                       >
                         {lang === 'fr' ? (
                           <>
-                            Votre permis international{' '}
+                            Votre permis international et national{' '}
                             <span className="text-blue-700">
-                              en moins de 48 heures.
+                              en moins de 24h à 48h.
                             </span>
                           </>
                         ) : lang === 'en' ? (
                           <>
-                            Your international driver’s license{' '}
+                            Your international and national driver’s license{' '}
                             <span className="text-blue-700">
-                              in under 48 hours.
+                              in 24h to 48h.
                             </span>
                           </>
                         ) : (
@@ -790,7 +801,7 @@ export default function App() {
                         <button
                           type="button"
                           onClick={() => setActiveView('enroll')}
-                          className="inline-flex items-center gap-2 px-6 py-3 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap"
+                          className="inline-flex items-center gap-2 px-6 py-3.5 bg-gradient-to-r from-blue-700 to-blue-800 hover:from-blue-600 hover:to-blue-700 text-white text-sm font-bold rounded-xl shadow-md transition-all cursor-pointer whitespace-nowrap"
                         >
                           <span>{t.heroCtaPrimary}</span>
                           <ArrowRight className="w-4 h-4" />
@@ -798,7 +809,7 @@ export default function App() {
                         <button
                           type="button"
                           onClick={() => setActiveView('candidate')}
-                          className="inline-flex items-center gap-2 px-5 py-3 bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 text-sm font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap"
+                          className="inline-flex items-center gap-2 px-5 py-3.5 bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 text-sm font-semibold rounded-xl transition-colors cursor-pointer whitespace-nowrap"
                         >
                           {!isCandidateUnlocked && (
                             <Lock className="w-4 h-4 text-slate-500" />
@@ -806,16 +817,31 @@ export default function App() {
                           <span>{t.heroCtaSecondary}</span>
                         </button>
                       </div>
-                      <div className="text-xs font-mono tabular-nums text-slate-600">
-                        {isEn
-                          ? `Permit ${category} (${selectedCountry.nameEn}): ${formattedLocalFee} (${baseEur} €)`
-                          : `Permis ${category} (${selectedCountry.nameFr}) : ${formattedLocalFee} (${baseEur} €)`}
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono tabular-nums text-slate-700 pt-1 border-t border-slate-100">
+                        <span>
+                          {isEn
+                            ? `Permit ${category} : ${baseEur} € (${formattedLocalFee})`
+                            : `Permis ${category} : ${baseEur} € (${formattedLocalFee})`}
+                        </span>
+                        <span className="text-emerald-700 font-bold">
+                          Paiement vérifié · Sécurisé
+                        </span>
                       </div>
                     </div>
                   </div>
 
                   {/* Animated Course Showcase Carousel in Hero Right Column */}
-                  <div className="lg:col-span-6 relative rounded-xl overflow-hidden border border-slate-200/80 bg-slate-900 min-h-[340px] shadow-lg flex flex-col justify-end">
+                  <div className="lg:col-span-6 relative rounded-2xl overflow-hidden border border-slate-200/80 bg-slate-950 min-h-[360px] shadow-lg flex flex-col justify-between">
+                    <div className="relative z-10 px-5 py-3.5 bg-slate-950/75 backdrop-blur-md border-b border-white/10 flex items-center justify-between text-white">
+                      <span className="text-xs font-mono font-bold text-amber-300">
+                        {isEn
+                          ? "ANIMATED SUMMARY · DRIV' ACADEMY"
+                          : "RÉSUMÉ EN IMAGES ANIMÉES · DRIV' ACADEMY"}
+                      </span>
+                      <span className="text-[11px] font-mono font-semibold text-emerald-300">
+                        24h / 48h
+                      </span>
+                    </div>
                     {!heroImgFailed ? (
                       <>
                         {HERO_SHOWCASE_GALLERY.map((imgSrc, idx) => (
@@ -836,11 +862,11 @@ export default function App() {
                             }`}
                           />
                         ))}
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/35 to-transparent pointer-events-none" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/35 to-slate-950/40 pointer-events-none" />
 
                         {/* Animated Mini Interactive Course Card Overlay */}
                         <div className="relative z-10 p-5 sm:p-6 space-y-4">
-                          <div className="bg-slate-950/80 backdrop-blur-md border border-slate-700/80 rounded-xl p-4 flex items-center justify-between gap-4 text-white">
+                          <div className="bg-slate-950/85 backdrop-blur-md border border-slate-700/80 rounded-xl p-4 flex items-center justify-between gap-4 text-white">
                             <div className="flex items-center gap-3.5 min-w-0">
                               <div className="w-12 h-12 rounded-xl bg-red-600 border-2 border-white flex items-center justify-center font-display font-extrabold text-sm shrink-0 shadow">
                                 {currentHeroCourse.badge}
@@ -865,7 +891,7 @@ export default function App() {
                             <button
                               type="button"
                               onClick={() => setActiveView('enroll')}
-                              className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg whitespace-nowrap shrink-0 cursor-pointer"
+                              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg whitespace-nowrap shrink-0 cursor-pointer"
                             >
                               {isEn ? 'Open' : 'Voir'}
                             </button>
@@ -881,7 +907,7 @@ export default function App() {
                                   aria-label={`Slide ${idx + 1}`}
                                   className={`h-1.5 rounded-full transition-all cursor-pointer ${
                                     idx === heroSlideIdx
-                                      ? 'w-7 bg-blue-400'
+                                      ? 'w-7 bg-amber-400'
                                       : 'w-2 bg-white/40 hover:bg-white/70'
                                   }`}
                                 />
@@ -897,54 +923,57 @@ export default function App() {
                       <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center text-white bg-gradient-to-br from-slate-900 to-blue-950">
                         <CarFront className="w-12 h-12 text-blue-400 mb-3" />
                         <div className="font-display text-xl font-semibold">
-                          DrivePro Academy International
+                          Driv&apos; Academy International
                         </div>
                       </div>
                     )}
                   </div>
                 </section>
 
-                {/* Full-Width 4-Column Tariff Strip (200 € / 350 € / 500 €) */}
+                {/* Institutional Partners & Accreditations Strip (UE, France, USA, Permis International & National) */}
+                <PartnerLogos lang={lang} />
+
+                {/* Full-Width 4-Column Tariff Strip (Permis Seulement) */}
                 <section className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {[
                     {
                       metric: `${formatLocalCurrency(convertEurFee(200, selectedCountry), selectedCountry, lang)}`,
                       accent: 'text-blue-700',
-                      titleFr: 'Permis A (Moto) · 200 €',
-                      titleEn: 'Permit A (Moto) · €200',
-                      descFr: 'Paiement direct via TapTap Send · Dossier complet agréé.',
-                      descEn: 'Direct TapTap Send checkout · Complete accredited dossier.',
+                      titleFr: 'Permis A · 200 €',
+                      titleEn: 'Permit A · €200',
+                      descFr: 'Paiement vérifié, sécurisé · Dossier complet & cours audio.',
+                      descEn: 'Verified secure payment · Complete dossier & audio courses.',
                     },
                     {
                       metric: `${formatLocalCurrency(convertEurFee(350, selectedCountry), selectedCountry, lang)}`,
                       accent: 'text-slate-900',
-                      titleFr: 'Permis B (Voiture) · 350 €',
-                      titleEn: 'Permit B (Car) · €350',
-                      descFr: 'Réinscription facile après Permis A · Cours audio toutes langues.',
-                      descEn: 'Easy re-enrollment after Permit A · Audio courses in all languages.',
+                      titleFr: 'Permis B · 350 €',
+                      titleEn: 'Permit B · €350',
+                      descFr: 'Réinscription facile après Permis A · Télépaiement immédiat.',
+                      descEn: 'Easy re-enrollment after Permit A · Instant verified checkout.',
                     },
                     {
                       metric: `${formatLocalCurrency(convertEurFee(500, selectedCountry), selectedCountry, lang)}`,
                       accent: 'text-emerald-700',
-                      titleFr: 'Permis C (Poids Lourd) · 500 €',
-                      titleEn: 'Permit C (Truck) · €500',
-                      descFr: 'Facture officielle & reçu TapTap Send générés immédiatement.',
-                      descEn: 'Official invoice & TapTap Send receipt generated instantly.',
+                      titleFr: 'Permis C · 500 €',
+                      titleEn: 'Permit C · €500',
+                      descFr: 'Paiement vérifié · Facture officielle générée immédiatement.',
+                      descEn: 'Verified payment · Official invoice generated instantly.',
                     },
                     {
-                      metric: '48h · Physique',
+                      metric: '24h · 48h',
                       accent: 'text-blue-700',
                       titleFr: 'QCM → Épreuves Physiques',
                       titleEn: 'Quiz → Physical Tests',
                       descFr:
-                        'Reprenez l’examen ou passez à l’étape suivante pour fixer vos épreuves physiques.',
+                        'Suivez vos cours, passez le QCM et fixez vos épreuves physiques.',
                       descEn:
-                        'Retake quiz or proceed to next step for corrections and physical test booking.',
+                        'Follow courses, pass the quiz and schedule your physical tests.',
                     },
                   ].map((item) => (
                     <div
                       key={item.titleEn}
-                      className="bg-white/95 backdrop-blur border border-slate-200 rounded-xl p-5 space-y-2 shadow-sm"
+                      className="bg-white/95 backdrop-blur border border-slate-200 rounded-2xl p-5 space-y-2 shadow-sm hover:border-blue-300 transition-colors"
                     >
                       <div
                         className={`text-2xl font-mono font-bold tabular-nums ${item.accent}`}
@@ -963,7 +992,7 @@ export default function App() {
 
                 {/* Lower Animated Multi-Image Community Classroom + Résumé de la plateforme */}
                 <section className="grid lg:grid-cols-12 gap-6 items-stretch">
-                  <div className="lg:col-span-5 relative rounded-xl overflow-hidden border border-slate-200/80 bg-slate-900 min-h-[290px] shadow-md flex flex-col justify-end">
+                  <div className="lg:col-span-5 relative rounded-2xl overflow-hidden border border-slate-200/80 bg-slate-900 min-h-[290px] shadow-md flex flex-col justify-end">
                     {!classImgFailed ? (
                       <>
                         {COMMUNITY_GALLERY_SLIDES.map((slide, idx) => (
@@ -982,10 +1011,10 @@ export default function App() {
                         ))}
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent pointer-events-none" />
                         <div className="relative z-10 p-5 space-y-2.5 text-white">
-                          <div className="text-xs font-mono text-emerald-300 font-semibold">
+                          <div className="text-xs font-mono text-amber-300 font-semibold">
                             {isEn
-                              ? 'ANIMATED ACADEMY SUMMARY · LIVE SCENES'
-                              : 'RÉSUMÉ EN IMAGES ANIMÉES · DRIVEPRO ACADEMY'}
+                              ? "ANIMATED SUMMARY · DRIV' ACADEMY"
+                              : "RÉSUMÉ EN IMAGES ANIMÉES · DRIV' ACADEMY"}
                           </div>
                           <div className="text-sm font-bold">
                             {isEn
@@ -1019,7 +1048,7 @@ export default function App() {
                     )}
                   </div>
 
-                  <div className="lg:col-span-7 bg-white/95 backdrop-blur border border-slate-200 rounded-xl p-6 md:p-8 flex flex-col justify-between gap-6 shadow-md">
+                  <div className="lg:col-span-7 bg-white/95 backdrop-blur border border-slate-200 rounded-2xl p-6 md:p-8 flex flex-col justify-between gap-6 shadow-md">
                     <div className="space-y-4">
                       <h2 className="font-display text-2xl sm:text-3xl font-bold text-slate-900">
                         {isEn ? (
@@ -1033,7 +1062,7 @@ export default function App() {
                           <>
                             Parcours complet :{' '}
                             <span className="text-blue-700">
-                              du dossier à la remise du permis
+                              du dossier à l’obtention du permis
                             </span>
                           </>
                         )}
@@ -1051,30 +1080,30 @@ export default function App() {
                           },
                           {
                             num: '02.',
-                            titleFr: 'Paiement TapTap Send Vérifié',
-                            titleEn: 'Verified TapTap Send Checkout',
+                            titleFr: 'Paiement · Mode Télépaiement',
+                            titleEn: 'Verified & Secure Payment',
                             textFr:
-                              'Payez via le lien officiel TapTap Send avec votre code déclencheur et capture de reçu pour recevoir votre facture officielle.',
+                              'Paiement vérifié, sécurisé directement via le lien officiel avec facture générée.',
                             textEn:
-                              'Pay via official TapTap Send link with your trigger code and receipt upload to receive your official invoice.',
+                              'Verified, secure payment via direct official link with instant invoice.',
                           },
                           {
                             num: '03.',
-                            titleFr: 'Cours Audio Adaptés au Pays & Langue',
-                            titleEn: 'Audio Adapted to Country & Language',
+                            titleFr: 'Cours Audio Animés Multilingues',
+                            titleEn: 'Multilingual Animated Audio',
                             textFr:
-                              'Changez de pays ou de langue en haut : la voix audio des 5 cours s’adapte automatiquement à votre langue.',
+                              'Suivez vos 5 modules animés avec voix audio adaptée automatiquement à votre langue.',
                             textEn:
-                              'Switch country or language at the top bar and the audio player adapts to your chosen locale.',
+                              'Follow your 5 animated courses with voice audio adapted to your chosen language.',
                           },
                           {
                             num: '04.',
-                            titleFr: 'QCM → Correction & Épreuves Physiques',
-                            titleEn: 'Quiz → Corrections & Physical Tests',
+                            titleFr: 'QCM → Épreuves Physiques < 48h',
+                            titleEn: 'Quiz → Physical Tests < 48h',
                             textFr:
-                              'Reprenez l’examen ou cliquez sur Passer à l’étape suivante pour recevoir la correction complète et le contact RDV physique.',
+                              'Reprenez l’examen ou passez à l’étape suivante pour recevoir la correction complète et le rendez-vous physique.',
                             textEn:
-                              'Retake quiz or proceed to next step for complete exam corrections and physical test scheduling.',
+                              'Retake quiz or proceed to next step for full corrections and physical test appointment.',
                           },
                         ].map((step) => (
                           <div key={step.num} className="space-y-1">
@@ -1174,21 +1203,25 @@ export default function App() {
             )}
           </main>
 
-          {/* Complete Official Corporate & Legal Footer with Trust Badges */}
-          <footer className="bg-slate-900 text-slate-300 border-t border-slate-800 mt-12">
+          {/* Complete Official Corporate & Legal Footer with Trust Badges, Hours & Socials */}
+          <footer className="bg-slate-950 text-slate-300 border-t border-slate-800 mt-12">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8 text-xs">
               <div className="grid md:grid-cols-12 gap-8 items-start">
-                <div className="md:col-span-5 space-y-3">
-                  <div className="flex items-center gap-3">
+                <div className="md:col-span-5 space-y-3.5">
+                  <div className="flex flex-wrap items-center gap-3">
                     <DriveProLogo dark size="sm" />
                     <span className="text-emerald-400 font-mono text-xs font-semibold">
-                      v4.2.0
+                      v4.3.0
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-mono font-bold text-[11px]">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>Ouvert 24h/24 · 5j/7</span>
                     </span>
                   </div>
                   <div className="flex items-start gap-2 text-slate-300 leading-relaxed">
                     <Building2 className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
                     <span>
-                      Siège social Paris : {PARIS_HQ_CONTACT.addressFr} · Agrément{' '}
+                      Siège social : {PARIS_HQ_CONTACT.addressFr} · Agrément{' '}
                       <span className="font-mono text-white font-semibold">
                         {PARIS_HQ_CONTACT.accreditation}
                       </span>{' '}
@@ -1261,7 +1294,7 @@ export default function App() {
                     <div className="bg-slate-800/80 border border-slate-700 rounded-lg p-2.5 flex items-center gap-2">
                       <ShieldCheck className="w-4 h-4 text-blue-400 shrink-0" />
                       <span className="text-[11px] font-semibold text-white">
-                        TapTap Vérifié
+                        Télépaiement Vérifié
                       </span>
                     </div>
                     <div className="bg-slate-800/80 border border-slate-700 rounded-lg p-2.5 flex items-center gap-2">
@@ -1271,18 +1304,38 @@ export default function App() {
                       </span>
                     </div>
                     <div className="bg-slate-800/80 border border-slate-700 rounded-lg p-2.5 flex items-center gap-2">
-                      <Building2 className="w-4 h-4 text-blue-400 shrink-0" />
+                      <Building2 className="w-4 h-4 text-amber-400 shrink-0" />
                       <span className="text-[11px] font-semibold text-white">
-                        Centre +103
+                        24h/24 · 5j/7
                       </span>
                     </div>
                   </div>
                 </div>
               </div>
 
+              {/* Official Social Media Accounts (Driv' Academy) + Institutional Partner Emblems */}
+              <div className="border-t border-slate-800 pt-6 space-y-4">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div className="space-y-2">
+                    <div className="text-[11px] font-mono uppercase tracking-wider text-amber-300 font-semibold">
+                      {isEn
+                        ? "Official Social Networks · Driv' Academy"
+                        : "Réseaux Sociaux Officiels · Driv' Academy"}
+                    </div>
+                    <SocialAccountsStrip dark />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold">
+                      {isEn ? 'Institutional Partners' : 'Partenaires Officiels'}
+                    </div>
+                    <PartnerLogos lang={lang} compact />
+                  </div>
+                </div>
+              </div>
+
               <div className="border-t border-slate-800 pt-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[11px] text-slate-400">
                 <div>
-                  © {new Date().getFullYear()} DrivePro Academy International · Tous droits réservés.
+                  © {new Date().getFullYear()} Driv&apos; Academy International · Ouvert 24h/24 · 5j/7 · Tous droits réservés.
                 </div>
                 <div className="flex flex-wrap items-center gap-4">
                   <button

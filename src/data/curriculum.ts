@@ -61,7 +61,7 @@ export interface QuizQuestion {
 export const CERTIFIED_INSTRUCTORS: InstructorProfile[] = [
   {
     id: 'inst_paris_01',
-    name: 'DrivePro Academy — Service Examens',
+    name: "Driv' Academy — Service Examens",
     titleFr: 'Coordination Officielle des Épreuves Physiques & Délivrance Permis',
     titleEn: 'Official Physical Exam & License Issuance Coordination',
     city: 'Siège International Paris · Réseau Mondial',

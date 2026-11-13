@@ -39,7 +39,7 @@ export const InvoiceReceiptModal: React.FC<InvoiceReceiptModalProps> = ({
 <html lang="fr">
 <head>
 <meta charset="utf-8" />
-<title>Facture & Reçu ${invoiceNo} — DrivePro Academy</title>
+<title>Facture & Reçu ${invoiceNo} — Driv' Academy</title>
 <style>
   body { font-family: Arial, sans-serif; background:#f8fafc; color:#0f172a; padding:32px; }
   .box { max-width:720px; margin:0 auto; background:#fff; border:1px solid #cbd5e1; border-radius:12px; padding:32px; }
@@ -51,8 +51,8 @@ export const InvoiceReceiptModal: React.FC<InvoiceReceiptModalProps> = ({
 </head>
 <body>
   <div class="box">
-    <h1>DrivePro Academy — Facture & Reçu Officiel</h1>
-    <div class="muted">${PARIS_HQ_CONTACT.addressFr} · Agrément ${PARIS_HQ_CONTACT.accreditation} · Code Centre +103</div>
+    <h1>Driv' Academy — Facture & Reçu Officiel</h1>
+    <div class="muted">${PARIS_HQ_CONTACT.addressFr} · Agrément ${PARIS_HQ_CONTACT.accreditation} · Ouvert 24h/24 · 5j/7</div>
     <hr style="margin:20px 0;border:none;border-top:1px solid #e2e8f0;" />
     <div class="row"><span>Numéro de Facture</span><strong>${invoiceNo}</strong></div>
     <div class="row"><span>Candidat</span><strong>${registration.fullName}</strong></div>
@@ -71,7 +71,7 @@ export const InvoiceReceiptModal: React.FC<InvoiceReceiptModalProps> = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Facture_Recu_${invoiceNo}_DrivePro.html`;
+    a.download = `Facture_Recu_${invoiceNo}_DrivAcademy.html`;
     a.click();
     URL.revokeObjectURL(url);
   };

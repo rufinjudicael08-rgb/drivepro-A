@@ -24,9 +24,7 @@ import {
   convertEurFee,
   formatLocalCurrency,
   getCategoryFeeEur,
-  getCountryFlagEmoji,
   TAPTAP_SEND_CHECKOUT,
-  WORLD_COUNTRIES,
 } from '../data/countries';
 import { getInstructorForCountry } from '../data/curriculum';
 import { getTranslations } from '../data/i18n';
@@ -47,7 +45,7 @@ interface RegistrationFlowProps {
   lang: Language;
   category: LicenseCategory;
   onChangeCategory: (cat: LicenseCategory) => void;
-  onChangeCountry: (country: CountryConfig) => void;
+  onChangeCountry?: (country: CountryConfig) => void;
   user: User | null;
   userProfile?: UserAccountRecord | null;
   registration: RegistrationRecord | null;
@@ -117,7 +115,6 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
   lang,
   category,
   onChangeCategory,
-  onChangeCountry,
   user,
   userProfile,
   registration,
@@ -292,31 +289,6 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
     setReceiptFileName(file.name.slice(0, 120));
     const thumb = await compressUploadImage(file);
     setReceiptThumbnail(thumb);
-  };
-
-  const handleCountrySwitchAtPayment = async (countryCode: string) => {
-    const nextCountry =
-      WORLD_COUNTRIES.find((c) => c.code === countryCode) || country;
-    onChangeCountry(nextCountry);
-
-    if (registration && registration.paymentStatus === 'pending') {
-      const updatedAmount = convertEurFee(registration.baseFeeEur, nextCountry);
-      try {
-        await updateDoc(doc(db, 'registrations', registration.id), {
-          countryCode: nextCountry.code,
-          countryName: isEn ? nextCountry.nameEn : nextCountry.nameFr,
-          currency: nextCountry.currency,
-          convertedAmount: updatedAmount,
-          updatedAt: serverTimestamp(),
-        });
-      } catch (error) {
-        handleFirestoreError(
-          error,
-          OperationType.UPDATE,
-          `registrations/${registration.id}`
-        );
-      }
-    }
   };
 
   const expectedTriggerCode = registration
@@ -777,8 +749,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
             </h3>
             <p className="text-[15px] text-slate-700 mt-1">
               {isEn
-                ? 'Select the license category you want to obtain (A: €200, B: €350, C: €500, D: €650). Payment uses TapTap Send.'
-                : 'Sélectionnez la catégorie de permis souhaitée (Permis A : 200 €, Permis B : 350 €, Permis C : 500 €). Règlement direct via TapTap Send.'}
+                ? 'Select your permit category (A: €200, B: €350, C: €500, D: €650). Direct verified payment.'
+                : 'Sélectionnez votre permis (Permis A : 200 €, Permis B : 350 €, Permis C : 500 €). Mode télépaiement vérifié.'}
             </p>
           </div>
 
@@ -1168,22 +1140,30 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
         </form>
       )}
 
-      {/* Step 3: Paiement — STRICTLY TapTap Send ONLY + Anti-Fake Trigger Code + Receipt Screenshot */}
+      {/* Step 3: Paiement — Mode Télépaiement Vérifié & Sécurisé */}
       {step === 3 && registration && !isUnlocked && (
         <form
           onSubmit={handleValidatePayment}
-          className="bg-white/95 backdrop-blur border border-slate-200 rounded-xl p-6 md:p-8 space-y-6 shadow-md"
+          className="bg-white/95 backdrop-blur border border-slate-200 rounded-2xl p-6 md:p-8 space-y-6 shadow-lg"
         >
           <div className="border-b border-slate-200 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h3 className="text-2xl font-bold text-slate-900">
+              <div className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-emerald-700 mb-1">
+                <ShieldCheck className="w-4 h-4" />
+                <span>
+                  {isEn
+                    ? 'VERIFIED & SECURE PAYMENT'
+                    : 'PAIEMENT VÉRIFIÉ · SÉCURISÉ'}
+                </span>
+              </div>
+              <h3 className="text-2xl font-display font-bold text-slate-900">
                 {isEn ? (
                   <>
-                    Step 3 — <span className="text-emerald-700">TapTap Send Payment</span>
+                    Step 3 — <span className="text-blue-700">Payment</span>
                   </>
                 ) : (
                   <>
-                    Étape 3 — <span className="text-emerald-700">Paiement TapTap Send Unique</span>
+                    Étape 3 — <span className="text-blue-700">Paiement</span>
                   </>
                 )}
               </h3>
@@ -1192,15 +1172,15 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                 {registration.licenseCategory} (#{registration.queueNumber})
               </p>
             </div>
-            <div className="bg-slate-900 text-white px-5 py-3 rounded-lg text-right font-mono tabular-nums">
-              <div className="text-xs text-slate-300">
-                {isEn ? 'Amount Due' : 'Montant à régler'}
+            <div className="bg-gradient-to-br from-slate-900 to-blue-950 text-white px-5 py-3.5 rounded-xl text-right font-mono tabular-nums border border-blue-900/40 shadow-sm">
+              <div className="text-xs text-amber-300 font-semibold">
+                {isEn ? 'Permit Fee' : 'Montant du permis'}
               </div>
-              <div className="text-xl font-bold">
-                {formatLocalCurrency(registration.convertedAmount, country, lang)}
+              <div className="text-2xl font-bold">
+                {registration.baseFeeEur} €
               </div>
-              <div className="text-xs text-blue-300">
-                ({registration.baseFeeEur} € ≈ {xofEquivalent.toLocaleString('fr-FR')} FCFA)
+              <div className="text-xs text-blue-200">
+                {formatLocalCurrency(registration.convertedAmount, country, lang)} · {xofEquivalent.toLocaleString('fr-FR')} FCFA
               </div>
             </div>
           </div>
@@ -1211,51 +1191,24 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
             </div>
           )}
 
-          {/* Country / Currency Adjuster at checkout */}
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <div className="text-sm font-bold text-slate-900">
-                {isEn ? 'Payment Country & Currency' : 'Pays & devise de règlement'}
-              </div>
-              <p className="text-xs text-slate-600">
-                {isEn
-                  ? 'Select the country you are sending funds from via TapTap Send.'
-                  : 'Choisissez le pays depuis lequel vous envoyez votre paiement TapTap Send.'}
-              </p>
-            </div>
-            <select
-              value={country.code}
-              onChange={(e) => handleCountrySwitchAtPayment(e.target.value)}
-              className="px-3.5 py-2.5 text-sm font-semibold text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
-            >
-              {WORLD_COUNTRIES.map((c) => (
-                <option key={c.code} value={c.code}>
-                  {getCountryFlagEmoji(c.code)} {isEn ? c.nameEn : c.nameFr} ({c.currency})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Sole Official Method: TapTap Send Checkout Panel (Verified HTTP 200 URL) */}
-          <div className="bg-slate-900 text-white rounded-xl p-6 space-y-5 border border-slate-800">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
-              <div className="space-y-1">
+          {/* Mode Télépaiement Officiel Card */}
+          <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white rounded-2xl p-6 space-y-5 border border-blue-900/50 shadow-md">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-5">
+              <div className="space-y-1.5">
                 <div className="inline-flex items-center gap-2 text-xs font-mono text-emerald-400 font-bold">
                   <Send className="w-4 h-4" />
                   <span>
                     {isEn
-                      ? 'SOLE OFFICIAL PAYMENT RAIL · TAPTAP SEND'
-                      : 'MODE DE PAIEMENT UNIQUE OFFICIEL · TAPTAP SEND'}
+                      ? 'SECURE E-PAYMENT · VERIFIED'
+                      : 'TÉLÉPAIEMENT · PAIEMENT VÉRIFIÉ, SÉCURISÉ'}
                   </span>
                 </div>
-                <div className="text-lg font-bold text-white">
-                  {isEn
-                    ? `Transfer Amount: €${registration.baseFeeEur} (${xofEquivalent.toLocaleString('en-US')} XOF)`
-                    : `Montant officiel à envoyer : ${registration.baseFeeEur} € (${xofEquivalent.toLocaleString('fr-FR')} FCFA)`}
+                <div className="text-xl font-display font-bold text-white">
+                  {isEn ? 'Payment' : 'Paiement'} · {registration.baseFeeEur} €
                 </div>
-                <p className="text-xs text-slate-300">
-                  {TAPTAP_SEND_CHECKOUT.recipientLabel} · {TAPTAP_SEND_CHECKOUT.linkReference}
-                </p>
+                <div className="text-xs text-blue-200 font-medium">
+                  Driv&apos; Academy · TapTap Send
+                </div>
               </div>
 
               <a
@@ -1263,39 +1216,35 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setLinkOpened(true)}
-                className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-lg whitespace-nowrap shrink-0 transition-colors"
+                className="inline-flex items-center justify-center gap-2.5 px-6 py-3.5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white text-sm font-bold rounded-xl whitespace-nowrap shrink-0 shadow-lg transition-all"
               >
                 <ExternalLink className="w-4 h-4" />
                 <span>
-                  {isEn
-                    ? 'Open TapTap Send Officiel'
-                    : 'Payer maintenant sur TapTap Send'}
+                  {isEn ? 'Pay Now (Official Link)' : 'Payer maintenant · Lien officiel'}
                 </span>
               </a>
             </div>
 
-            {/* Unique Trigger Code Box */}
-            <div className="bg-slate-800/90 border border-slate-700 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="space-y-1">
+            {/* Trigger Code Box (Concise) */}
+            <div className="bg-white/5 border border-white/15 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-0.5">
                 <div className="text-xs font-semibold text-amber-300">
-                  {isEn
-                    ? 'Mandatory Dossier Trigger Code (anti-fraud check):'
-                    : 'Code Déclencheur Officiel de votre dossier (à noter / recopier) :'}
+                  {isEn ? 'Receipt Code' : 'Code de vérification reçu'}
                 </div>
                 <div className="text-xs text-slate-300">
                   {isEn
-                    ? 'Include or confirm this exact code below with your TapTap Send receipt screenshot so our system issues your official invoice.'
-                    : 'Indiquez ce code en référence et saisissez-le ci-dessous avec la capture de votre reçu TapTap Send pour déclencher votre facture.'}
+                    ? 'Verified payment reference'
+                    : 'Paiement vérifié, sécurisé'}
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <span className="px-3.5 py-2 bg-slate-950 border border-blue-500/60 rounded-lg font-mono text-base font-bold text-white tracking-wider">
+                <span className="px-4 py-2 bg-slate-950 border border-amber-400/50 rounded-lg font-mono text-base font-bold text-white tracking-wider">
                   {expectedTriggerCode}
                 </span>
                 <button
                   type="button"
                   onClick={handleCopyTriggerCode}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-blue-700 hover:bg-blue-600 text-white text-xs font-semibold rounded-lg cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg cursor-pointer"
                 >
                   {copiedTrigger ? (
                     <>

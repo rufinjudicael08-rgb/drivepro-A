@@ -7,11 +7,12 @@ const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
 
-export const ADMIN_EMAIL = 'lokossoujudicael00@gmail.com';
+export const ADMIN_EMAIL = 'firefile486@gmail.com';
 export const FIREBASE_PROJECT_ID = firebaseConfig.projectId;
 export const FIREBASE_DATABASE_ID = firebaseConfig.firestoreDatabaseId;
 export const FIRESTORE_CONSOLE_URL = `https://console.firebase.google.com/project/${firebaseConfig.projectId}/firestore/databases/${firebaseConfig.firestoreDatabaseId}/data`;
 export const FIREBASE_AUTH_PROVIDERS_URL = `https://console.firebase.google.com/project/${firebaseConfig.projectId}/authentication/providers`;
+export const FIREBASE_AUTH_TEMPLATES_URL = `https://console.firebase.google.com/project/${firebaseConfig.projectId}/authentication/emails`;
 
 export function translateAuthErrorFr(error: unknown): string {
   const errObj = error as { code?: string; message?: string } | null;

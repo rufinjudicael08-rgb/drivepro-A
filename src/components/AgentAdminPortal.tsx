@@ -19,6 +19,8 @@ import {
   Globe,
   Link2,
   Lock,
+  Mail,
+  Megaphone,
   Receipt,
   Search,
   Share2,
@@ -38,6 +40,7 @@ import {
   ADMIN_EMAIL,
   db,
   FIREBASE_AUTH_PROVIDERS_URL,
+  FIREBASE_AUTH_TEMPLATES_URL,
   FIREBASE_DATABASE_ID,
   FIREBASE_PROJECT_ID,
   FIRESTORE_CONSOLE_URL,
@@ -84,10 +87,11 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
 
   // Agent Social Link Generator state
   const [platform, setPlatform] = useState<SocialPlatform>('TikTok');
-  const [campaignName, setCampaignName] = useState('Permis Express 48h — Bio Lien');
-  const [targetCountry, setTargetCountry] = useState('BJ');
+  const [campaignName, setCampaignName] = useState("Driv' Academy — Permis Express 24h/48h");
+  const [targetCountry, setTargetCountry] = useState('FR');
   const [creatingLink, setCreatingLink] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copiedAdId, setCopiedAdId] = useState<string | null>(null);
 
   // Admin Console filters, ID & TapTap Receipt preview modals
   const [searchQuery, setSearchQuery] = useState('');
@@ -313,50 +317,63 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
               <span>Fournisseur E-mail / Mot de passe</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
+            <a
+              href={FIREBASE_AUTH_TEMPLATES_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-lg whitespace-nowrap"
+            >
+              <Mail className="w-4 h-4" />
+              <span>Modèle E-mail « Drive Academy »</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
           </div>
         </div>
 
         <div className="grid md:grid-cols-2 gap-4">
           <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-4 space-y-2">
             <div className="text-xs font-semibold text-blue-300">
-              1. Où voir toutes les données du site sur Firebase ?
+              1. Base de données Firebase ({FIREBASE_DATABASE_ID})
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
-              Vos comptes (<span className="font-mono text-white">users</span>), inscriptions, paiements, liens TikTok/Instagram et QCM sont enregistrés dans la base nommée{' '}
+              Vos comptes (<span className="font-mono text-white">users</span>), inscriptions, paiements, liens TikTok/Instagram/Facebook/LinkedIn et QCM sont enregistrés dans la base{' '}
               <span className="font-mono text-white font-semibold">{FIREBASE_DATABASE_ID}</span> (Projet{' '}
-              <span className="font-mono text-white">{FIREBASE_PROJECT_ID}</span>), et non dans « (default) ».
+              <span className="font-mono text-white">{FIREBASE_PROJECT_ID}</span>).
             </p>
           </div>
 
           <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-4 space-y-2">
-            <div className="text-xs font-semibold text-emerald-300">
-              2. Comptes sans blocage de domaine ({currentHostname}) :
+            <div className="text-xs font-semibold text-amber-300">
+              2. Nom d’expéditeur « Drive Academy » (Mot de passe oublié) :
             </div>
-            <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2">
-              <span className="font-mono text-xs text-white truncate">
-                Mode actif : Nom + E-mail + Téléphone + Mot de passe
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Cliquez sur <span className="font-semibold text-white">Modèle E-mail « Drive Academy »</span> ci-dessus →{' '}
+              <span className="font-semibold text-white">Réinitialisation du mot de passe</span> → icône crayon → mettez{' '}
+              <span className="font-mono text-amber-300">Nom de l’expéditeur : Drive Academy</span> et{' '}
+              <span className="font-mono text-emerald-300">Adresse de réponse : {ADMIN_EMAIL}</span> → Enregistrer.
+            </p>
+            <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5">
+              <span className="font-mono text-[11px] text-white truncate">
+                Domaine actif : {currentHostname}
               </span>
               <button
                 type="button"
                 onClick={handleCopyHostname}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white rounded cursor-pointer shrink-0"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] font-semibold text-white rounded cursor-pointer shrink-0"
               >
                 {copiedDomain ? (
                   <>
-                    <Check className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Domaine copié</span>
+                    <Check className="w-3 h-3 text-emerald-400" />
+                    <span>Copié</span>
                   </>
                 ) : (
                   <>
-                    <Copy className="w-3.5 h-3.5" />
-                    <span>Copier {currentHostname}</span>
+                    <Copy className="w-3 h-3" />
+                    <span>Copier</span>
                   </>
                 )}
               </button>
             </div>
-            <p className="text-[11px] text-slate-400">
-              La connexion Google a été supprimée : l’inscription par E-mail / Mot de passe fonctionne sur Vercel, mobile, TikTok et Instagram.
-            </p>
           </div>
         </div>
       </section>
@@ -381,45 +398,54 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
           </div>
         </div>
 
-        {/* Operational Social Automation Playbooks */}
-        <div className="grid md:grid-cols-3 gap-4">
+        {/* Operational Social Automation Playbooks — Branded Driv' Academy */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             {
-              platform: 'TikTok',
+              platform: 'TikTok · Driv’ Academy',
               titleFr: '01. Bio TikTok & Auto-DM',
               titleEn: '01. TikTok Bio & Auto-DM',
               descFr:
-                'Placez votre lien traqué ?src=tiktok en lien de bio ou réponse aux commentaires « PERMIS ». Le pays cible pré-configure la devise et TapTap Send.',
+                'Placez ?src=tiktok en bio sur votre compte « Driv’ Academy » ou en réponse automatique aux commentaires « PERMIS ».',
               descEn:
-                'Place your ?src=tiktok tracked URL in profile bio or comment auto-replies. Target country auto-configures currency and TapTap Send.',
+                'Place ?src=tiktok in your Driv’ Academy TikTok bio or automated comment replies.',
             },
             {
-              platform: 'Facebook',
-              titleFr: '02. Page Facebook & Messenger',
-              titleEn: '02. Facebook Lead Ads & Messenger',
+              platform: 'Facebook · Driv’ Academy',
+              titleFr: '02. Page Facebook & Ads',
+              titleEn: '02. Facebook Lead Ads',
               descFr:
-                'Redirigez vos publications et messages automatiques Messenger vers votre lien traqué pour encaisser les dossiers avec pièce d’identité.',
+                'Reliez vos publications et campagnes automatiques Facebook « Driv’ Academy » directement au télépaiement.',
               descEn:
-                'Route Facebook Posts and Messenger automated flows directly to your tracked enrollment URL with mandatory ID collection.',
+                'Route Driv’ Academy Facebook Posts & Lead Ads straight to your verified checkout URL.',
             },
             {
-              platform: 'Instagram',
-              titleFr: '03. Bio Instagram & Story',
-              titleEn: '03. Instagram Bio & Stories',
+              platform: 'Instagram · Driv’ Academy',
+              titleFr: '03. Bio Instagram & Reels',
+              titleEn: '03. Instagram Bio & Reels',
               descFr:
-                'Ajoutez le lien dans votre bio Instagram ou en sticker Story pour convertir vos abonnés directement depuis leur pays.',
+                'Ajoutez le lien traqué en bio et en sticker Story sur « Driv’ Academy » pour capter vos candidats 24h/24.',
               descEn:
-                'Add the tracked URL in your Instagram bio or Story sticker to enroll followers worldwide.',
+                'Add the tracked URL in your Driv’ Academy Instagram bio and Story stickers 24/7.',
+            },
+            {
+              platform: 'LinkedIn · Driv’ Academy',
+              titleFr: '04. Page LinkedIn Pro',
+              titleEn: '04. LinkedIn Pro Page',
+              descFr:
+                'Ciblez les professionnels et conducteurs (Permis B & C) via votre page « Driv’ Academy » avec inscription directe.',
+              descEn:
+                'Capture professionals seeking Permit B & C directly from your Driv’ Academy LinkedIn page.',
             },
           ].map((card) => (
             <div
               key={card.platform}
-              className="p-5 rounded-xl border border-slate-200 bg-slate-50/70 space-y-2"
+              className="p-4 rounded-xl border border-slate-200 bg-slate-50/80 space-y-2"
             >
-              <div className="text-xs font-mono font-semibold text-blue-700">
+              <div className="text-xs font-mono font-bold text-blue-700">
                 {card.platform}
               </div>
-              <h3 className="text-base font-semibold text-slate-900">
+              <h3 className="text-sm font-bold text-slate-900">
                 {isEn ? card.titleEn : card.titleFr}
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
@@ -443,9 +469,10 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
               onChange={(e) => setPlatform(e.target.value as SocialPlatform)}
               className="w-full px-3 py-2.5 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-700"
             >
-              <option value="TikTok">TikTok</option>
-              <option value="Facebook">Facebook</option>
-              <option value="Instagram">Instagram</option>
+              <option value="TikTok">TikTok (Driv&apos; Academy)</option>
+              <option value="Facebook">Facebook (Driv&apos; Academy)</option>
+              <option value="Instagram">Instagram (Driv&apos; Academy)</option>
+              <option value="LinkedIn">LinkedIn (Driv&apos; Academy)</option>
             </select>
           </div>
 
@@ -588,9 +615,104 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
                   );
                 })
               )}
-            </tbody>
-          </table>
-        </div>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Automated Social Media Ads Kit (Facebook, Instagram, LinkedIn, TikTok) */}
+          <div className="bg-slate-900 text-white rounded-xl p-5 space-y-4 border border-slate-800">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+              <div className="flex items-center gap-2.5">
+                <Megaphone className="w-5 h-5 text-amber-400 shrink-0" />
+                <div>
+                  <h3 className="text-base font-bold text-white">
+                    Pack Publicités Automatisées · Driv&apos; Academy (Facebook, Instagram, LinkedIn, TikTok)
+                  </h3>
+                  <p className="text-xs text-slate-300">
+                    Copiez vos annonces prêtes à l’emploi et lancez vos campagnes automatiques avec votre lien traqué.
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <a
+                  href="https://business.facebook.com/adsmanager"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg whitespace-nowrap"
+                >
+                  Meta Ads (FB / IG)
+                </a>
+                <a
+                  href="https://www.linkedin.com/campaignmanager"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold rounded-lg whitespace-nowrap"
+                >
+                  LinkedIn Ads
+                </a>
+                <a
+                  href="https://ads.tiktok.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg whitespace-nowrap"
+                >
+                  TikTok Ads
+                </a>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-3">
+              {[
+                {
+                  id: 'fb_ig',
+                  network: "Facebook & Instagram Ads · Driv' Academy",
+                  text: `🚗 Votre permis international et national en moins de 24h à 48h avec Driv' Academy !\n✅ Auto-école internationale agréée (UE · France · USA)\n✅ Télépaiement vérifié et sécurisé\n✅ Cours audio multilingues · Ouvert 24h/24, 5j/7\n👉 Inscrivez-vous maintenant : ${appOrigin}/?src=facebook&ref=FB_AUTO`,
+                },
+                {
+                  id: 'tiktok_li',
+                  network: "TikTok & LinkedIn Ads · Driv' Academy",
+                  text: `🔥 Permis A (200€) · Permis B (350€) · Permis C (500€) en 24h à 48h !\nDriv' Academy accompagne votre dossier complet, votre code audio et vos épreuves physiques.\n🕒 Ouvert 24h/24 · 5j/7 — Lien officiel : ${appOrigin}/?src=tiktok&ref=TT_AUTO`,
+                },
+              ].map((ad) => (
+                <div
+                  key={ad.id}
+                  className="bg-slate-950/80 border border-slate-800 rounded-xl p-4 flex flex-col justify-between gap-3"
+                >
+                  <div className="space-y-1.5">
+                    <div className="text-xs font-mono font-bold text-amber-300">
+                      {ad.network}
+                    </div>
+                    <p className="text-xs text-slate-200 whitespace-pre-line leading-relaxed">
+                      {ad.text}
+                    </p>
+                  </div>
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(ad.text);
+                        setCopiedAdId(ad.id);
+                        setTimeout(() => setCopiedAdId(null), 2000);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-700 hover:bg-blue-600 text-white text-xs font-semibold rounded-lg cursor-pointer"
+                    >
+                      {copiedAdId === ad.id ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-300" />
+                          <span>Annonce copiée</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>Copier le texte publicitaire</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
       </section>
 
       {/* Section 2: Real-Time Admin Console, ID Cards & CSV/Excel Exports */}
@@ -704,6 +826,7 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
               <option value="TikTok">TikTok</option>
               <option value="Facebook">Facebook</option>
               <option value="Instagram">Instagram</option>
+              <option value="LinkedIn">LinkedIn</option>
               <option value="Direct">Direct</option>
             </select>
 

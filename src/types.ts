@@ -6,7 +6,7 @@ export type PaymentStatus = 'pending' | 'paid' | 'verified';
 
 export type DossierStatus = 'locked' | 'queue' | 'code_unlocked' | 'practical_ready';
 
-export type SocialPlatform = 'TikTok' | 'Facebook' | 'Instagram';
+export type SocialPlatform = 'TikTok' | 'Facebook' | 'Instagram' | 'LinkedIn';
 
 export type IdCardType = 'CNI' | 'Passeport' | 'Titre de séjour';
 
