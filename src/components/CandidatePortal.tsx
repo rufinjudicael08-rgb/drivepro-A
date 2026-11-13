@@ -12,6 +12,7 @@ import {
   Phone,
   RotateCcw,
   ShieldCheck,
+  Volume2,
   XCircle,
 } from 'lucide-react';
 import {
@@ -27,6 +28,7 @@ import { getTranslations } from '../data/i18n';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Language, QuizAttemptRecord, RegistrationRecord } from '../types';
 import { CourseAnimation } from './CourseAnimations';
+import { CourseAudioPlayer } from './CourseAudioPlayer';
 
 interface CandidatePortalProps {
   lang: Language;
@@ -158,6 +160,11 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
   );
   const [activeModuleId, setActiveModuleId] = useState<string>(CODE_MODULES[0].id);
 
+  // Spoken audio state (module narrative, explanatory photo, interactive diagram, or individual chapter)
+  const [customAudioText, setCustomAudioText] = useState<string | null>(null);
+  const [customAudioLabel, setCustomAudioLabel] = useState<string | null>(null);
+  const [visualImgFailed, setVisualImgFailed] = useState(false);
+
   // Quiz state
   const [quizStarted, setQuizStarted] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -173,6 +180,12 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
     }
   }, [registration?.completedModuleIds]);
 
+  useEffect(() => {
+    setCustomAudioText(null);
+    setCustomAudioLabel(null);
+    setVisualImgFailed(false);
+  }, [activeModuleId]);
+
   const isUnlocked =
     registration !== null &&
     (registration.paymentStatus === 'paid' || registration.paymentStatus === 'verified');
@@ -187,7 +200,7 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
 
   if (!user || !registration || !isUnlocked) {
     return (
-      <section className="bg-white border border-slate-200 rounded-xl p-8 md:p-12 text-center space-y-5">
+      <section className="bg-white/95 backdrop-blur border border-slate-200 rounded-xl p-8 md:p-12 text-center space-y-5 shadow-lg">
         <div className="mx-auto w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700">
           <Lock className="w-6 h-6" />
         </div>
@@ -199,8 +212,8 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
           </h2>
           <p className="text-sm text-slate-600 leading-relaxed">
             {isEn
-              ? 'Access to the live queue, sequential animated theory courses, official practice quiz, and direct France WhatsApp scheduling remains locked until your dossier is completed and paid.'
-              : 'Vous ne pouvez pas accéder à la file d’attente, aux cours de code animés, au QCM officiel ni au contact WhatsApp France tant que votre dossier et votre paiement (TapTap Send ou moyen local) ne sont pas validés.'}
+              ? 'Access to the live queue, sequential audio courses, official practice quiz, and physical test scheduling remains locked until your legal dossier (ID document) and payment are validated.'
+              : 'Vous ne pouvez pas accéder à la file d’attente, aux cours audio animés, au QCM officiel ni à la prise de rendez-vous pour les épreuves physiques tant que votre dossier légal (avec pièce d’identité) et votre paiement ne sont pas validés.'}
           </p>
         </div>
         <button
@@ -214,8 +227,8 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                 ? 'Complete Payment Now'
                 : 'Finaliser mon paiement'
               : isEn
-              ? 'Complete Dossier & Pay'
-              : 'Remplir mon dossier & payer'}
+              ? 'Complete Legal Dossier & Pay'
+              : 'Remplir mon dossier légal & payer'}
           </span>
         </button>
       </section>
@@ -254,7 +267,6 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
         codeProgress: computedProgress,
         updatedAt: serverTimestamp(),
       });
-      // Advance automatically to next sequential course if available
       if (index + 1 < CODE_MODULES.length) {
         setActiveModuleId(CODE_MODULES[index + 1].id);
       }
@@ -329,8 +341,8 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
 
   const whatsappText = encodeURIComponent(
     isEn
-      ? `Hello DrivePro Paris HQ, I am ${registration.fullName} (${registration.countryName}, Queue #${registration.queueNumber}, Permit ${registration.licenseCategory}). I completed all 5 sequential modules and passed the exam with ${registration.quizBestScore}%. I am ready to schedule my practical driving lessons.`
-      : `Bonjour l’équipe DrivePro Paris, je suis ${registration.fullName} (${registration.countryName}, Dossier #${registration.queueNumber}, Permis ${registration.licenseCategory}). J’ai terminé tous les cours séquentiels et réussi le QCM avec ${registration.quizBestScore}%. Je souhaite planifier mes leçons pratiques.`
+      ? `Hello DrivePro Coordinator, I am ${registration.fullName} (${registration.countryName}, Dossier #${registration.queueNumber}, Permit ${registration.licenseCategory}, ID ${registration.idCardNumber || 'validated'}). I completed all 5 audio courses and passed the theory quiz (${registration.quizBestScore}%). I would like to schedule my final physical tests to obtain my license.`
+      : `Bonjour, je suis ${registration.fullName} (${registration.countryName}, Dossier #${registration.queueNumber}, Permis ${registration.licenseCategory}, Pièce ${registration.idCardNumber || 'validée'}). J’ai terminé les 5 cours audio séquentiels et réussi le QCM officiel avec ${registration.quizBestScore}%. Je souhaite fixer mon rendez-vous pour achever les épreuves physiques et recevoir mon permis.`
   );
 
   const activeModuleIndex = Math.max(
@@ -339,10 +351,15 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
   );
   const activeModule = CODE_MODULES[activeModuleIndex] || CODE_MODULES[0];
 
+  const handleSpeakText = (text: string, label: string) => {
+    setCustomAudioLabel(label);
+    setCustomAudioText(text);
+  };
+
   return (
     <section className="space-y-6">
       {/* Candidate Metrics Summary Strip */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5 md:p-6 grid grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="bg-white/95 backdrop-blur border border-slate-200 rounded-xl p-5 md:p-6 grid grid-cols-2 lg:grid-cols-4 gap-6 shadow-sm">
         <div>
           <div className="text-xs text-slate-500">{t.queuePositionLabel}</div>
           <div className="text-2xl font-mono font-semibold text-slate-900 mt-1 tabular-nums">
@@ -361,8 +378,8 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
             <span>
               {registration.paymentStatus === 'verified'
                 ? isEn
-                  ? 'Verified Paris HQ'
-                  : 'Vérifié Paris HQ'
+                  ? 'Verified'
+                  : 'Vérifié & Approuvé'
                 : isEn
                 ? 'Paid & Unlocked'
                 : 'Payé & Débloqué'}
@@ -394,17 +411,17 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
           <div className="text-xs text-slate-500 mt-1">
             {practicalUnlocked
               ? isEn
-                ? 'WhatsApp practical unlocked'
-                : 'Contact pratique débloqué'
+                ? 'Physical tests booking unlocked'
+                : 'Rendez-vous épreuves physiques débloqué'
               : isEn
               ? `${quizAttempts.length} attempt(s) · Target 75%`
-              : `${quizAttempts.length} tentative(s) · Seuil 75%`}
+              : `${quizAttempts.length} tentative(s) · Seuil 75 %`}
           </div>
         </div>
       </div>
 
       {/* Sub-navigation Tabs */}
-      <div className="flex flex-wrap items-center gap-1.5 p-1.5 bg-slate-100 rounded-xl border border-slate-200 w-fit">
+      <div className="flex flex-wrap items-center gap-1.5 p-1.5 bg-slate-100/95 backdrop-blur rounded-xl border border-slate-200 w-fit">
         {[
           { id: 'queue' as const, label: t.candidateTabQueue, icon: Clock, locked: false },
           { id: 'code' as const, label: t.candidateTabCode, icon: BookOpen, locked: false },
@@ -437,7 +454,7 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
 
       {/* Tab 1: Queue Status */}
       {activeTab === 'queue' && (
-        <div className="bg-white border border-slate-200 rounded-xl p-6 md:p-8 space-y-6">
+        <div className="bg-white/95 backdrop-blur border border-slate-200 rounded-xl p-6 md:p-8 space-y-6 shadow-sm">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
             <div>
               <h3 className="text-xl font-semibold text-slate-900">
@@ -447,8 +464,8 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
               </h3>
               <p className="text-sm text-slate-600 mt-1">
                 {isEn
-                  ? 'Your dossier is synced with Paris HQ. Complete all sequential courses and pass the quiz to unlock practical scheduling.'
-                  : 'Votre dossier est synchronisé avec le siège de Paris. Terminez les cours séquentiels et réussissez le QCM pour débloquer la conduite pratique.'}
+                  ? 'Your legal dossier is validated. Complete all 5 audio-guided courses and pass the quiz (≥75%) to unlock your appointment contact for final physical driving tests.'
+                  : 'Votre dossier légal est validé. Terminez les 5 cours audio séquentiels puis réussissez le QCM (≥ 75 %) pour débloquer le contact afin de fixer votre rendez-vous d’épreuves physiques.'}
               </p>
             </div>
             <div className="text-xs font-mono text-slate-600 bg-slate-50 border border-slate-200 px-3 py-2 rounded-lg">
@@ -460,16 +477,16 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
             {[
               {
                 step: '01',
-                titleFr: 'Dossier & Paiement TapTap Send / Local',
-                titleEn: 'Dossier & TapTap Send / Local Payment',
+                titleFr: 'Dossier légal (CNI) & Paiement',
+                titleEn: 'Legal Dossier (ID) & Payment',
                 statusFr: 'Validé',
                 statusEn: 'Completed',
                 done: true,
               },
               {
                 step: '02',
-                titleFr: '5 Modules séquentiels & QCM officiel',
-                titleEn: '5 Sequential Modules & Official Quiz',
+                titleFr: '5 Cours Audio & QCM officiel',
+                titleEn: '5 Audio Courses & Official Quiz',
                 statusFr: practicalUnlocked
                   ? `Réussi (${registration.quizBestScore}%)`
                   : `${completedModules.length}/5 cours · QCM ${registration.quizBestScore}%`,
@@ -480,14 +497,18 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
               },
               {
                 step: '03',
-                titleFr: 'Pratique en personne (+33 7 72 03 46 89)',
-                titleEn: 'In-Person Practical (+33 7 72 03 46 89)',
+                titleFr: practicalUnlocked
+                  ? `Épreuves physiques & RDV (${PARIS_HQ_CONTACT.displayPhone})`
+                  : 'Épreuves physiques & remise du permis',
+                titleEn: practicalUnlocked
+                  ? `Physical Tests & Booking (${PARIS_HQ_CONTACT.displayPhone})`
+                  : 'Final Physical Tests & License Issuance',
                 statusFr: practicalUnlocked
-                  ? 'WhatsApp & Appel débloqués'
-                  : 'Verrouillé jusqu’au QCM réussi',
+                  ? 'Contact & WhatsApp débloqués'
+                  : 'Débloqué uniquement après le QCM réussi',
                 statusEn: practicalUnlocked
-                  ? 'WhatsApp & Call Unlocked'
-                  : 'Locked until quiz passed',
+                  ? 'Phone & WhatsApp Unlocked'
+                  : 'Unlocked strictly after passing Quiz',
                 done: practicalUnlocked,
               },
             ].map((stage) => (
@@ -495,8 +516,8 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                 key={stage.step}
                 className={`p-5 rounded-xl border ${
                   stage.done
-                    ? 'border-emerald-200 bg-emerald-50/40'
-                    : 'border-slate-200 bg-slate-50/60'
+                    ? 'border-emerald-200 bg-emerald-50/50'
+                    : 'border-slate-200 bg-slate-50/70'
                 }`}
               >
                 <div className="flex items-center justify-between text-xs font-mono text-slate-500">
@@ -525,28 +546,28 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
               className="px-4 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold rounded-lg cursor-pointer"
             >
               {isEn
-                ? 'Continue Sequential Theory Courses'
-                : 'Continuer les cours séquentiels'}
+                ? 'Continue Sequential Audio Courses'
+                : 'Continuer les cours audio séquentiels'}
             </button>
           </div>
         </div>
       )}
 
-      {/* Tab 2: Strictly Sequential Animated Code Courses + Study Guide + Quiz */}
+      {/* Tab 2: Strictly Sequential Animated & Audio-Guided Code Courses + Quiz */}
       {activeTab === 'code' && (
         <div className="space-y-6">
-          <div className="bg-white border border-slate-200 rounded-xl p-6 md:p-8 space-y-6">
+          <div className="bg-white/95 backdrop-blur border border-slate-200 rounded-xl p-6 md:p-8 space-y-6 shadow-sm">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
               <div>
                 <h3 className="text-xl font-semibold text-slate-900">
                   {isEn
-                    ? 'Sequential Highway Code Courses & Study Method'
-                    : 'Programme séquentiel complet de Code de la Route'}
+                    ? 'Sequential Audio & Visual Highway Code Courses'
+                    : 'Programme séquentiel complet avec explications audio & images'}
                 </h3>
                 <p className="text-sm text-slate-600 mt-1">
                   {isEn
-                    ? 'Each module must be studied and validated in strict order before the next course unlocks.'
-                    : 'Progression strictement verrouillée : vous devez terminer et valider le cours en cours pour débloquer le suivant, jusqu’au module Comment étudier.'}
+                    ? 'Listen to the instructor narration, inspect the real-road visual and interactive animation, and validate each course in strict order.'
+                    : 'Écoutez les explications vocales du moniteur sur chaque image et schéma animé, puis validez chaque cours dans l’ordre strict pour débloquer le suivant.'}
                 </p>
               </div>
               <div className="text-xs font-mono text-slate-600 tabular-nums">
@@ -572,13 +593,13 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                         !unlocked
                           ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
                           : selected
-                          ? 'border-blue-700 bg-blue-50/80 cursor-pointer'
-                          : 'border-slate-200 hover:border-slate-300 cursor-pointer'
+                          ? 'border-blue-700 bg-blue-50/90 cursor-pointer'
+                          : 'border-slate-200 bg-white hover:border-slate-300 cursor-pointer'
                       }`}
                     >
                       <div className="space-y-1">
                         <div className="text-xs font-mono opacity-80">
-                          {mod.number} · {mod.durationMin} min
+                          {mod.number} · {mod.durationMin} min · Audio
                           {mod.isStudyGuide
                             ? isEn
                               ? ' · Final Guide'
@@ -601,7 +622,7 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                 })}
               </div>
 
-              {/* Right Content: Detailed Course Chapters + Interactive Animation */}
+              {/* Right Content: Audio Voice Player + Explanatory Image + Interactive Animation + Chapters */}
               <div className="lg:col-span-8 bg-slate-50 border border-slate-200 rounded-xl p-6 space-y-6">
                 <div className="space-y-2 border-b border-slate-200 pb-4">
                   <div className="text-xs font-mono text-blue-700 font-semibold">
@@ -616,19 +637,112 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                   </p>
                 </div>
 
-                {/* Interactive Animated Diagram */}
-                <CourseAnimation type={activeModule.animationType} lang={lang} />
+                {/* Built-In Instructor Voice Audio Explanation Player */}
+                <CourseAudioPlayer
+                  lang={lang}
+                  speakerName={activeModule.speakerName}
+                  speakerRole={
+                    isEn ? activeModule.speakerRoleEn : activeModule.speakerRoleFr
+                  }
+                  speakerAvatarUrl={activeModule.speakerAvatarUrl}
+                  title={isEn ? activeModule.titleEn : activeModule.titleFr}
+                  script={isEn ? activeModule.audioScriptEn : activeModule.audioScriptFr}
+                  customTriggerText={customAudioText}
+                  customTriggerLabel={customAudioLabel}
+                  onClearCustomTrigger={() => {
+                    setCustomAudioText(null);
+                    setCustomAudioLabel(null);
+                  }}
+                />
 
-                {/* Deep Multi-Chapter Course Text */}
+                {/* Explanatory Road / Classroom Photograph with Direct Audio Trigger */}
+                <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+                  {!visualImgFailed ? (
+                    <img
+                      src={activeModule.visualUrl}
+                      alt={
+                        isEn
+                          ? activeModule.visualCaptionEn
+                          : activeModule.visualCaptionFr
+                      }
+                      referrerPolicy="no-referrer"
+                      onError={() => setVisualImgFailed(true)}
+                      className="w-full h-56 sm:h-64 object-cover"
+                    />
+                  ) : (
+                    <div className="h-44 bg-slate-900 text-white flex items-center justify-center p-6 text-sm">
+                      {isEn
+                        ? activeModule.visualCaptionEn
+                        : activeModule.visualCaptionFr}
+                    </div>
+                  )}
+                  <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border-t border-slate-100">
+                    <p className="text-xs text-slate-700 leading-relaxed">
+                      <span className="font-semibold text-slate-900">
+                        {isEn ? 'Visual Analysis: ' : 'Analyse de l’image : '}
+                      </span>
+                      {isEn
+                        ? activeModule.visualCaptionEn
+                        : activeModule.visualCaptionFr}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleSpeakText(
+                          isEn
+                            ? `Looking at this visual for ${activeModule.titleEn}: ${activeModule.visualCaptionEn}. Remember: ${activeModule.audioScriptEn}`
+                            : `Observation commentée de cette image pour le ${activeModule.titleFr} : ${activeModule.visualCaptionFr}. ${activeModule.audioScriptFr}`,
+                          isEn
+                            ? 'Voice Explanation · Illustrated Scene'
+                            : 'Explication vocale · Image du cours'
+                        )
+                      }
+                      className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg whitespace-nowrap shrink-0 cursor-pointer"
+                    >
+                      <Volume2 className="w-3.5 h-3.5 text-blue-400" />
+                      <span>
+                        {isEn
+                          ? 'Explain Image Audio'
+                          : 'Écouter l’explication de cette image'}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Interactive Animated Diagram with Built-In Voice Trigger */}
+                <CourseAnimation
+                  type={activeModule.animationType}
+                  lang={lang}
+                  onSpeakAnimation={handleSpeakText}
+                />
+
+                {/* Deep Multi-Chapter Course Text with Individual Audio Playback */}
                 <div className="space-y-4">
                   {activeModule.chapters.map((chapter, cIdx) => (
                     <div
                       key={cIdx}
                       className="bg-white border border-slate-200 rounded-xl p-5 space-y-2.5"
                     >
-                      <h5 className="text-base font-semibold text-slate-900">
-                        {isEn ? chapter.headingEn : chapter.headingFr}
-                      </h5>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h5 className="text-base font-semibold text-slate-900">
+                          {isEn ? chapter.headingEn : chapter.headingFr}
+                        </h5>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleSpeakText(
+                              isEn
+                                ? `${chapter.headingEn}. ${chapter.bodyEn}. ${chapter.tipEn}`
+                                : `${chapter.headingFr}. ${chapter.bodyFr}. ${chapter.tipFr}`,
+                              isEn ? chapter.headingEn : chapter.headingFr
+                            )
+                          }
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-800 text-xs font-semibold rounded-md cursor-pointer"
+                        >
+                          <Volume2 className="w-3.5 h-3.5" />
+                          <span>{isEn ? 'Listen' : 'Écouter ce chapitre'}</span>
+                        </button>
+                      </div>
                       <p className="text-sm text-slate-700 leading-relaxed">
                         {isEn ? chapter.bodyEn : chapter.bodyFr}
                       </p>
@@ -690,7 +804,7 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
           </div>
 
           {/* Official State Exam Practice Quiz — Locked until ALL 5 modules completed */}
-          <div className="bg-white border border-slate-200 rounded-xl p-6 md:p-8 space-y-6">
+          <div className="bg-white/95 backdrop-blur border border-slate-200 rounded-xl p-6 md:p-8 space-y-6 shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
               <div>
                 <h3 className="text-xl font-semibold text-slate-900">
@@ -700,8 +814,8 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                 </h3>
                 <p className="text-sm text-slate-600 mt-1">
                   {isEn
-                    ? 'Requires completion of Courses 01–04 and Module 05 (How to Study). Pass with ≥75% to unlock direct practical WhatsApp contact.'
-                    : 'Débloqué après validation des Cours 01 à 04 et du Module 05 (Comment étudier). Réussite ≥ 75 % requise pour contacter l’agence en pratique.'}
+                    ? 'Requires completion of Courses 01–04 and Module 05 (How to Study). Pass with ≥75% to unlock the coordinator contact and book your final physical tests.'
+                    : 'Débloqué après validation des Cours 01 à 04 et du Module 05 (Comment étudier). Réussite ≥ 75 % requise pour obtenir le contact de rendez-vous des épreuves physiques.'}
                 </p>
               </div>
               {allModulesCompleted && !quizStarted && (
@@ -851,18 +965,18 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                 {quizFinished && (
                   <div className="space-y-6">
                     <div
-                      className={`p-6 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                      className={`p-6 rounded-xl border flex flex-col lg:flex-row lg:items-center justify-between gap-5 ${
                         currentScorePct >= 75
                           ? 'bg-emerald-50 border-emerald-200'
                           : 'bg-amber-50 border-amber-200'
                       }`}
                     >
-                      <div className="space-y-1">
+                      <div className="space-y-2 max-w-2xl">
                         <div className="text-sm font-semibold text-slate-900">
                           {currentScorePct >= 75
                             ? isEn
-                              ? 'Practice Exam Passed — Practical WhatsApp Scheduling Unlocked!'
-                              : 'QCM réussi — Le contact direct pour vos leçons pratiques est débloqué !'
+                              ? 'Theory Exam Passed — Physical Test Coordinator Contact Unlocked!'
+                              : 'QCM réussi ! Prochaine étape : les épreuves physiques finales'
                             : isEn
                             ? 'Below 75% Threshold — Review Corrections & Retry'
                             : 'Score inférieur à 75 % — Révisez le corrigé et recommencez'}
@@ -870,21 +984,43 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                         <div className="text-2xl font-mono font-bold tabular-nums text-slate-900">
                           {correctCount} / {OFFICIAL_QUIZ_BANK.length} ({currentScorePct}%)
                         </div>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
                         {currentScorePct >= 75 && (
-                          <button
-                            type="button"
-                            onClick={() => setActiveTab('instructor')}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg whitespace-nowrap cursor-pointer"
-                          >
-                            <MessageCircle className="w-4 h-4" />
-                            <span>
-                              {isEn
-                                ? 'Contact Practical Instructor'
-                                : 'Contacter le moniteur pratique'}
-                            </span>
-                          </button>
+                          <p className="text-xs text-slate-700 leading-relaxed">
+                            {isEn
+                              ? `To receive your official driving license, you must now pass brief in-person physical tests. Contact your coordinator directly at ${PARIS_HQ_CONTACT.displayPhone} or on WhatsApp to book your appointment and collect your license.`
+                              : `Pour obtenir votre permis proprement dit, il vous reste à passer quelques épreuves physiques officielles. Contactez dès maintenant votre responsable au ${PARIS_HQ_CONTACT.displayPhone} (appel ou WhatsApp) pour fixer votre rendez-vous, achever les épreuves physiques et récupérer votre permis.`}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-2 shrink-0">
+                        {currentScorePct >= 75 && (
+                          <>
+                            <a
+                              href={`${PARIS_HQ_CONTACT.whatsappUrl}?text=${whatsappText}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg whitespace-nowrap"
+                            >
+                              <MessageCircle className="w-4 h-4" />
+                              <span>
+                                {isEn
+                                  ? 'Book Appointment on WhatsApp'
+                                  : 'Fixer mon RDV sur WhatsApp'}
+                              </span>
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => setActiveTab('instructor')}
+                              className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold rounded-lg whitespace-nowrap cursor-pointer"
+                            >
+                              <Phone className="w-4 h-4" />
+                              <span>
+                                {isEn
+                                  ? 'Open Physical Test Contact'
+                                  : 'Voir les coordonnées complètes'}
+                              </span>
+                            </button>
+                          </>
                         )}
                         <button
                           type="button"
@@ -944,9 +1080,9 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
         </div>
       )}
 
-      {/* Tab 3: Certified Practical Instructor Contact (Locked until ALL courses + Quiz >= 75%) */}
+      {/* Tab 3: Physical Tests & Direct Coordinator Contact (Locked until ALL courses + Quiz >= 75%) */}
       {activeTab === 'instructor' && (
-        <div className="bg-white border border-slate-200 rounded-xl p-6 md:p-8 space-y-6">
+        <div className="bg-white/95 backdrop-blur border border-slate-200 rounded-xl p-6 md:p-8 space-y-6 shadow-sm">
           {!practicalUnlocked ? (
             <div className="text-center py-8 space-y-4 max-w-xl mx-auto">
               <div className="mx-auto w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700">
@@ -954,13 +1090,13 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
               </div>
               <h3 className="text-xl font-semibold text-slate-900">
                 {isEn
-                  ? 'Practical Contact Locked Until Theory Quiz Is Passed'
-                  : 'Contact pratique verrouillé jusqu’à la réussite du QCM'}
+                  ? 'Physical Exam Appointment Locked Until Theory Quiz Is Passed'
+                  : 'Rendez-vous épreuves physiques verrouillé jusqu’à la réussite du QCM'}
               </h3>
               <p className="text-sm text-slate-600 leading-relaxed">
                 {isEn
-                  ? `Complete all 5 sequential modules (${completedModules.length}/5 done) and score at least 75% on the Official Quiz (current best: ${registration.quizBestScore}%) to unlock direct WhatsApp and phone scheduling with our Paris agency.`
-                  : `Vous devez terminer les 5 modules séquentiels (${completedModules.length}/5 validés) puis réussir le QCM officiel à 75 % minimum (meilleur score actuel : ${registration.quizBestScore} %) pour accéder au numéro direct et WhatsApp de votre coordinateur pratique.`}
+                  ? `Complete all 5 sequential audio modules (${completedModules.length}/5 done) and score at least 75% on the Official Quiz (current best: ${registration.quizBestScore}%) to unlock the coordinator’s direct phone and WhatsApp so you can book your physical driving tests and receive your license.`
+                  : `Vous devez d’abord valider les 5 modules audio séquentiels (${completedModules.length}/5 validés) puis réussir le QCM officiel à 75 % minimum (meilleur score actuel : ${registration.quizBestScore} %). Les coordonnées directes pour fixer votre rendez-vous d’épreuves physiques et récupérer votre permis apparaîtront ici dès votre réussite.`}
               </p>
               <button
                 type="button"
@@ -977,7 +1113,20 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                 <span>{t.instructorUnlockedTitle}</span>
               </div>
 
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border border-slate-200 rounded-xl p-6 bg-slate-50/70">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 space-y-2">
+                <div className="text-sm font-semibold text-emerald-950">
+                  {isEn
+                    ? 'Final Step to Obtain Your License: Pass Your Physical Tests'
+                    : 'Dernière étape pour retirer votre permis officiel : les épreuves physiques'}
+                </div>
+                <p className="text-xs text-emerald-900 leading-relaxed">
+                  {isEn
+                    ? 'You have successfully validated your theory preparation. To receive your actual driving license, you must complete a short series of in-person physical tests. Contact the coordinator below via direct phone call or WhatsApp to fix your appointment date, pass the physical tests, and receive your license.'
+                    : 'Félicitations pour votre réussite au QCM ! Pour obtenir votre permis de conduire proprement dit, vous devez maintenant passer quelques épreuves physiques pratiques avec notre examinateur. Contactez le responsable ci-dessous par appel ou WhatsApp pour fixer votre rendez-vous, achever les épreuves physiques et prendre votre permis.'}
+                </p>
+              </div>
+
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border border-slate-200 rounded-xl p-6 bg-slate-50/80">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
                   {!imgFailed ? (
                     <img
@@ -1001,12 +1150,12 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                       {isEn ? assignedInstructor.titleEn : assignedInstructor.titleFr}
                     </p>
                     <div className="text-xs text-slate-500 flex flex-wrap items-center gap-2">
-                      <span>{PARIS_HQ_CONTACT.addressFr}</span>
+                      <span>{assignedInstructor.city}</span>
                       <span aria-hidden="true">·</span>
                       <span>{assignedInstructor.certification}</span>
                     </div>
-                    <div className="text-xs font-mono text-slate-800 pt-1 font-semibold">
-                      {isEn ? 'Direct France Line:' : 'Ligne directe France :'}{' '}
+                    <div className="text-sm font-mono text-blue-800 pt-1 font-bold">
+                      {isEn ? 'Direct Appointment Line:' : 'Numéro direct rendez-vous :'}{' '}
                       {PARIS_HQ_CONTACT.displayPhone}
                     </div>
                   </div>
@@ -1030,12 +1179,6 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                     <span>{t.instructorWhatsappBtn}</span>
                   </a>
                 </div>
-              </div>
-
-              <div className="text-xs text-slate-600 leading-relaxed">
-                {isEn
-                  ? 'Practical in-person driving hours are scheduled directly via our Paris coordination line (+33 7 72 03 46 89) prior to your official state driving exam.'
-                  : 'Vos heures de conduite pratique en personne sont planifiées directement via notre ligne France (+33 7 72 03 46 89 / WhatsApp) avant votre passage à l’examen officiel de l’État.'}
               </div>
             </>
           )}

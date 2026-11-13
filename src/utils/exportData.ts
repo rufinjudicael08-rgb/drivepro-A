@@ -35,9 +35,14 @@ export function exportRegistrationsCsv(records: RegistrationRecord[]) {
     'Full Name',
     'Email',
     'Phone',
+    'Address',
+    'City',
     'Country Code',
     'Country',
-    'City',
+    'WiFi Confirmed',
+    'ID Type',
+    'ID Number',
+    'ID Document File',
     'License Category',
     'Language',
     'Currency',
@@ -59,9 +64,14 @@ export function exportRegistrationsCsv(records: RegistrationRecord[]) {
     r.fullName,
     r.email,
     r.phone,
+    r.address,
+    r.city,
     r.countryCode,
     r.countryName,
-    r.city,
+    r.wifiReady ? 'Oui' : 'Non',
+    r.idCardType,
+    r.idCardNumber,
+    r.idCardFileName,
     r.licenseCategory,
     r.preferredLanguage,
     r.currency,
@@ -92,9 +102,13 @@ export function exportRegistrationsExcel(records: RegistrationRecord[]) {
     'Nom Complet',
     'Email',
     'Téléphone',
-    'Code Pays',
-    'Pays',
+    'Adresse',
     'Ville',
+    'Pays',
+    'Wi-Fi / Internet',
+    'Type Pièce',
+    'N° Pièce Identité',
+    'Fichier CNI',
     'Catégorie',
     'Langue',
     'Devise',
@@ -109,7 +123,9 @@ export function exportRegistrationsExcel(records: RegistrationRecord[]) {
     'Code Tracking',
   ];
 
-  const headerHtml = headers.map((h) => `<th style="background:#0f172a;color:#ffffff;padding:6px 10px;">${escapeXmlHtml(h)}</th>`).join('');
+  const headerHtml = headers
+    .map((h) => `<th style="background:#0f172a;color:#ffffff;padding:6px 10px;">${escapeXmlHtml(h)}</th>`)
+    .join('');
   const bodyHtml = records
     .map(
       (r) =>
@@ -119,9 +135,13 @@ export function exportRegistrationsExcel(records: RegistrationRecord[]) {
           <td>${escapeXmlHtml(r.fullName)}</td>
           <td>${escapeXmlHtml(r.email)}</td>
           <td>${escapeXmlHtml(r.phone)}</td>
-          <td>${escapeXmlHtml(r.countryCode)}</td>
-          <td>${escapeXmlHtml(r.countryName)}</td>
+          <td>${escapeXmlHtml(r.address)}</td>
           <td>${escapeXmlHtml(r.city)}</td>
+          <td>${escapeXmlHtml(r.countryName)} (${escapeXmlHtml(r.countryCode)})</td>
+          <td>${r.wifiReady ? 'Confirmé' : 'Non'}</td>
+          <td>${escapeXmlHtml(r.idCardType)}</td>
+          <td>${escapeXmlHtml(r.idCardNumber)}</td>
+          <td>${escapeXmlHtml(r.idCardFileName)}</td>
           <td>${escapeXmlHtml(r.licenseCategory)}</td>
           <td>${escapeXmlHtml(r.preferredLanguage)}</td>
           <td>${escapeXmlHtml(r.currency)}</td>
@@ -157,6 +177,8 @@ export function exportPaymentsCsv(logs: PaymentLogRecord[]) {
     'Payment ID',
     'Registration ID',
     'Candidate Name',
+    'Sender Name',
+    'Sender Phone',
     'Country Code',
     'Currency',
     'Base Amount (EUR)',
@@ -170,6 +192,8 @@ export function exportPaymentsCsv(logs: PaymentLogRecord[]) {
     p.id,
     p.registrationId,
     p.candidateName,
+    p.senderName || '-',
+    p.senderPhone || '-',
     p.countryCode,
     p.currency,
     p.baseAmountEur,
@@ -192,6 +216,8 @@ export function exportPaymentsExcel(logs: PaymentLogRecord[]) {
     'ID Paiement',
     'ID Dossier',
     'Candidat',
+    'Expéditeur',
+    'Tél. Expéditeur',
     'Pays',
     'Devise',
     'Base (EUR)',
@@ -201,7 +227,9 @@ export function exportPaymentsExcel(logs: PaymentLogRecord[]) {
     'Statut',
   ];
 
-  const headerHtml = headers.map((h) => `<th style="background:#0f172a;color:#ffffff;padding:6px 10px;">${escapeXmlHtml(h)}</th>`).join('');
+  const headerHtml = headers
+    .map((h) => `<th style="background:#0f172a;color:#ffffff;padding:6px 10px;">${escapeXmlHtml(h)}</th>`)
+    .join('');
   const bodyHtml = logs
     .map(
       (p) =>
@@ -209,6 +237,8 @@ export function exportPaymentsExcel(logs: PaymentLogRecord[]) {
           <td>${escapeXmlHtml(p.id)}</td>
           <td>${escapeXmlHtml(p.registrationId)}</td>
           <td>${escapeXmlHtml(p.candidateName)}</td>
+          <td>${escapeXmlHtml(p.senderName || '-')}</td>
+          <td>${escapeXmlHtml(p.senderPhone || '-')}</td>
           <td>${escapeXmlHtml(p.countryCode)}</td>
           <td>${escapeXmlHtml(p.currency)}</td>
           <td>${escapeXmlHtml(p.baseAmountEur)}</td>

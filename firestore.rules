@@ -41,17 +41,19 @@ service cloud.firestore {
 
     function isValidRegistration(data) {
       return data.keys().hasAll([
-        'id', 'userId', 'fullName', 'email', 'phone', 'countryCode', 'countryName',
-        'city', 'licenseCategory', 'preferredLanguage', 'currency', 'baseFeeEur',
-        'convertedAmount', 'paymentMethod', 'paymentStatus', 'dossierStatus',
+        'id', 'userId', 'fullName', 'email', 'phone', 'address', 'city', 'wifiReady',
+        'idCardType', 'idCardNumber', 'idCardFileName', 'idCardThumbnail',
+        'countryCode', 'countryName', 'licenseCategory', 'preferredLanguage', 'currency',
+        'baseFeeEur', 'convertedAmount', 'paymentMethod', 'paymentStatus', 'dossierStatus',
         'latestPaymentId', 'queueNumber', 'completedModuleIds', 'codeProgress',
         'quizBestScore', 'referralCode', 'referralPlatform', 'assignedInstructorId',
         'createdAt', 'updatedAt'
       ])
       && data.keys().hasOnly([
-        'id', 'userId', 'fullName', 'email', 'phone', 'countryCode', 'countryName',
-        'city', 'licenseCategory', 'preferredLanguage', 'currency', 'baseFeeEur',
-        'convertedAmount', 'paymentMethod', 'paymentStatus', 'dossierStatus',
+        'id', 'userId', 'fullName', 'email', 'phone', 'address', 'city', 'wifiReady',
+        'idCardType', 'idCardNumber', 'idCardFileName', 'idCardThumbnail',
+        'countryCode', 'countryName', 'licenseCategory', 'preferredLanguage', 'currency',
+        'baseFeeEur', 'convertedAmount', 'paymentMethod', 'paymentStatus', 'dossierStatus',
         'latestPaymentId', 'queueNumber', 'completedModuleIds', 'codeProgress',
         'quizBestScore', 'referralCode', 'referralPlatform', 'assignedInstructorId',
         'createdAt', 'updatedAt'
@@ -61,13 +63,19 @@ service cloud.firestore {
       && data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 100
       && data.email is string && data.email.size() >= 5 && data.email.size() <= 150
       && data.phone is string && data.phone.size() >= 5 && data.phone.size() <= 30
+      && data.address is string && data.address.size() >= 4 && data.address.size() <= 180
+      && data.city is string && data.city.size() >= 2 && data.city.size() <= 100
+      && data.wifiReady is bool && data.wifiReady == true
+      && data.idCardType in ['CNI', 'Passeport', 'Titre de séjour']
+      && data.idCardNumber is string && data.idCardNumber.size() >= 4 && data.idCardNumber.size() <= 60
+      && data.idCardFileName is string && data.idCardFileName.size() >= 3 && data.idCardFileName.size() <= 120
+      && data.idCardThumbnail is string && data.idCardThumbnail.size() <= 90000
       && data.countryCode is string && data.countryCode.size() >= 2 && data.countryCode.size() <= 3
       && data.countryName is string && data.countryName.size() >= 2 && data.countryName.size() <= 100
-      && data.city is string && data.city.size() >= 2 && data.city.size() <= 100
       && data.licenseCategory in ['A', 'B', 'C', 'D']
       && data.preferredLanguage is string && data.preferredLanguage.size() >= 2 && data.preferredLanguage.size() <= 10
       && data.currency is string && data.currency.size() >= 3 && data.currency.size() <= 10
-      && data.baseFeeEur is number && data.baseFeeEur in [100, 150, 200, 250]
+      && data.baseFeeEur is number && data.baseFeeEur in [200, 250, 300, 350]
       && data.convertedAmount is number && data.convertedAmount > 0 && data.convertedAmount <= 100000000
       && data.paymentMethod is string && data.paymentMethod.size() >= 2 && data.paymentMethod.size() <= 80
       && data.paymentStatus in ['pending', 'paid', 'verified']
@@ -86,22 +94,24 @@ service cloud.firestore {
 
     function isValidPayment(data) {
       return data.keys().hasAll([
-        'id', 'registrationId', 'userId', 'candidateName', 'countryCode',
-        'currency', 'baseAmountEur', 'amountPaid', 'method', 'transactionRef',
-        'status', 'createdAt'
+        'id', 'registrationId', 'userId', 'candidateName', 'senderName', 'senderPhone',
+        'countryCode', 'currency', 'baseAmountEur', 'amountPaid', 'method',
+        'transactionRef', 'status', 'createdAt'
       ])
       && data.keys().hasOnly([
-        'id', 'registrationId', 'userId', 'candidateName', 'countryCode',
-        'currency', 'baseAmountEur', 'amountPaid', 'method', 'transactionRef',
-        'status', 'createdAt'
+        'id', 'registrationId', 'userId', 'candidateName', 'senderName', 'senderPhone',
+        'countryCode', 'currency', 'baseAmountEur', 'amountPaid', 'method',
+        'transactionRef', 'status', 'createdAt'
       ])
       && isValidId(data.id)
       && isValidId(data.registrationId)
       && data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128
       && data.candidateName is string && data.candidateName.size() >= 2 && data.candidateName.size() <= 100
+      && data.senderName is string && data.senderName.size() <= 100
+      && data.senderPhone is string && data.senderPhone.size() <= 40
       && data.countryCode is string && data.countryCode.size() >= 2 && data.countryCode.size() <= 3
       && data.currency is string && data.currency.size() >= 3 && data.currency.size() <= 10
-      && data.baseAmountEur is number && data.baseAmountEur in [100, 150, 200, 250]
+      && data.baseAmountEur is number && data.baseAmountEur in [200, 250, 300, 350]
       && data.amountPaid is number && data.amountPaid > 0 && data.amountPaid <= 100000000
       && data.method is string && data.method.size() >= 2 && data.method.size() <= 80
       && data.transactionRef is string && data.transactionRef.size() >= 4 && data.transactionRef.size() <= 80
@@ -230,10 +240,10 @@ service cloud.firestore {
     }
 
     match /social_links/{linkId} {
-      allow get: if isVerified() && isValidId(linkId) && (existing().agentId == request.auth.uid || isAdmin());
-      allow list: if isVerified() && (resource.data.agentId == request.auth.uid || isBootstrappedAdmin());
+      allow get: if isAdmin() && isValidId(linkId);
+      allow list: if isBootstrappedAdmin();
 
-      allow create: if isVerified()
+      allow create: if isAdmin()
         && isValidId(linkId)
         && isValidSocialLink(incoming())
         && incoming().id == linkId
@@ -242,21 +252,15 @@ service cloud.firestore {
         && incoming().createdAt == request.time
         && incoming().updatedAt == request.time;
 
-      allow update: if isVerified()
+      allow update: if isAdmin()
         && isValidId(linkId)
         && isValidSocialLink(incoming())
         && incoming().id == existing().id
         && incoming().agentId == existing().agentId
         && incoming().createdAt == existing().createdAt
-        && incoming().updatedAt == request.time
-        && (
-          isAdmin() || (
-            existing().agentId == request.auth.uid
-            && incoming().diff(existing()).affectedKeys().hasOnly(['clicks', 'active', 'campaignName', 'updatedAt'])
-          )
-        );
+        && incoming().updatedAt == request.time;
 
-      allow delete: if isVerified() && isValidId(linkId) && (existing().agentId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin() && isValidId(linkId);
     }
 
     match /quiz_attempts/{attemptId} {

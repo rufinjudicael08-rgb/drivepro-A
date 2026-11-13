@@ -1,33 +1,31 @@
 import { CountryConfig, LicenseCategory, PaymentMethodOption } from '../types';
 
 export const CATEGORY_FEES_EUR: Record<LicenseCategory, number> = {
-  A: 100,
-  B: 150,
-  C: 200,
-  D: 250,
+  A: 200,
+  B: 250,
+  C: 300,
+  D: 350,
 };
 
 export function getCategoryFeeEur(category: LicenseCategory): number {
-  return CATEGORY_FEES_EUR[category] ?? 150;
+  return CATEGORY_FEES_EUR[category] ?? 250;
 }
 
-export const TAPTAP_SEND_BENEFICIARY = {
-  primaryDisplay: '+229 01 42 85 12 46',
-  primaryRaw: '2290142851246',
-  secondaryDisplay: '+229 01 40 87 46',
-  secondaryRaw: '22901408746',
-  destinationCountryFr: 'Bénin (Mobile Money · XOF)',
-  destinationCountryEn: 'Benin (Mobile Money · XOF)',
-  recipientName: 'DrivePro Academy · Direction Bénin / Paris',
+export const TAPTAP_SEND_CHECKOUT = {
+  paymentLinkUrl: 'https://www.taptapsend.com/send-money',
+  destinationCountryFr: 'Bénin · Transfert International Sécurisé',
+  destinationCountryEn: 'Benin · Secure International Transfer',
+  recipientLabel: 'DrivePro Academy · Compte Officiel Agréé',
+  linkReference: 'DP-TTS-OFFICIAL',
 };
 
 export const PAYMENT_TAPTAP_SEND: PaymentMethodOption = {
   id: 'taptap_send',
-  labelFr: 'TapTap Send (Direct · Prioritaire)',
-  labelEn: 'TapTap Send (Direct · Priority)',
+  labelFr: 'TapTap Send (Lien direct · Prioritaire)',
+  labelEn: 'TapTap Send (Direct Link · Priority)',
   category: 'taptap_send',
-  hintFr: 'Envoi direct instantané vers +229 01 42 85 12 46 (Bénin)',
-  hintEn: 'Instant direct transfer to +229 01 42 85 12 46 (Benin)',
+  hintFr: 'Paiement instantané via notre lien direct · Saisissez simplement vos coordonnées',
+  hintEn: 'Instant transfer via our direct link · Enter only your sender details',
 };
 
 const PAYMENT_CARD: PaymentMethodOption = {

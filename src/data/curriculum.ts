@@ -24,6 +24,15 @@ export interface CodeLessonModule {
   number: string;
   isStudyGuide?: boolean;
   animationType: 'signals' | 'roundabout' | 'braking' | 'safety' | 'study';
+  visualUrl: string;
+  visualCaptionFr: string;
+  visualCaptionEn: string;
+  speakerName: string;
+  speakerRoleFr: string;
+  speakerRoleEn: string;
+  speakerAvatarUrl: string;
+  audioScriptFr: string;
+  audioScriptEn: string;
   titleFr: string;
   titleEn: string;
   durationMin: number;
@@ -51,12 +60,12 @@ export interface QuizQuestion {
 export const CERTIFIED_INSTRUCTORS: InstructorProfile[] = [
   {
     id: 'inst_paris_01',
-    name: 'Marc-Antoine Delacroix · Coordination Paris HQ',
-    titleFr: 'Moniteur Principal & Coordinateur Pratique Diplômé d’État (ECSR)',
-    titleEn: 'Senior State-Certified Driving Instructor & Coordinator (ECSR)',
-    city: 'Paris 8e · 48 Av. des Champs-Élysées',
+    name: 'Marc-Antoine Delacroix · Coordinateur Pratique',
+    titleFr: 'Examinateur & Coordinateur des Épreuves Physiques (ECSR)',
+    titleEn: 'State-Certified Practical Examiner & Physical Test Coordinator',
+    city: 'Centre d’examen DrivePro · France & International',
     languages: ['Français', 'English'],
-    certification: 'Agrément Préfecture de Police Paris · N° 075-4419',
+    certification: 'Agrément Officiel E-24-075-0891',
     phone: PARIS_HQ_CONTACT.phone,
     whatsapp: PARIS_HQ_CONTACT.whatsappDigits,
     experienceYears: 14,
@@ -64,12 +73,12 @@ export const CERTIFIED_INSTRUCTORS: InstructorProfile[] = [
   },
   {
     id: 'inst_benin_01',
-    name: 'Coordination Internationale Paris — Afrique de l’Ouest',
-    titleFr: 'Pôle Pratique & Examen d’État (Ligne directe Paris / Bénin)',
-    titleEn: 'Practical Training & State Exam Hub (Paris / Benin Line)',
-    city: 'Paris HQ & Cotonou · Réseau DrivePro',
+    name: 'Coordination Épreuves Physiques — Afrique de l’Ouest',
+    titleFr: 'Responsable Rendez-vous Épreuves Physiques & Délivrance Permis',
+    titleEn: 'Physical Exam Appointment & License Issuance Coordinator',
+    city: 'Réseau Agréé International DrivePro',
     languages: ['Français', 'English'],
-    certification: 'Agrément DrivePro Paris · Coordination ANaTT',
+    certification: 'Agrément DrivePro · Coordination Examens',
     phone: PARIS_HQ_CONTACT.phone,
     whatsapp: PARIS_HQ_CONTACT.whatsappDigits,
     experienceYears: 11,
@@ -78,9 +87,9 @@ export const CERTIFIED_INSTRUCTORS: InstructorProfile[] = [
   {
     id: 'inst_eu_01',
     name: 'Elena Georgieva · Pôle Mobilité Europe',
-    titleFr: 'Monitrice Certifiée UE — Allemagne, Bulgarie, Pologne, Espagne & Danemark',
-    titleEn: 'Certified EU Driving Instructor — Multilingual Track',
-    city: 'Paris HQ · Coordination UE',
+    titleFr: 'Coordinatrice Épreuves Physiques UE — Multilingue',
+    titleEn: 'Certified EU Physical Exam Coordinator — Multilingual Track',
+    city: 'Réseau DrivePro Europe',
     languages: ['English', 'Français', 'Deutsch', 'Български', 'Español'],
     certification: 'EU Directive 2006/126/EC Senior Examiner Prep',
     phone: PARIS_HQ_CONTACT.phone,
@@ -105,13 +114,26 @@ export const CODE_MODULES: CodeLessonModule[] = [
     id: 'mod_signals',
     number: '01',
     animationType: 'signals',
+    visualUrl: '/src/assets/images/course_signs_roundabout_1794576016919.jpg',
+    visualCaptionFr:
+      'Observation réelle depuis le poste de conduite : panneau Cédez-le-passage, sens giratoire, passages piétons et marquage directionnel au sol.',
+    visualCaptionEn:
+      'Real driver-view study: Yield sign, roundabout indicator, pedestrian crosswalks, and directional lane markings.',
+    speakerName: 'Marc-Antoine Delacroix',
+    speakerRoleFr: 'Moniteur Principal · Explication audio du cours & de l’image',
+    speakerRoleEn: 'Lead Instructor · Full Audio Course & Visual Explanation',
+    speakerAvatarUrl: '/src/assets/images/instructor_portrait_paris_1794569648475.jpg',
+    audioScriptFr:
+      'Bonjour et bienvenue dans ce premier cours DrivePro Academy. Regardez attentivement l’image de la route devant vous et l’animation ci-dessous. La règle numéro un du Code de la Route est la hiérarchie stricte des signaux. En haut de l’échelle, les gestes de l’agent de police annulent toujours les feux et les panneaux. Ensuite viennent les feux tricolores, puis les panneaux verticaux, et enfin les marquages blancs peints au sol. Sur l’illustration réelle, notez le panneau triangulaire inversé rouge : il signifie Cédez-le-passage et se lit même recouvert de neige grâce à sa pointe vers le bas. N’oubliez jamais : devant une ligne continue blanche, interdiction absolue de chevaucher, sauf pour dépasser un cycliste en laissant un mètre en ville et un mètre cinquante hors agglomération.',
+    audioScriptEn:
+      'Welcome to Course 01 at DrivePro Academy. Observe the road photograph and interactive diagram below. Rule number one is the strict hierarchy of traffic controls: police officer gestures always override traffic lights, lights override signs, and signs override painted road markings. Notice the inverted red triangle Yield sign on the photo, designed so drivers recognize it instantly even in heavy snow. Never cross a solid white center line unless safely passing a cyclist with at least 1 meter clearance in urban areas and 1.5 meters on rural roads.',
     titleFr: 'Cours 01 — Signalisation routière & marquages au sol',
     titleEn: 'Course 01 — Road Signage & Lane Markings',
     durationMin: 25,
     summaryFr:
-      'Cours complet de 25 minutes : comprendre la hiérarchie absolue entre agent de police, feux tricolores, panneaux verticaux et marquages au sol pour éviter toute faute éliminatoire.',
+      'Cours complet de 25 minutes avec explication audio guidée : maîtrisez la hiérarchie absolue entre agent de police, feux tricolores, panneaux verticaux et marquages au sol.',
     summaryEn:
-      'Complete 25-minute course: master traffic hierarchy between officers, signal lights, vertical signs, and pavement markings.',
+      'Complete 25-minute audio-guided course: master traffic hierarchy between officers, signal lights, vertical signs, and pavement markings.',
     chapters: [
       {
         headingFr: '1.1 La hiérarchie officielle des signaux (règle d’or)',
@@ -159,13 +181,26 @@ export const CODE_MODULES: CodeLessonModule[] = [
     id: 'mod_priority',
     number: '02',
     animationType: 'roundabout',
+    visualUrl: '/src/assets/images/bg_instructor_briefing_1794576016795.jpg',
+    visualCaptionFr:
+      'Séance explicative en salle : analyse détaillée des trajectoires en intersection et règles de priorité entre véhicules.',
+    visualCaptionEn:
+      'Classroom briefing photo: analyzing intersection turning priorities and multi-vehicle trajectories.',
+    speakerName: 'Elena Georgieva',
+    speakerRoleFr: 'Monitrice Certifiée · Explication audio des priorités',
+    speakerRoleEn: 'Certified Instructor · Right-of-Way Audio Coaching',
+    speakerAvatarUrl: '/src/assets/images/instructor_portrait_paris_1794569648475.jpg',
+    audioScriptFr:
+      'Passons maintenant au Cours numéro deux consacré aux priorités et aux carrefours giratoires. Comme vous le voyez sur la photo de briefing et le schéma animé, lorsque vous arrivez à une intersection sans aucun panneau ni feu, la priorité à droite s’applique automatiquement : vous devez céder le passage à tout véhicule venant de votre droite. À l’inverse, dans un carrefour à sens giratoire moderne muni du panneau Cédez-le-passage, ce sont les véhicules déjà engagés sur l’anneau central à votre gauche qui sont prioritaires. Pour tourner à droite ou aller tout droit, gardez la voie extérieure. Pour tourner à gauche ou faire demi-tour, placez-vous sur la voie intérieure avec le clignotant gauche, puis vérifiez votre angle mort droit et actionnez le clignotant droit avant de sortir.',
+    audioScriptEn:
+      'Welcome to Course 02 on intersections and roundabouts. As shown in our briefing visual and interactive roundabout simulation, unmarked intersections strictly follow right-hand priority. However, upon entering a modern yield-controlled roundabout, vehicles already circulating on the ring to your left have priority. Use the outer lane for right or straight exits, and the inner lane with your left indicator for left turns or U-turns before checking your right blind spot and signaling right to exit.',
     titleFr: 'Cours 02 — Priorités, intersections & carrefours giratoires',
     titleEn: 'Course 02 — Right of Way, Intersections & Roundabouts',
     durationMin: 30,
     summaryFr:
-      'Cours complet de 30 minutes : maîtriser la priorité à droite sans signalisation, le positionnement dans un giratoire à deux voies et le dégagement pour véhicules d’urgence.',
+      'Cours complet de 30 minutes avec explication audio : maîtriser la priorité à droite, les trajectoires dans un giratoire à deux voies et les véhicules d’urgence.',
     summaryEn:
-      'Complete 30-minute course: master unmarked right-of-way rules, multi-lane roundabout positioning, and emergency vehicle priority.',
+      'Complete 30-minute audio-guided course: master unmarked right-of-way rules, multi-lane roundabout positioning, and emergency vehicle priority.',
     chapters: [
       {
         headingFr: '2.1 La priorité à droite (carrefour sans panneau)',
@@ -213,13 +248,26 @@ export const CODE_MODULES: CodeLessonModule[] = [
     id: 'mod_speed',
     number: '03',
     animationType: 'braking',
+    visualUrl: '/src/assets/images/course_highway_safety_1794576016759.jpg',
+    visualCaptionFr:
+      'Perspective autoroutière : chevrons blancs de distance de sécurité (2 secondes) et bande d’arrêt d’urgence protégée.',
+    visualCaptionEn:
+      'Motorway driver view: white two-second following distance chevrons and protected hard shoulder.',
+    speakerName: 'Marc-Antoine Delacroix',
+    speakerRoleFr: 'Moniteur Principal · Explication audio vitesse & freinage',
+    speakerRoleEn: 'Lead Instructor · Braking & Physics Audio Coaching',
+    speakerAvatarUrl: '/src/assets/images/instructor_portrait_paris_1794569648475.jpg',
+    audioScriptFr:
+      'Bienvenue dans le Cours numéro trois sur la vitesse et les distances d’arrêt. Regardez les chevrons blancs sur l’autoroute : ils matérialisent l’intervalle vital de deux secondes à conserver derrière le véhicule qui vous précède. Pendant votre temps de réaction d’une seconde, votre voiture avance avant même que vous ne touchiez le frein : multipliez les dizaines de la vitesse par trois. À cinquante kilomètres-heure, quinze mètres. À quatre-vingt-dix, vingt-sept mètres. Pour connaître la distance d’arrêt totale sur sol sec, multipliez les dizaines par elles-mêmes : neuf fois neuf égale quatre-vingt-un mètres à quatre-vingt-dix kilomètres-heure ! Et faites très attention : sur route mouillée, la distance de freinage est multipliée par deux. Testez différentes vitesses sur le simulateur juste en dessous pour mémoriser ces chiffres d’examen.',
+    audioScriptEn:
+      'In Course 03, look closely at the motorway chevrons showing the mandatory two-second safety gap. During a normal one-second reaction phase, your car continues moving at full speed before braking begins: multiply the tens digit of speed by three (at 90 km/h that is 27 meters). For total dry stopping distance, square the tens digit (9 times 9 equals 81 meters). On wet pavement, braking distance doubles. Test multiple speeds using the interactive simulator below to anchor these values.',
     titleFr: 'Cours 03 — Vitesse, distances d’arrêt & visibilité',
     titleEn: 'Course 03 — Speed Limits, Stopping Distances & Visibility',
     durationMin: 25,
     summaryFr:
-      'Cours complet de 25 minutes : calculer mentalement vos distances de réaction et d’arrêt sur sol sec ou mouillé, maîtriser l’intervalle de sécurité de 2 secondes et rouler sous intempéries.',
+      'Cours complet de 25 minutes avec simulateur audio-visuel : calculer vos distances de réaction et d’arrêt sur sol sec ou mouillé et conduire sous intempéries.',
     summaryEn:
-      'Complete 25-minute course: compute reaction and braking distances on dry vs wet roads, 2-second gaps, and severe weather limits.',
+      'Complete 25-minute audio-visual course: compute reaction and braking distances on dry vs wet roads, 2-second gaps, and severe weather limits.',
     chapters: [
       {
         headingFr: '3.1 Temps de réaction (1 seconde) et calcul ×3',
@@ -267,13 +315,26 @@ export const CODE_MODULES: CodeLessonModule[] = [
     id: 'mod_safety',
     number: '04',
     animationType: 'safety',
+    visualUrl: '/src/assets/images/bg_driving_practice_1794576015720.jpg',
+    visualCaptionFr:
+      'Mise en situation en voiture double-commande : posture des mains, prise d’information permanente et accompagnement du moniteur.',
+    visualCaptionEn:
+      'Dual-control vehicle training session: hand position, constant scanning, and live instructor guidance.',
+    speakerName: 'Marc-Antoine Delacroix',
+    speakerRoleFr: 'Moniteur Principal · Coaching audio sécurité & éco-conduite',
+    speakerRoleEn: 'Lead Instructor · Safety & Eco-Driving Audio Coaching',
+    speakerAvatarUrl: '/src/assets/images/instructor_portrait_paris_1794569648475.jpg',
+    audioScriptFr:
+      'Dans ce quatrième cours, observons la position réelle à bord du véhicule d’apprentissage. Pour votre sécurité et la réussite des épreuves pratiques comme théoriques, trois points sont éliminatoires. Premièrement, l’alcool et les stupéfiants : en période probatoire, la limite est à zéro virgule deux grammes par litre, soit aucun verre d’alcool. Deuxièmement, le téléphone tenu en main ou toute oreillette Bluetooth sont strictement interdits au volant. Troisièmement, en cas de panne sur autoroute, mettez votre gilet haute visibilité à l’intérieur de l’habitacle, faites sortir tous les passagers côté droit et placez tout le monde derrière la glissière de sécurité. Enfin, pour pratiquer l’éco-conduite, passez vos vitesses tôt autour de deux mille tours par minute afin d’économiser jusqu’à vingt pour cent de carburant.',
+    audioScriptEn:
+      'In Course 04, observe the real instructor-student seating inside a dual-control training car. Three topics carry zero tolerance on exams: probationary drivers face a 0.2 g/L BAC limit meaning zero drinks; hand-held phones and ear-worn Bluetooth headsets are strictly banned; and during a motorway breakdown, put on high-vis vests inside the car, exit passenger-side, and wait behind the guardrail. For eco-driving, shift up early around 2,000 RPM to cut fuel consumption up to 20 percent.',
     titleFr: 'Cours 04 — Sécurité du conducteur, alcool & éco-conduite',
     titleEn: 'Course 04 — Driver Safety, Impairment & Eco-Driving',
     durationMin: 20,
     summaryFr:
-      'Cours complet de 20 minutes : seuils légaux d’alcoolémie, interdiction stricte des téléphones/oreillettes, procédure d’urgence sur autoroute et conduite économique.',
+      'Cours complet de 20 minutes avec explication audio : seuils d’alcoolémie, interdiction téléphone/oreillettes, procédure d’urgence autoroute et éco-conduite.',
     summaryEn:
-      'Complete 20-minute course: BAC limits, mobile phone bans, motorway breakdown procedure, and eco-driving techniques.',
+      'Complete 20-minute audio-guided course: BAC limits, mobile phone bans, motorway breakdown procedure, and eco-driving techniques.',
     chapters: [
       {
         headingFr: '4.1 Alcoolémie, stupéfiants & permis probatoire',
@@ -322,13 +383,26 @@ export const CODE_MODULES: CodeLessonModule[] = [
     number: '05',
     isStudyGuide: true,
     animationType: 'study',
+    visualUrl: '/src/assets/images/bg_theory_students_1794576015291.jpg',
+    visualCaptionFr:
+      'Préparation collective à l’examen : révision structurée des séries visuelles sur tablette avant le passage du QCM officiel.',
+    visualCaptionEn:
+      'Collaborative exam readiness: structured tablet review of official signage and scenario series.',
+    speakerName: 'Elena Georgieva',
+    speakerRoleFr: 'Coordinatrice Examen · Méthode audio Comment étudier',
+    speakerRoleEn: 'Exam Coordinator · How to Study Audio Briefing',
+    speakerAvatarUrl: '/src/assets/images/instructor_portrait_paris_1794569648475.jpg',
+    audioScriptFr:
+      'Félicitations d’être arrivé à ce dernier module avant l’examen blanc ! Voici exactement comment étudier efficacement pour réussir du premier coup. À chaque question du QCM, vous avez vingt secondes d’analyse. Ne lisez pas les réponses immédiatement : balayez l’image dans l’ordre exact : un, les rétroviseurs ; deux, les panneaux et le marquage au sol ; trois, les piétons ou cyclistes cachés. Validez ce module, puis obtenez au moins soixante-quinze pour cent au QCM officiel juste en dessous. Dès votre QCM réussi, notre système vous indiquera le contact direct du responsable afin de fixer votre rendez-vous pour passer vos quelques épreuves physiques finales et récupérer votre permis !',
+    audioScriptEn:
+      'Congratulations on reaching the final readiness module! Here is how to study and pass on your first attempt. Spend your first seconds scanning every image in three steps: one, mirrors; two, signs and road markings; three, vulnerable pedestrians and cyclists. Validate this module, then score at least 75 percent on the official quiz below. As soon as you pass the quiz, you will receive the direct contact number to schedule your final in-person physical tests and obtain your driving license.',
     titleFr: 'Module 05 — Comment étudier & réussir l’examen officiel',
     titleEn: 'Module 05 — How to Study & Pass the State Exam',
     durationMin: 15,
     summaryFr:
-      'Dernière étape obligatoire avant le QCM : méthode de révision stratégique, décryptage des pièges de l’examen d’État et préparation directe aux leçons pratiques avec votre moniteur.',
+      'Dernière étape obligatoire avant le QCM : méthode audio de révision stratégique pour réussir l’examen théorique et débloquer votre rendez-vous d’épreuves physiques.',
     summaryEn:
-      'Final mandatory study module before the quiz: exam strategy, avoiding common question traps, and preparing for practical handoff.',
+      'Final mandatory study module before the quiz: strategic audio review method to pass the theory test and unlock your final physical test appointment.',
     chapters: [
       {
         headingFr: '5.1 Méthode des 3 lectures avant chaque question d’examen',
@@ -341,25 +415,25 @@ export const CODE_MODULES: CodeLessonModule[] = [
         tipEn: 'Stick with your structured first analysis unless you clearly misread a sign.',
       },
       {
-        headingFr: '5.2 Répétition espacée et seuil de validation (≥ 75%)',
-        headingEn: '5.2 Spaced Repetition & 75% Passing Gate',
+        headingFr: '5.2 Validation du QCM & passage des épreuves physiques finales',
+        headingEn: '5.2 Quiz Validation & Final Physical Tests',
         bodyFr:
-          'Pour passer à la conduite pratique en personne avec l’agence et votre moniteur certifié (+33 7 72 03 46 89), vous devez valider cet examen blanc à 75 % minimum (9 bonnes réponses sur 12). Relisez vos erreurs grâce au corrigé détaillé après chaque tentative jusqu’à atteindre 90–100 % sans hésitation.',
+          'Pour obtenir votre permis définitif après le code, vous devrez passer quelques épreuves physiques officielles en personne. Dès que vous atteignez 75 % minimum (9 bonnes réponses sur 12) au QCM qui suit ce module, les coordonnées directes de votre responsable se débloquent automatiquement pour fixer votre rendez-vous, achever vos épreuves physiques et recevoir votre permis.',
         bodyEn:
-          'To unlock practical scheduling with our certified Paris team (+33 7 72 03 46 89), pass the practice quiz at 75%+ (9/12). Review every explanation until you consistently score 90%+.',
-        tipFr: 'Dès que votre score ≥ 75 % est enregistré, le bouton WhatsApp direct vers Paris HQ se débloque automatiquement.',
-        tipEn: 'Once 75%+ is recorded, the direct WhatsApp contact button unlocks immediately.',
+          'To obtain your official license, you will complete brief in-person physical tests after passing the theory quiz. Scoring 75%+ (9/12) immediately unlocks your coordinator’s direct contact details so you can book your appointment and collect your license.',
+        tipFr: 'Validez ce module ci-dessous pour déverrouiller immédiatement le QCM officiel de 12 questions.',
+        tipEn: 'Validate this module below to immediately unlock the 12-question official quiz.',
       },
     ],
     keyRulesFr: [
       'Scannez toujours rétroviseurs → panneaux/sol → usagers vulnérables avant de répondre.',
-      'Score minimum requis pour débloquer la prise de rendez-vous pratique WhatsApp : 75 % (9/12).',
-      'Après réussite au QCM, contactez directement +33 7 72 03 46 89 sur WhatsApp pour planifier vos leçons pratiques.',
+      'Score minimum requis au QCM : 75 % (9 bonnes réponses sur 12).',
+      'Après réussite au QCM, contactez votre responsable (coordonnées débloquées) pour passer vos épreuves physiques et retirer votre permis.',
     ],
     keyRulesEn: [
       'Always scan mirrors → signs/markings → vulnerable users before choosing.',
-      'Minimum quiz score required to unlock practical WhatsApp scheduling: 75% (9/12).',
-      'Upon passing, contact +33 7 72 03 46 89 directly on WhatsApp to book in-person driving lessons.',
+      'Minimum quiz passing score: 75% (9 out of 12).',
+      'Upon passing the quiz, your coordinator’s contact unlocks to book final physical tests and issue your license.',
     ],
   },
 ];

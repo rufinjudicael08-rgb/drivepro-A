@@ -9,7 +9,7 @@
 @layer base {
   body {
     font-family: var(--font-sans);
-    background-color: #f8fafc;
+    background-color: #020617;
     color: #0f172a;
   }
 
@@ -19,5 +19,62 @@
 
   .tabular-nums {
     font-variant-numeric: tabular-nums;
+  }
+}
+
+@keyframes driveproKenBurnsA {
+  0% {
+    transform: scale(1.02) translate3d(0%, 0%, 0);
+  }
+  50% {
+    transform: scale(1.11) translate3d(-2.2%, -1.5%, 0);
+  }
+  100% {
+    transform: scale(1.02) translate3d(0%, 0%, 0);
+  }
+}
+
+@keyframes driveproKenBurnsB {
+  0% {
+    transform: scale(1.08) translate3d(-1.5%, 0%, 0);
+  }
+  50% {
+    transform: scale(1.02) translate3d(2%, -1.8%, 0);
+  }
+  100% {
+    transform: scale(1.08) translate3d(-1.5%, 0%, 0);
+  }
+}
+
+@keyframes driveproAudioBar {
+  0%, 100% {
+    transform: scaleY(0.32);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.animate-kenburns-a {
+  animation: driveproKenBurnsA 26s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-kenburns-b {
+  animation: driveproKenBurnsB 30s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-audio-bar {
+  animation: driveproAudioBar 0.75s ease-in-out infinite;
+  transform-origin: bottom;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-kenburns-a,
+  .animate-kenburns-b,
+  .animate-audio-bar {
+    animation: none !important;
+    transform: none !important;
   }
 }

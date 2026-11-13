@@ -3,16 +3,18 @@ import { User } from 'firebase/auth';
 import { doc, serverTimestamp, setDoc, writeBatch } from 'firebase/firestore';
 import {
   ArrowRight,
-  Check,
   CheckCircle2,
-  Copy,
   CreditCard,
+  ExternalLink,
   FileCheck2,
+  IdCard,
   Lock,
   Send,
   ShieldCheck,
   Smartphone,
   Unlock,
+  Upload,
+  Wifi,
 } from 'lucide-react';
 import {
   CATEGORY_FEES_EUR,
@@ -20,12 +22,18 @@ import {
   formatLocalCurrency,
   getCategoryFeeEur,
   getCountryFlagEmoji,
-  TAPTAP_SEND_BENEFICIARY,
+  TAPTAP_SEND_CHECKOUT,
 } from '../data/countries';
 import { getInstructorForCountry } from '../data/curriculum';
 import { getTranslations } from '../data/i18n';
 import { db, handleFirestoreError, OperationType } from '../firebase';
-import { CountryConfig, Language, LicenseCategory, RegistrationRecord } from '../types';
+import {
+  CountryConfig,
+  IdCardType,
+  Language,
+  LicenseCategory,
+  RegistrationRecord,
+} from '../types';
 
 interface RegistrationFlowProps {
   country: CountryConfig;
@@ -38,6 +46,38 @@ interface RegistrationFlowProps {
   referralPlatform: string;
   onSignIn: () => Promise<void>;
   onOpenCandidatePortal: () => void;
+  onStepChange?: (step: 1 | 2 | 3 | 4) => void;
+}
+
+async function compressIdCardImage(file: File): Promise<string> {
+  if (!file.type.startsWith('image/')) {
+    return '';
+  }
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const maxWidth = 420;
+        const scale = Math.min(1, maxWidth / Math.max(img.width, 1));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve('');
+          return;
+        }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.62);
+        resolve(dataUrl.length <= 85000 ? dataUrl : '');
+      };
+      img.onerror = () => resolve('');
+      img.src = String(reader.result || '');
+    };
+    reader.onerror = () => resolve('');
+    reader.readAsDataURL(file);
+  });
 }
 
 export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
@@ -51,6 +91,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
   referralPlatform,
   onSignIn,
   onOpenCandidatePortal,
+  onStepChange,
 }) => {
   const t = getTranslations(lang);
   const isEn = lang === 'en';
@@ -80,30 +121,70 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
     }
   }, [isUnlocked, registration]);
 
-  const [fullName, setFullName] = useState(
-    registration?.fullName || user?.displayName || ''
-  );
+  useEffect(() => {
+    onStepChange?.(step);
+  }, [step, onStepChange]);
+
+  // Step 2 Legal Dossier State
+  const [lastName, setLastName] = useState('');
+  const [firstName, setFirstName] = useState('');
   const [email, setEmail] = useState(registration?.email || user?.email || '');
   const [phone, setPhone] = useState(
     registration?.phone || `${country.dialCode} `
   );
+  const [address, setAddress] = useState(registration?.address || '');
   const [city, setCity] = useState(
     registration?.city || (country.code === 'FR' ? 'Paris' : '')
   );
+  const [wifiReady, setWifiReady] = useState<boolean>(
+    registration?.wifiReady ?? true
+  );
+  const [idCardType, setIdCardType] = useState<IdCardType>(
+    registration?.idCardType || 'CNI'
+  );
+  const [idCardNumber, setIdCardNumber] = useState(
+    registration?.idCardNumber || ''
+  );
+  const [idCardFileName, setIdCardFileName] = useState(
+    registration?.idCardFileName || ''
+  );
+  const [idCardThumbnail, setIdCardThumbnail] = useState(
+    registration?.idCardThumbnail || ''
+  );
   const [acceptedTerms, setAcceptedTerms] = useState(false);
 
+  // Step 3 Payment State (client enters their own sender coordinates — no recipient number displayed)
   const [selectedMethodId, setSelectedMethodId] = useState<string>(
     country.paymentMethods[0]?.id || 'taptap_send'
   );
+  const [senderName, setSenderName] = useState(
+    registration?.fullName || user?.displayName || ''
+  );
+  const [senderPhone, setSenderPhone] = useState(registration?.phone || '');
   const [paymentDetailInput, setPaymentDetailInput] = useState('');
-  const [copiedTapTap, setCopiedTapTap] = useState(false);
+  const [linkOpened, setLinkOpened] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (user?.displayName && !fullName) setFullName(user.displayName);
+    if (user?.displayName && !firstName && !lastName) {
+      const parts = user.displayName.trim().split(/\s+/);
+      if (parts.length > 1) {
+        setFirstName(parts.slice(0, -1).join(' '));
+        setLastName(parts[parts.length - 1]);
+      } else {
+        setFirstName(user.displayName);
+      }
+    }
     if (user?.email && !email) setEmail(user.email);
-  }, [user, fullName, email]);
+  }, [user, firstName, lastName, email]);
+
+  useEffect(() => {
+    if (registration) {
+      setSenderName((prev) => prev || registration.fullName);
+      setSenderPhone((prev) => prev || registration.phone);
+    }
+  }, [registration]);
 
   useEffect(() => {
     setSelectedMethodId(country.paymentMethods[0]?.id || 'taptap_send');
@@ -122,21 +203,24 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
     country.paymentMethods.find((m) => m.id === selectedMethodId) ||
     country.paymentMethods[0];
 
-  const handleCopyTapTap = () => {
-    navigator.clipboard.writeText(TAPTAP_SEND_BENEFICIARY.primaryRaw);
-    setCopiedTapTap(true);
-    setTimeout(() => setCopiedTapTap(false), 2000);
+  const handleIdFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIdCardFileName(file.name.slice(0, 120));
+    const thumb = await compressIdCardImage(file);
+    setIdCardThumbnail(thumb);
   };
 
   const handleSaveDossier = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
 
-    if (fullName.trim().length < 2) {
+    const combinedFullName = `${firstName.trim()} ${lastName.trim()}`.trim();
+    if (lastName.trim().length < 2 || firstName.trim().length < 2) {
       setFormError(
         isEn
-          ? 'Please enter your full legal name (minimum 2 characters).'
-          : 'Veuillez saisir votre nom complet (minimum 2 caractères).'
+          ? 'Please enter both your Last Name and First Name.'
+          : 'Veuillez renseigner obligatoirement votre Nom de famille et votre Prénom.'
       );
       return;
     }
@@ -151,8 +235,16 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
     if (phone.trim().length < 6) {
       setFormError(
         isEn
-          ? 'Please provide a valid phone / WhatsApp number.'
+          ? 'Please provide a valid WhatsApp phone number.'
           : 'Veuillez saisir un numéro de téléphone WhatsApp valide.'
+      );
+      return;
+    }
+    if (address.trim().length < 4) {
+      setFormError(
+        isEn
+          ? 'Please provide your full residential street address.'
+          : 'Veuillez saisir votre adresse complète de résidence (rue, quartier).'
       );
       return;
     }
@@ -164,11 +256,27 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
       );
       return;
     }
+    if (!wifiReady) {
+      setFormError(
+        isEn
+          ? 'Please confirm Wi-Fi / Internet connectivity for online audio courses.'
+          : 'Veuillez confirmer votre accès Wi-Fi / Internet pour suivre les cours audio en ligne.'
+      );
+      return;
+    }
+    if (idCardNumber.trim().length < 4 || idCardFileName.trim().length < 3) {
+      setFormError(
+        isEn
+          ? 'Mandatory legal check: enter your ID number AND upload a photo/scan of your National ID or Passport.'
+          : 'Pièce légale obligatoire : saisissez le numéro ET joignez la photo ou le scan de votre Carte d’Identité (ou Passeport).'
+      );
+      return;
+    }
     if (!acceptedTerms) {
       setFormError(
         isEn
           ? 'You must accept the DrivePro Academy enrollment policy.'
-          : 'Vous devez accepter le règlement d’inscription DrivePro Academy.'
+          : 'Vous devez accepter le règlement légal d’inscription DrivePro Academy.'
       );
       return;
     }
@@ -177,7 +285,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
       setFormError(
         isEn
           ? 'Please sign in with Google below first to secure your dossier.'
-          : 'Veuillez d’abord vous connecter avec Google ci-dessous pour enregistrer votre dossier.'
+          : 'Veuillez d’abord vous connecter avec Google ci-dessus pour enregistrer votre dossier.'
       );
       return;
     }
@@ -190,12 +298,18 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
     const payload = {
       id: regId,
       userId: user.uid,
-      fullName: fullName.trim().slice(0, 100),
+      fullName: combinedFullName.slice(0, 100),
       email: email.trim().slice(0, 150),
       phone: phone.trim().slice(0, 30),
+      address: address.trim().slice(0, 180),
+      city: city.trim().slice(0, 100),
+      wifiReady: true,
+      idCardType,
+      idCardNumber: idCardNumber.trim().slice(0, 60),
+      idCardFileName: idCardFileName.trim().slice(0, 120),
+      idCardThumbnail: idCardThumbnail.slice(0, 88000),
       countryCode: country.code,
       countryName: isEn ? country.nameEn : country.nameFr,
-      city: city.trim().slice(0, 100),
       licenseCategory: category,
       preferredLanguage: lang,
       currency: country.currency,
@@ -222,6 +336,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
 
     try {
       await setDoc(doc(db, 'registrations', regId), payload);
+      setSenderName(combinedFullName);
+      setSenderPhone(phone.trim());
       setStep(3);
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, `registrations/${regId}`);
@@ -243,11 +359,20 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
       return;
     }
 
+    if (senderName.trim().length < 2 || senderPhone.trim().length < 5) {
+      setFormError(
+        isEn
+          ? 'Please enter your full sender name and phone number.'
+          : 'Veuillez saisir votre nom complet et votre numéro d’expéditeur.'
+      );
+      return;
+    }
+
     if (paymentDetailInput.trim().length < 4) {
       setFormError(
         isEn
           ? 'Please enter your TapTap Send transfer reference or payment confirmation.'
-          : 'Veuillez saisir votre référence de transfert TapTap Send ou justificatif de paiement.'
+          : 'Veuillez saisir votre référence de transfert ou justificatif de paiement.'
       );
       return;
     }
@@ -274,6 +399,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
         registrationId: registration.id,
         userId: user.uid,
         candidateName: registration.fullName,
+        senderName: senderName.trim().slice(0, 100),
+        senderPhone: senderPhone.trim().slice(0, 40),
         countryCode: registration.countryCode,
         currency: registration.currency,
         baseAmountEur: registration.baseFeeEur,
@@ -310,7 +437,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
 
   return (
     <section id="registration-funnel" className="space-y-6">
-      <div className="bg-slate-900 text-white rounded-xl p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-slate-900/95 text-white rounded-xl p-5 md:p-6 border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-start gap-3.5">
           {isUnlocked ? (
             <Unlock className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
@@ -321,15 +448,15 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
             <h3 className="text-base font-semibold">
               {isUnlocked
                 ? isEn
-                  ? 'Dossier Validated — Sequential Theory Courses Unlocked'
-                  : 'Dossier validé — Cours séquentiels débloqués'
+                  ? 'Dossier Validated — Sequential Audio Courses Unlocked'
+                  : 'Dossier légal validé — Cours audio séquentiels débloqués'
                 : t.lockedNoticeTitle}
             </h3>
             <p className="text-sm text-slate-300 max-w-3xl leading-relaxed">
               {isUnlocked
                 ? isEn
-                  ? 'Your registration fee is recorded. Complete the 5 sequential modules and pass the exam (≥75%) to unlock direct WhatsApp scheduling.'
-                  : 'Votre paiement est enregistré. Terminez les 5 modules séquentiels et réussissez le QCM (≥75%) pour débloquer le contact WhatsApp pratique.'
+                  ? 'Your registration fee is recorded. Complete the 5 sequential modules and pass the exam (≥75%) to unlock your physical exam appointment contact.'
+                  : 'Votre paiement est enregistré. Terminez les 5 modules audio séquentiels et réussissez le QCM (≥75%) pour fixer vos épreuves physiques finales.'
                 : t.lockedNoticeBody}
             </p>
           </div>
@@ -378,11 +505,11 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
               onClick={() => clickable && setStep(item.num)}
               className={`px-4 py-3 rounded-lg border text-left transition-colors flex items-center justify-between gap-2 ${
                 active
-                  ? 'bg-blue-700 text-white border-blue-700'
+                  ? 'bg-blue-700 text-white border-blue-600'
                   : item.done
                   ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
                   : item.locked
-                  ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+                  ? 'bg-white/90 text-slate-400 border-slate-200 cursor-not-allowed'
                   : 'bg-white text-slate-800 border-slate-200 hover:border-slate-400 cursor-pointer'
               }`}
             >
@@ -397,20 +524,20 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
         })}
       </div>
 
-      {/* Step 1: Country & License Category Pricing */}
+      {/* Step 1: Country & License Category Pricing (200 / 250 / 300 / 350 EUR) */}
       {step === 1 && !isUnlocked && (
-        <div className="bg-white border border-slate-200 rounded-xl p-6 md:p-8 space-y-6">
+        <div className="bg-white/95 backdrop-blur border border-slate-200 rounded-xl p-6 md:p-8 space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
             <div>
               <h3 className="text-xl font-semibold text-slate-900">
                 {isEn
                   ? 'Step 1 — Select License Category & Local Fee'
-                  : 'Étape 1 — Choix du permis & tarif adapté'}
+                  : 'Étape 1 — Choix du permis & tarif officiel'}
               </h3>
               <p className="text-sm text-slate-600 mt-1">
                 {isEn
-                  ? `Active country: ${country.nameEn} (${country.currency}) · Fees adjust per license category.`
-                  : `Pays actif : ${country.nameFr} (${country.currency}) · Tarif adapté selon la catégorie de permis choisie.`}
+                  ? `Active country: ${country.nameEn} (${country.currency}) · Fees start at €200 for Category A.`
+                  : `Pays actif : ${country.nameFr} (${country.currency}) · Tarifs progressifs à partir de 200 € (Permis A).`}
               </p>
             </div>
             <div className="text-sm font-mono bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 tabular-nums">
@@ -428,22 +555,22 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                   id: 'A' as LicenseCategory,
                   titleFr: 'Permis A / A2 — Moto',
                   titleEn: 'Category A — Motorcycle',
-                  descFr: 'Plateau, circulation & examen officiel d’État',
-                  descEn: 'Track maneuver, road & state exam',
+                  descFr: 'Formation accélérée, épreuves physiques & permis < 48h',
+                  descEn: 'Fast-track theory, physical test & permit < 48h',
                 },
                 {
                   id: 'B' as LicenseCategory,
                   titleFr: 'Permis B — Voiture',
                   titleEn: 'Category B — Passenger Car',
-                  descFr: 'Boîte manuelle ou auto · Formation complète',
-                  descEn: 'Manual or automatic · Full training',
+                  descFr: 'Boîte manuelle ou auto · Dossier complet agréé',
+                  descEn: 'Manual or automatic · Complete accredited track',
                 },
                 {
                   id: 'C' as LicenseCategory,
                   titleFr: 'Permis C — Poids Lourd',
                   titleEn: 'Category C — Heavy Truck',
-                  descFr: 'Transport de marchandises international',
-                  descEn: 'Commercial freight qualification',
+                  descFr: 'Transport international de marchandises',
+                  descEn: 'International commercial freight qualification',
                 },
                 {
                   id: 'D' as LicenseCategory,
@@ -505,7 +632,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-lg transition-colors cursor-pointer"
             >
               <span>
-                {isEn ? 'Continue to Dossier' : 'Continuer vers le dossier'}
+                {isEn ? 'Continue to Legal Dossier' : 'Continuer vers le dossier légal'}
               </span>
               <ArrowRight className="w-4 h-4" />
             </button>
@@ -513,23 +640,23 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
         </div>
       )}
 
-      {/* Step 2: Candidate Dossier Form */}
+      {/* Step 2: Legal Dossier Form (Nom, Prénom, Email, Adresse, Wi-Fi, Carte d'Identité obligatoire) */}
       {step === 2 && !isUnlocked && (
         <form
           onSubmit={handleSaveDossier}
-          className="bg-white border border-slate-200 rounded-xl p-6 md:p-8 space-y-6"
+          className="bg-white/95 backdrop-blur border border-slate-200 rounded-xl p-6 md:p-8 space-y-6"
         >
           <div className="border-b border-slate-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h3 className="text-xl font-semibold text-slate-900">
                 {isEn
-                  ? 'Step 2 — Candidate Administrative Dossier'
-                  : 'Étape 2 — Constitution du dossier administratif'}
+                  ? 'Step 2 — Mandatory Legal Dossier & ID Verification'
+                  : 'Étape 2 — Dossier légal complet & Pièce d’identité obligatoire'}
               </h3>
               <p className="text-sm text-slate-600 mt-1">
                 {isEn
-                  ? `Permit ${category} · Paris HQ Registry · Fee due in next step: ${formattedLocalFee} (${baseFeeEur} €)`
-                  : `Permis ${category} · Siège Paris · Montant à régler à l’étape suivante : ${formattedLocalFee} (${baseFeeEur} €)`}
+                  ? `Permit ${category} · Legal identity check required · Fee: ${formattedLocalFee} (€${baseFeeEur})`
+                  : `Permis ${category} · Vérification légale obligatoire · Frais : ${formattedLocalFee} (${baseFeeEur} €)`}
               </p>
             </div>
             {referralCode && (
@@ -566,21 +693,35 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
           <div className="grid md:grid-cols-2 gap-5">
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-slate-700">
-                {t.fullNameLabel}
+                {isEn ? 'Last Name (Family Name) *' : 'Nom de famille (état civil) *'}
               </label>
               <input
                 type="text"
                 required
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder={isEn ? 'e.g. Amina Mensah / John Doe' : 'Ex : Amina Mensah / Jean Dupont'}
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder={isEn ? 'e.g. DUPONT / MENSAH' : 'Ex : LOKOSSOU / DUPONT'}
                 className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
               />
             </div>
 
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-slate-700">
-                {t.emailLabel}
+                {isEn ? 'First Name(s) *' : 'Prénom(s) complet(s) *'}
+              </label>
+              <input
+                type="text"
+                required
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder={isEn ? 'e.g. Amina / Jean' : 'Ex : Amina / Jean'}
+                className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-slate-700">
+                {t.emailLabel} *
               </label>
               <input
                 type="email"
@@ -594,7 +735,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
 
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-slate-700">
-                {t.phoneLabel}
+                {t.phoneLabel} *
               </label>
               <input
                 type="tel"
@@ -608,32 +749,150 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
 
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-slate-700">
-                {t.cityLabel}
+                {isEn ? 'Full Street Address *' : 'Adresse complète (rue, quartier, BP) *'}
+              </label>
+              <input
+                type="text"
+                required
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder={
+                  isEn
+                    ? '12 Rue de Rivoli / Akpakpa Lot 42'
+                    : 'Ex : 12 Rue de Rivoli / Quartier Cadjèhoun Lot 42'
+                }
+                className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-slate-700">
+                {t.cityLabel} *
               </label>
               <input
                 type="text"
                 required
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                placeholder={isEn ? 'Paris, Cotonou, Berlin, Sofia...' : 'Paris, Cotonou, Berlin, Sofia...'}
+                placeholder="Paris, Cotonou, Berlin, Sofia..."
                 className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
               />
             </div>
           </div>
 
-          <label className="flex items-start gap-3 text-sm text-slate-700 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={acceptedTerms}
-              onChange={(e) => setAcceptedTerms(e.target.checked)}
-              className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-700 focus:ring-blue-700"
-            />
-            <span>
-              {isEn
-                ? 'I certify that the information submitted to DrivePro Academy Paris is accurate and understand that theory courses unlock only after payment.'
-                : 'Je certifie l’exactitude des informations transmises à DrivePro Academy Paris et comprends que l’accès aux cours et au moniteur est conditionné au règlement des frais.'}
-            </span>
-          </label>
+          {/* Official Mandatory ID Card Block */}
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-4">
+            <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+              <IdCard className="w-4 h-4 text-blue-700 shrink-0" />
+              <span>
+                {isEn
+                  ? 'Mandatory Official Identity Document (Legal Compliance)'
+                  : 'Pièce d’identité officielle obligatoire (Conformité légale)'}
+              </span>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-slate-700">
+                  {isEn ? 'Document Type *' : 'Type de pièce *'}
+                </label>
+                <select
+                  value={idCardType}
+                  onChange={(e) => setIdCardType(e.target.value as IdCardType)}
+                  className="w-full px-3 py-2.5 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-700"
+                >
+                  <option value="CNI">Carte Nationale d’Identité (CNI)</option>
+                  <option value="Passeport">Passeport officiel</option>
+                  <option value="Titre de séjour">Titre de séjour / Carte résident</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-slate-700">
+                  {isEn ? 'ID Document Number *' : 'Numéro de la pièce *'}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={idCardNumber}
+                  onChange={(e) => setIdCardNumber(e.target.value)}
+                  placeholder="Ex : 204918273 / CIP-BJ-0092"
+                  className="w-full px-3.5 py-2.5 text-sm font-mono border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-700"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-slate-700">
+                  {isEn ? 'Upload ID Photo / Scan *' : 'Photo ou scan de la carte *'}
+                </label>
+                <label className="flex items-center justify-between gap-2 px-3.5 py-2.5 text-xs font-semibold bg-white border border-slate-300 hover:border-blue-600 rounded-lg cursor-pointer">
+                  <span className="truncate text-slate-700">
+                    {idCardFileName
+                      ? idCardFileName
+                      : isEn
+                      ? 'Choose ID file (JPG/PNG/PDF)'
+                      : 'Joindre CNI (JPG/PNG/PDF)'}
+                  </span>
+                  <Upload className="w-4 h-4 text-blue-700 shrink-0" />
+                  <input
+                    type="file"
+                    accept="image/*,.pdf"
+                    onChange={handleIdFileChange}
+                    className="sr-only"
+                  />
+                </label>
+              </div>
+            </div>
+
+            {idCardThumbnail && (
+              <div className="flex items-center gap-3 pt-1">
+                <img
+                  src={idCardThumbnail}
+                  alt="Aperçu pièce d'identité"
+                  className="h-14 w-22 object-cover rounded-md border border-slate-300"
+                />
+                <span className="text-xs text-emerald-700 font-medium">
+                  {isEn
+                    ? 'ID preview attached securely to your legal dossier.'
+                    : 'Aperçu de votre pièce d’identité joint au dossier légal.'}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Wi-Fi Connectivity Confirmation + Terms */}
+          <div className="space-y-3">
+            <label className="flex items-start gap-3 text-sm text-slate-800 bg-blue-50/60 border border-blue-100 rounded-lg p-3.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={wifiReady}
+                onChange={(e) => setWifiReady(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-700 focus:ring-blue-700"
+              />
+              <span className="flex items-center gap-2">
+                <Wifi className="w-4 h-4 text-blue-700 shrink-0" />
+                <span>
+                  {isEn
+                    ? 'I confirm I have reliable Wi-Fi / Internet connectivity to stream the animated audio driving courses and online state quiz.'
+                    : 'Je confirme disposer d’une connexion Wi-Fi / Internet active pour suivre les cours audio, animations et le QCM officiel en ligne.'}
+                </span>
+              </span>
+            </label>
+
+            <label className="flex items-start gap-3 text-sm text-slate-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-700 focus:ring-blue-700"
+              />
+              <span>
+                {isEn
+                  ? 'I certify that the legal information and ID card submitted to DrivePro Academy are authentic.'
+                  : 'Je certifie sur l’honneur l’exactitude de mon état civil, de mon adresse et de ma pièce d’identité transmise à DrivePro Academy.'}
+              </span>
+            </label>
+          </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
             <button
@@ -655,18 +914,18 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
         </form>
       )}
 
-      {/* Step 3: Mandatory Payment Gate (TapTap Send Priority Worldwide) */}
+      {/* Step 3: Payment Gate (TapTap Send Direct Link — NO recipient number displayed) */}
       {step === 3 && registration && !isUnlocked && (
         <form
           onSubmit={handleValidatePayment}
-          className="bg-white border border-slate-200 rounded-xl p-6 md:p-8 space-y-6"
+          className="bg-white/95 backdrop-blur border border-slate-200 rounded-xl p-6 md:p-8 space-y-6"
         >
           <div className="border-b border-slate-100 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h3 className="text-xl font-semibold text-slate-900">
                 {isEn
-                  ? 'Step 3 — Payment via TapTap Send or Local Method'
-                  : 'Étape 3 — Règlement prioritaire par TapTap Send ou moyen local'}
+                  ? 'Step 3 — Payment via Direct TapTap Send Link or Local Method'
+                  : 'Étape 3 — Paiement par lien direct TapTap Send ou moyen local'}
               </h3>
               <p className="text-sm text-slate-600 mt-1">
                 {isEn
@@ -693,12 +952,12 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
             </div>
           )}
 
-          {/* Method Picker with TapTap Send First */}
+          {/* Method Picker */}
           <div className="space-y-3">
             <label className="block text-xs font-semibold text-slate-700">
               {isEn
-                ? `Payment methods for ${country.nameEn} (TapTap Send recommended worldwide)`
-                : `Moyens de paiement pour ${country.nameFr} (TapTap Send prioritaire pour tous)`}
+                ? `Payment methods for ${country.nameEn} (TapTap Send Direct Link recommended)`
+                : `Moyens de paiement pour ${country.nameFr} (Lien direct TapTap Send prioritaire)`}
             </label>
             <div className="grid sm:grid-cols-2 gap-3">
               {country.paymentMethods.map((method) => {
@@ -711,9 +970,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                     onClick={() => setSelectedMethodId(method.id)}
                     className={`p-4 rounded-xl border text-left transition-colors flex items-start justify-between gap-3 cursor-pointer ${
                       selected
-                        ? isTapTap
-                          ? 'border-blue-700 bg-blue-50 ring-1 ring-blue-700'
-                          : 'border-blue-700 bg-blue-50/70 ring-1 ring-blue-700'
+                        ? 'border-blue-700 bg-blue-50 ring-1 ring-blue-700'
                         : 'border-slate-200 hover:border-slate-300'
                     }`}
                   >
@@ -739,112 +996,133 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
             </div>
           </div>
 
-          {/* Dedicated TapTap Send Direct Transfer Panel */}
+          {/* Direct TapTap Send Link Panel — Zero raw beneficiary phone displayed */}
           {activePaymentMethod?.id === 'taptap_send' && (
             <div className="bg-slate-900 text-white rounded-xl p-5 space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
                 <div>
                   <div className="text-xs font-mono text-blue-300">
-                    {isEn ? 'Direct TapTap Send Instructions' : 'Instructions de paiement direct TapTap Send'}
+                    {isEn
+                      ? 'Encrypted Direct Payment Link · TapTap Send'
+                      : 'Lien direct de paiement sécurisé · TapTap Send'}
                   </div>
                   <div className="text-base font-semibold mt-0.5">
                     {isEn
-                      ? `Send ${registration.baseFeeEur} € (${xofEquivalent.toLocaleString('en-US')} XOF) via TapTap Send`
-                      : `Envoyez ${registration.baseFeeEur} € (${xofEquivalent.toLocaleString('fr-FR')} FCFA) via TapTap Send`}
+                      ? `Amount to settle: €${registration.baseFeeEur} (${xofEquivalent.toLocaleString('en-US')} XOF)`
+                      : `Montant officiel : ${registration.baseFeeEur} € (${xofEquivalent.toLocaleString('fr-FR')} FCFA)`}
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleCopyTapTap}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg whitespace-nowrap shrink-0 cursor-pointer"
+                <a
+                  href={`${TAPTAP_SEND_CHECKOUT.paymentLinkUrl}?ref=${encodeURIComponent(registration.id)}&amount=${registration.baseFeeEur}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setLinkOpened(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg whitespace-nowrap shrink-0"
                 >
-                  {copiedTapTap ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  <ExternalLink className="w-4 h-4" />
                   <span>
-                    {copiedTapTap
-                      ? isEn
-                        ? 'Number Copied'
-                        : 'Numéro copié'
-                      : isEn
-                      ? 'Copy TapTap Number'
-                      : 'Copier le numéro'}
+                    {isEn
+                      ? 'Open TapTap Send Direct Link'
+                      : 'Ouvrir le lien de paiement TapTap Send'}
                   </span>
-                </button>
+                </a>
               </div>
 
-              <div className="grid sm:grid-cols-3 gap-4 text-xs">
+              <div className="grid sm:grid-cols-2 gap-4 text-xs">
                 <div>
                   <div className="text-slate-400">
-                    {isEn ? 'Destination Country' : 'Pays destinataire'}
+                    {isEn ? 'Accredited Account' : 'Compte bénéficiaire'}
                   </div>
                   <div className="font-semibold text-white mt-0.5">
-                    {isEn
-                      ? TAPTAP_SEND_BENEFICIARY.destinationCountryEn
-                      : TAPTAP_SEND_BENEFICIARY.destinationCountryFr}
+                    {TAPTAP_SEND_CHECKOUT.recipientLabel}
                   </div>
                 </div>
                 <div>
                   <div className="text-slate-400">
-                    {isEn ? 'Recipient Number (Mobile Money)' : 'Numéro bénéficiaire TapTap Send'}
+                    {isEn ? 'Payment Link Status' : 'État du lien de paiement'}
                   </div>
-                  <div className="font-mono font-bold text-amber-300 text-sm mt-0.5">
-                    {TAPTAP_SEND_BENEFICIARY.primaryDisplay}
-                  </div>
-                  <div className="font-mono text-[11px] text-slate-400">
-                    ({TAPTAP_SEND_BENEFICIARY.secondaryDisplay})
-                  </div>
-                </div>
-                <div>
-                  <div className="text-slate-400">
-                    {isEn ? 'Beneficiary' : 'Bénéficiaire'}
-                  </div>
-                  <div className="font-semibold text-white mt-0.5">
-                    {TAPTAP_SEND_BENEFICIARY.recipientName}
+                  <div className="font-mono text-emerald-300 mt-0.5">
+                    {linkOpened
+                      ? isEn
+                        ? 'Link opened — Enter your sender details below'
+                        : 'Lien ouvert — Saisissez vos coordonnées ci-dessous'
+                      : isEn
+                      ? 'Ready · Routed directly via secure beneficiary link'
+                      : 'Actif · Routage direct sans saisie manuelle de numéro'}
                   </div>
                 </div>
               </div>
 
               <p className="text-xs text-slate-300 leading-relaxed">
                 {isEn
-                  ? '1. Open the TapTap Send app · 2. Select Benin (Mobile Money) and send the exact amount to +229 01 42 85 12 46 · 3. Enter your TapTap Send transfer ID below to unlock your theory courses.'
-                  : '1. Ouvrez l’application TapTap Send · 2. Choisissez Bénin (Mobile Money) et envoyez le montant exact au +229 01 42 85 12 46 · 3. Saisissez votre référence de transfert TapTap Send ci-dessous pour débloquer vos cours.'}
+                  ? 'Click the TapTap Send button above to send your registration fee via the routed link, then enter your own sender details and transaction ID below to unlock your courses.'
+                  : 'Cliquez sur le bouton TapTap Send ci-dessus pour effectuer votre règlement via le lien direct, puis saisissez simplement vos propres coordonnées d’expéditeur et votre référence ci-dessous.'}
               </p>
             </div>
           )}
 
-          <div className="space-y-1.5">
-            <label className="block text-xs font-semibold text-slate-700">
-              {activePaymentMethod?.id === 'taptap_send'
-                ? isEn
-                  ? 'TapTap Send Transaction ID or Sender Phone Number'
-                  : 'ID de transaction TapTap Send (ou votre numéro d’envoi)'
-                : activePaymentMethod?.category === 'mobile_money'
-                ? isEn
-                  ? 'Mobile Money Number / BLIK / MobilePay ID'
-                  : 'Numéro Mobile Money / Code BLIK / MobilePay'
-                : activePaymentMethod?.category === 'bank'
-                ? isEn
-                  ? 'IBAN or Bank Transfer Reference'
-                  : 'IBAN ou référence de virement'
-                : isEn
-                ? 'Last 4 card digits or PayPal account email'
-                : '4 derniers chiffres de carte ou e-mail PayPal'}
-            </label>
-            <input
-              type="text"
-              required
-              value={paymentDetailInput}
-              onChange={(e) => setPaymentDetailInput(e.target.value)}
-              placeholder={
-                activePaymentMethod?.id === 'taptap_send'
-                  ? 'Ex: TTS-84920145 / +33 6 12 34 56 78'
+          {/* Client's own sender coordinates */}
+          <div className="grid md:grid-cols-3 gap-4">
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-slate-700">
+                {isEn ? 'Your Full Name (Sender) *' : 'Votre nom complet (expéditeur) *'}
+              </label>
+              <input
+                type="text"
+                required
+                value={senderName}
+                onChange={(e) => setSenderName(e.target.value)}
+                className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-slate-700">
+                {isEn ? 'Your Phone / Account Number *' : 'Votre téléphone d’envoi *'}
+              </label>
+              <input
+                type="text"
+                required
+                value={senderPhone}
+                onChange={(e) => setSenderPhone(e.target.value)}
+                placeholder={`${country.dialCode} ...`}
+                className="w-full px-3.5 py-2.5 text-sm font-mono border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-slate-700">
+                {activePaymentMethod?.id === 'taptap_send'
+                  ? isEn
+                    ? 'TapTap Send Transaction ID *'
+                    : 'Référence / ID de transaction *'
                   : activePaymentMethod?.category === 'mobile_money'
-                  ? `${country.dialCode} 97 00 00 00`
+                  ? isEn
+                    ? 'Mobile Money / BLIK / MobilePay ID *'
+                    : 'Référence Mobile Money / BLIK *'
                   : activePaymentMethod?.category === 'bank'
-                  ? 'FR76 3000 6000 0112 3456 7890 189'
-                  : '4242 / candidate@paypal.com'
-              }
-              className="w-full px-3.5 py-2.5 text-sm font-mono border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
-            />
+                  ? isEn
+                    ? 'IBAN / Transfer Reference *'
+                    : 'IBAN / Référence virement *'
+                  : isEn
+                  ? 'Last 4 card digits / PayPal Email *'
+                  : '4 derniers chiffres carte / Email PayPal *'}
+              </label>
+              <input
+                type="text"
+                required
+                value={paymentDetailInput}
+                onChange={(e) => setPaymentDetailInput(e.target.value)}
+                placeholder={
+                  activePaymentMethod?.id === 'taptap_send'
+                    ? 'Ex : TTS-928410'
+                    : activePaymentMethod?.category === 'bank'
+                    ? 'FR76 3000 ...'
+                    : 'Ex : 4242 / Ref-8841'
+                }
+                className="w-full px-3.5 py-2.5 text-sm font-mono border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
+              />
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
@@ -852,8 +1130,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
               <span>
                 {isEn
-                  ? 'Verified settlement · Atomic dossier unlock'
-                  : 'Paiement enregistré · Déblocage atomique des cours'}
+                  ? 'Verified settlement · Immediate dossier unlock'
+                  : 'Paiement sécurisé · Déblocage immédiat de vos cours'}
               </span>
             </div>
             <button
@@ -868,16 +1146,16 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
         </form>
       )}
 
-      {/* Step 4: Unlocked */}
+      {/* Step 4: Unlocked (Phone number STILL hidden until QCM passed!) */}
       {step === 4 && isUnlocked && registration && (
-        <div className="bg-white border border-emerald-200 rounded-xl p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="bg-white/95 backdrop-blur border border-emerald-200 rounded-xl p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-emerald-700 text-sm font-semibold">
               <CheckCircle2 className="w-5 h-5" />
               <span>
                 {isEn
-                  ? 'Payment Confirmed & Sequential Courses Unlocked'
-                  : 'Paiement confirmé & Cours séquentiels débloqués'}
+                  ? 'Payment Confirmed & Sequential Audio Courses Unlocked'
+                  : 'Paiement confirmé & Cours audio animés débloqués'}
               </span>
             </div>
             <h3 className="text-2xl font-semibold text-slate-900">
@@ -887,8 +1165,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
             </h3>
             <p className="text-sm text-slate-600 max-w-2xl">
               {isEn
-                ? 'Complete Courses 1 through 4, study the final readiness guide, and pass the practice exam (≥75%) to unlock your direct France WhatsApp contact (+33 7 72 03 46 89).'
-                : 'Suivez les cours 1 à 4 dans l’ordre, validez le module Comment étudier et réussissez le QCM (≥75%) pour débloquer le contact direct WhatsApp France (+33 7 72 03 46 89).'}
+                ? 'Study Courses 01–04 with voice explanations and interactive diagrams, validate Module 05 (How to Study), and pass the official quiz (≥75%) to receive the direct contact for your final physical tests.'
+                : 'Suivez les cours 01 à 04 avec explications audio et images animées, validez le module Comment étudier puis réussissez le QCM officiel (≥75 %) pour obtenir le contact de rendez-vous des épreuves physiques.'}
             </p>
           </div>
           <button

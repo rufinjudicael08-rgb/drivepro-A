@@ -8,6 +8,8 @@ export type DossierStatus = 'locked' | 'queue' | 'code_unlocked' | 'practical_re
 
 export type SocialPlatform = 'TikTok' | 'Facebook' | 'Instagram';
 
+export type IdCardType = 'CNI' | 'Passeport' | 'Titre de séjour';
+
 export interface CountryConfig {
   code: string;
   nameFr: string;
@@ -36,9 +38,15 @@ export interface RegistrationRecord {
   fullName: string;
   email: string;
   phone: string;
+  address: string;
+  city: string;
+  wifiReady: boolean;
+  idCardType: IdCardType;
+  idCardNumber: string;
+  idCardFileName: string;
+  idCardThumbnail: string;
   countryCode: string;
   countryName: string;
-  city: string;
   licenseCategory: LicenseCategory;
   preferredLanguage: string;
   currency: string;
@@ -64,6 +72,8 @@ export interface PaymentLogRecord {
   registrationId: string;
   userId: string;
   candidateName: string;
+  senderName: string;
+  senderPhone: string;
   countryCode: string;
   currency: string;
   baseAmountEur: number;

@@ -2,7 +2,7 @@
   "entities": {
     "Registration": {
       "title": "Candidate Registration",
-      "description": "Candidate driving school dossier, country/currency selection, category-based EUR fee, locked funnel state, sequential course progress, and practical readiness.",
+      "description": "Candidate driving school dossier including legal address, Wi-Fi readiness, mandatory ID card verification, category-based EUR fee (200-350 EUR), locked funnel state, sequential course progress, and physical exam readiness.",
       "type": "object",
       "properties": {
         "id": {
@@ -31,17 +31,43 @@
           "minLength": 5,
           "maxLength": 30
         },
+        "address": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 180
+        },
+        "city": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "wifiReady": {
+          "type": "boolean"
+        },
+        "idCardType": {
+          "type": "string",
+          "enum": ["CNI", "Passeport", "Titre de séjour"]
+        },
+        "idCardNumber": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 60
+        },
+        "idCardFileName": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 120
+        },
+        "idCardThumbnail": {
+          "type": "string",
+          "maxLength": 90000
+        },
         "countryCode": {
           "type": "string",
           "minLength": 2,
           "maxLength": 3
         },
         "countryName": {
-          "type": "string",
-          "minLength": 2,
-          "maxLength": 100
-        },
-        "city": {
           "type": "string",
           "minLength": 2,
           "maxLength": 100
@@ -122,9 +148,15 @@
         "fullName",
         "email",
         "phone",
+        "address",
+        "city",
+        "wifiReady",
+        "idCardType",
+        "idCardNumber",
+        "idCardFileName",
+        "idCardThumbnail",
         "countryCode",
         "countryName",
-        "city",
         "licenseCategory",
         "preferredLanguage",
         "currency",
@@ -147,7 +179,7 @@
     },
     "PaymentLog": {
       "title": "Payment Log",
-      "description": "Immutable payment audit log for category registration fee settlement (TapTap Send, Card, SEPA, Mobile Money).",
+      "description": "Immutable payment audit log for category registration fee settlement with sender coordinates.",
       "type": "object",
       "properties": {
         "id": {
@@ -171,6 +203,14 @@
           "type": "string",
           "minLength": 2,
           "maxLength": 100
+        },
+        "senderName": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "senderPhone": {
+          "type": "string",
+          "maxLength": 40
         },
         "countryCode": {
           "type": "string",
@@ -212,6 +252,8 @@
         "registrationId",
         "userId",
         "candidateName",
+        "senderName",
+        "senderPhone",
         "countryCode",
         "currency",
         "baseAmountEur",
@@ -224,7 +266,7 @@
     },
     "SocialLink": {
       "title": "Social Tracking Link",
-      "description": "Agent campaign link for TikTok, Facebook, and Instagram lead capture tracking.",
+      "description": "Creator-only campaign tracking links for TikTok, Facebook, and Instagram lead capture.",
       "type": "object",
       "properties": {
         "id": {
@@ -350,7 +392,7 @@
       "schema": {
         "$ref": "#/entities/Registration"
       },
-      "description": "Candidate registration documents gated by payment verification."
+      "description": "Candidate registration documents gated by payment verification and legal ID."
     },
     "/payments/{paymentId}": {
       "schema": {
@@ -362,7 +404,7 @@
       "schema": {
         "$ref": "#/entities/SocialLink"
       },
-      "description": "Tracked social media campaign links managed by agents and admins."
+      "description": "Tracked social media campaign links managed exclusively by the site creator/admin."
     },
     "/quiz_attempts/{attemptId}": {
       "schema": {

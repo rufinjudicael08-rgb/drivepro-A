@@ -1,13 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { CloudRain, Play, RotateCcw, Shield, Sun } from 'lucide-react';
+import { CloudRain, Play, RotateCcw, Shield, Sun, Volume2 } from 'lucide-react';
 import { CodeLessonModule } from '../data/curriculum';
 
 interface CourseAnimationProps {
   type: CodeLessonModule['animationType'];
   lang: string;
+  onSpeakAnimation?: (text: string, label: string) => void;
 }
 
-export const CourseAnimation: React.FC<CourseAnimationProps> = ({ type, lang }) => {
+export const CourseAnimation: React.FC<CourseAnimationProps> = ({
+  type,
+  lang,
+  onSpeakAnimation,
+}) => {
   const isFr = lang !== 'en';
 
   // State for signals animation
@@ -44,6 +49,22 @@ export const CourseAnimation: React.FC<CourseAnimationProps> = ({ type, lang }) 
     return () => clearInterval(id);
   }, []);
 
+  const renderAudioButton = (spokenFr: string, spokenEn: string, labelFr: string, labelEn: string) => {
+    if (!onSpeakAnimation) return null;
+    return (
+      <button
+        type="button"
+        onClick={() =>
+          onSpeakAnimation(isFr ? spokenFr : spokenEn, isFr ? labelFr : labelEn)
+        }
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+      >
+        <Volume2 className="w-3.5 h-3.5" />
+        <span>{isFr ? 'Écouter ce schéma' : 'Listen to Diagram'}</span>
+      </button>
+    );
+  };
+
   if (type === 'signals') {
     const stopAtLine = officerActive;
     const visualX = stopAtLine ? Math.min(carPos * 1.4, 120) : 40 + carPos * 2.4;
@@ -61,36 +82,44 @@ export const CourseAnimation: React.FC<CourseAnimationProps> = ({ type, lang }) 
                 : 'Police Officer vs Green Traffic Light'}
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setOfficerActive((v) => !v)}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+          <div className="flex flex-wrap items-center gap-2">
+            {renderAudioButton(
               officerActive
-                ? 'bg-amber-500 text-slate-950'
-                : 'bg-emerald-600 text-white'
-            }`}
-          >
-            {officerActive
-              ? isFr
-                ? 'Agent : Bras levé (Arrêt obligatoire)'
-                : 'Officer: Raised Arm (Must Stop)'
-              : isFr
-              ? 'Agent absent : Feu vert actif'
-              : 'No Officer: Green Light Active'}
-          </button>
+                ? 'Regardez la voiture bleue sur ce schéma animé : même si le feu tricolore devant elle est vert, elle s’arrête devant la ligne blanche parce que l’agent de police lève le bras. L’agent annule toujours les feux.'
+                : 'Sur ce schéma, aucun agent ne dirige la circulation : le feu vert reprend donc immédiatement le commandement et autorise le passage.',
+              officerActive
+                ? 'Watch the blue car in this diagram: even though the traffic light is green, it stops at the white line because the police officer has raised their arm. Officer signals always override traffic lights.'
+                : 'With no officer present in the intersection, the green signal governs traffic and permits safe passage.',
+              'Explication audio · Animation Hiérarchie',
+              'Audio Guide · Signal Hierarchy'
+            )}
+            <button
+              type="button"
+              onClick={() => setOfficerActive((v) => !v)}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+                officerActive
+                  ? 'bg-amber-500 text-slate-950'
+                  : 'bg-emerald-600 text-white'
+              }`}
+            >
+              {officerActive
+                ? isFr
+                  ? 'Agent : Bras levé (Arrêt obligatoire)'
+                  : 'Officer: Raised Arm (Must Stop)'
+                : isFr
+                ? 'Agent absent : Feu vert actif'
+                : 'No Officer: Green Light Active'}
+            </button>
+          </div>
         </div>
 
         <svg viewBox="0 0 420 140" className="w-full h-36 bg-slate-800 rounded-lg">
-          {/* Road */}
           <rect x="0" y="45" width="420" height="70" fill="#334155" />
           <line x1="0" y1="80" x2="420" y2="80" stroke="#94A3B8" strokeWidth="2" strokeDasharray="12 10" />
-          {/* Stop line */}
           <rect x="195" y="48" width="6" height="64" fill="#FFFFFF" />
-          {/* Traffic Light (Always Green in demo) */}
           <rect x="215" y="10" width="22" height="36" rx="4" fill="#0F172A" stroke="#64748B" />
           <circle cx="226" cy="20" r="4" fill="#334155" />
           <circle cx="226" cy="34" r="5" fill="#22C55E" />
-          {/* Police Officer */}
           {officerActive && (
             <g transform="translate(260, 18)">
               <circle cx="12" cy="10" r="7" fill="#60A5FA" />
@@ -101,7 +130,6 @@ export const CourseAnimation: React.FC<CourseAnimationProps> = ({ type, lang }) 
               </text>
             </g>
           )}
-          {/* Animated Car */}
           <g transform={`translate(${visualX}, 85)`}>
             <rect x="0" y="0" width="52" height="22" rx="5" fill="#3B82F6" />
             <rect x="10" y="3" width="24" height="16" rx="2" fill="#BFDBFE" />
@@ -142,39 +170,46 @@ export const CourseAnimation: React.FC<CourseAnimationProps> = ({ type, lang }) 
               {isFr ? 'Trajectoire et priorité dans l’anneau' : 'Lane Choice & Ring Priority'}
             </div>
           </div>
-          <div className="flex gap-1.5 bg-slate-800 p-1 rounded-lg">
-            <button
-              type="button"
-              onClick={() => setRoundaboutPath('right')}
-              className={`px-3 py-1 text-xs font-semibold rounded-md cursor-pointer ${
-                roundaboutPath === 'right' ? 'bg-blue-600 text-white' : 'text-slate-300'
-              }`}
-            >
-              {isFr ? 'Droite / Tout droit' : 'Right / Straight'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setRoundaboutPath('left')}
-              className={`px-3 py-1 text-xs font-semibold rounded-md cursor-pointer ${
-                roundaboutPath === 'left' ? 'bg-blue-600 text-white' : 'text-slate-300'
-              }`}
-            >
-              {isFr ? 'Gauche / Demi-tour' : 'Left / U-Turn'}
-            </button>
+          <div className="flex flex-wrap items-center gap-2">
+            {renderAudioButton(
+              roundaboutPath === 'right'
+                ? 'Le point rouge circule déjà dans le carrefour à sens giratoire : il est donc prioritaire. Pour sortir à droite ou tout droit, suivez la ligne verte extérieure et mettez votre clignotant droit avant de quitter l’anneau.'
+                : 'Pour tourner à gauche ou faire demi-tour, engagez-vous sur la trajectoire orange intérieure avec le clignotant gauche, laissez passer le véhicule rouge déjà présent, puis rabattez-vous à droite avec le clignotant droit juste avant votre sortie.',
+              roundaboutPath === 'right'
+                ? 'The red marker is already inside the roundabout ring and holds priority. Follow the green outer lane to exit right or straight while signaling right.'
+                : 'For left turns or U-turns, follow the amber inner lane with your left indicator, yield to the red circulating car, and signal right before exiting.',
+              'Explication audio · Animation Giratoire',
+              'Audio Guide · Roundabout Animation'
+            )}
+            <div className="flex gap-1.5 bg-slate-800 p-1 rounded-lg">
+              <button
+                type="button"
+                onClick={() => setRoundaboutPath('right')}
+                className={`px-3 py-1 text-xs font-semibold rounded-md cursor-pointer ${
+                  roundaboutPath === 'right' ? 'bg-blue-600 text-white' : 'text-slate-300'
+                }`}
+              >
+                {isFr ? 'Droite / Tout droit' : 'Right / Straight'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setRoundaboutPath('left')}
+                className={`px-3 py-1 text-xs font-semibold rounded-md cursor-pointer ${
+                  roundaboutPath === 'left' ? 'bg-blue-600 text-white' : 'text-slate-300'
+                }`}
+              >
+                {isFr ? 'Gauche / Demi-tour' : 'Left / U-Turn'}
+              </button>
+            </div>
           </div>
         </div>
 
         <svg viewBox="0 0 380 180" className="w-full h-44 bg-slate-800 rounded-lg">
-          {/* Roads */}
           <rect x="115" y="0" width="50" height="180" fill="#334155" />
           <rect x="20" y="65" width="240" height="50" fill="#334155" />
-          {/* Outer ring */}
           <circle cx={cx} cy={cy} r="64" fill="#334155" stroke="#94A3B8" strokeWidth="2" />
-          {/* Inner lane dashed */}
           <circle cx={cx} cy={cy} r="44" fill="none" stroke="#CBD5E1" strokeWidth="1.5" strokeDasharray="6 6" />
-          {/* Center island */}
           <circle cx={cx} cy={cy} r="24" fill="#1E293B" stroke="#64748B" strokeWidth="2" />
-          {/* Highlighted trajectory */}
           {roundaboutPath === 'right' ? (
             <path
               d="M 152 175 L 152 142 Q 192 135 198 92 L 255 92"
@@ -192,9 +227,7 @@ export const CourseAnimation: React.FC<CourseAnimationProps> = ({ type, lang }) 
               strokeDasharray="6 4"
             />
           )}
-          {/* Circulating priority vehicle */}
           <circle cx={ringCarX} cy={ringCarY} r="7" fill="#EF4444" stroke="#FFFFFF" strokeWidth="2" />
-          {/* Legend */}
           <g transform="translate(270, 32)">
             <circle cx="8" cy="10" r="6" fill="#EF4444" />
             <text x="20" y="14" fill="#E2E8F0" fontSize="10">
@@ -247,7 +280,13 @@ export const CourseAnimation: React.FC<CourseAnimationProps> = ({ type, lang }) 
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {renderAudioButton(
+              `À ${speed} kilomètres par heure sur ${wetRoad ? 'chaussée mouillée' : 'sol sec'}, vous parcourez ${reactionMeters} mètres pendant votre seconde de réaction, puis ${brakingMeters} mètres en freinant, soit ${totalMeters} mètres au total avant l’arrêt complet.`,
+              `At ${speed} kilometers per hour on a ${wetRoad ? 'wet' : 'dry'} road, you cover ${reactionMeters} meters during your one-second reaction time plus ${brakingMeters} meters braking, totaling ${totalMeters} meters to stop completely.`,
+              `Explication audio · Freinage à ${speed} km/h`,
+              `Audio Guide · Braking at ${speed} km/h`
+            )}
             <button
               type="button"
               onClick={() => setWetRoad((w) => !w)}
@@ -311,7 +350,7 @@ export const CourseAnimation: React.FC<CourseAnimationProps> = ({ type, lang }) 
               className="absolute top-1.5 w-6 h-6 rounded bg-white text-slate-900 text-[10px] font-bold flex items-center justify-center shadow transition-all duration-1000"
               style={{ left: brakingRun ? 'calc(100% - 28px)' : '4px' }}
             >
-              🚗
+              CAR
             </div>
           </div>
           <div className="flex flex-wrap justify-between text-xs text-slate-300 font-mono tabular-nums">
@@ -342,21 +381,29 @@ export const CourseAnimation: React.FC<CourseAnimationProps> = ({ type, lang }) 
               {isFr ? 'Régime moteur optimal & Zone de sécurité' : 'Optimal Engine RPM & Motorway Safety'}
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setEcoMode((e) => !e)}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg cursor-pointer ${
-              ecoMode ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'
-            }`}
-          >
-            {ecoMode
-              ? isFr
-                ? 'Éco-conduite : 2 000 tr/min (-18% CO₂)'
-                : 'Eco-Driving: 2,000 RPM (-18% CO₂)'
-              : isFr
-              ? 'Sur-régime : 3 900 tr/min (+25% conso)'
-              : 'High RPM: 3,900 RPM (+25% fuel)'}
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            {renderAudioButton(
+              'Sur le cadran de gauche, maintenir le moteur autour de deux mille tours par minute permet d’économiser jusqu’à dix-huit pour cent de carburant. À droite, en cas de panne sur autoroute, enfilez votre gilet jaune à bord et faites passer tous les passagers derrière la glissière de sécurité.',
+              'On the left meter, shifting early around 2,000 RPM cuts fuel consumption by up to 18 percent. On the right, during a motorway breakdown, wear high-vis vests inside the car and stand behind the safety guardrail.',
+              'Explication audio · Éco-conduite & Urgence',
+              'Audio Guide · Eco & Safety'
+            )}
+            <button
+              type="button"
+              onClick={() => setEcoMode((e) => !e)}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg cursor-pointer ${
+                ecoMode ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'
+              }`}
+            >
+              {ecoMode
+                ? isFr
+                  ? 'Éco-conduite : 2 000 tr/min (-18% CO₂)'
+                  : 'Eco-Driving: 2,000 RPM (-18% CO₂)'
+                : isFr
+                ? 'Sur-régime : 3 900 tr/min (+25% conso)'
+                : 'High RPM: 3,900 RPM (+25% fuel)'}
+            </button>
+          </div>
         </div>
 
         <div className="grid sm:grid-cols-2 gap-4 text-xs">
@@ -399,8 +446,16 @@ export const CourseAnimation: React.FC<CourseAnimationProps> = ({ type, lang }) 
   // Study guide animation
   return (
     <div className="bg-slate-900 text-white rounded-xl p-5 space-y-4">
-      <div className="text-xs font-mono text-blue-300">
-        {isFr ? 'Méthode officielle · 20 secondes par question' : 'Official Method · 20 Seconds Per Question'}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="text-xs font-mono text-blue-300">
+          {isFr ? 'Méthode officielle animée · 20 secondes par question' : 'Animated Exam Method · 20 Seconds Per Question'}
+        </div>
+        {renderAudioButton(
+          'Voici la routine en trois étapes qui s’illumine devant vous : d’abord les rétroviseurs, ensuite les panneaux et le marquage au sol, et enfin les usagers vulnérables comme les piétons et les cyclistes. Appliquez cette méthode dans cet ordre exact sur chaque image du QCM.',
+          'Follow the illuminated three-step scan: mirrors first, traffic signs and markings second, and vulnerable pedestrians or cyclists third before selecting your answer.',
+          'Explication audio · Routine 20 secondes',
+          'Audio Guide · 20-Second Scan'
+        )}
       </div>
       <div className="grid sm:grid-cols-3 gap-3">
         {[
