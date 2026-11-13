@@ -14,19 +14,19 @@ export function getCategoryFeeEur(category: LicenseCategory): number {
 export const TAPTAP_SEND_CHECKOUT = {
   paymentLinkUrlFr: 'https://www.taptapsend.com/fr',
   paymentLinkUrlEn: 'https://www.taptapsend.com/en',
-  destinationCountryFr: 'Transfert International Sécurisé · TapTap Send',
-  destinationCountryEn: 'Secure International Transfer · TapTap Send',
-  recipientLabel: 'DrivePro Academy · Service Paiements Agréé',
-  linkReference: 'DP-TTS-OFFICIAL',
+  destinationCountryFr: 'Transfert International Sécurisé',
+  destinationCountryEn: 'Secure International Transfer',
+  recipientLabel: 'Driveo Academy · Service Paiements',
+  linkReference: 'DP-OFFICIEL',
 };
 
 export const PAYMENT_TAPTAP_SEND: PaymentMethodOption = {
   id: 'taptap_send',
-  labelFr: 'TapTap Send (Paiement Officiel Unique)',
-  labelEn: 'TapTap Send (Official Payment)',
+  labelFr: 'Télépaiement Officiel',
+  labelEn: 'Official E-Payment',
   category: 'taptap_send',
-  hintFr: 'Ouvrez TapTap Send, effectuez le transfert puis saisissez votre ID de reçu et votre capture.',
-  hintEn: 'Open TapTap Send, send your transfer, then enter your receipt ID and proof.',
+  hintFr: 'Ouvrez le lien officiel, effectuez le règlement puis saisissez votre ID de transaction et votre code.',
+  hintEn: 'Open the official link, complete payment, then enter your transaction ID and code.',
 };
 
 const PAYMENT_CARD: PaymentMethodOption = {

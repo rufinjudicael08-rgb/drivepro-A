@@ -91,11 +91,30 @@
   transform-origin: bottom;
 }
 
+@keyframes driveoMarquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: driveoMarquee 32s linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-kenburns-a,
   .animate-kenburns-b,
   .animate-kenburns-c,
-  .animate-audio-bar {
+  .animate-audio-bar,
+  .animate-marquee {
     animation: none !important;
     transform: none !important;
   }

@@ -451,6 +451,62 @@
         "createdAt",
         "updatedAt"
       ]
+    },
+    "ContactMessage": {
+      "title": "Contact Question Message",
+      "description": "Questions and contact inquiries submitted by visitors and candidates.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "fullName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 150
+        },
+        "phone": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "subject": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "message": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 1500
+        },
+        "status": {
+          "type": "string",
+          "enum": ["new", "replied"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "fullName",
+        "email",
+        "phone",
+        "subject",
+        "message",
+        "status",
+        "createdAt"
+      ]
     }
   },
   "firestore": {
@@ -483,6 +539,12 @@
         "$ref": "#/entities/QuizAttempt"
       },
       "description": "Online code theory practice quiz attempts by verified candidates."
+    },
+    "/contact_messages/{messageId}": {
+      "schema": {
+        "$ref": "#/entities/ContactMessage"
+      },
+      "description": "Visitor and candidate questions stored for email and creator inbox follow-up."
     }
   }
 }

@@ -135,3 +135,14 @@ export interface InstructorProfile {
   experienceYears: number;
   avatarUrl: string;
 }
+
+export interface ContactMessageRecord {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  subject: string;
+  message: string;
+  status: 'new' | 'replied';
+  createdAt?: unknown;
+}

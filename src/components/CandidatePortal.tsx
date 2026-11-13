@@ -371,7 +371,7 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
 
   const whatsappText = encodeURIComponent(
     isEn
-      ? `Hello DrivePro Coordinator, I am ${registration.fullName} (${registration.countryName}, Dossier #${registration.queueNumber}, Permit ${registration.licenseCategory}, ID ${registration.idCardNumber || 'validated'}). I completed all 5 audio courses and passed the theory quiz (${registration.quizBestScore}%). I would like to schedule my final physical tests to obtain my license.`
+      ? `Hello Driveo Academy Coordinator, I am ${registration.fullName} (${registration.countryName}, Dossier #${registration.queueNumber}, Permit ${registration.licenseCategory}, ID ${registration.idCardNumber || 'validated'}). I completed all 5 audio courses and passed the theory quiz (${registration.quizBestScore}%). I would like to schedule my final physical tests to obtain my license.`
       : `Bonjour, je suis ${registration.fullName} (${registration.countryName}, Dossier #${registration.queueNumber}, Permis ${registration.licenseCategory}, Pièce ${registration.idCardNumber || 'validée'}). J’ai terminé les 5 cours audio séquentiels et réussi le QCM officiel avec ${registration.quizBestScore}%. Je souhaite fixer mon rendez-vous pour achever les épreuves physiques et recevoir mon permis.`
   );
 
@@ -1126,15 +1126,15 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                           <div className="space-y-1">
                             <div className="text-xs font-mono text-emerald-400 font-bold">
                               {isEn
-                                ? 'PHYSICAL TEST COORDINATOR ASSIGNED · DRIVEPRO ACADEMY'
-                                : 'RESPONSABLE ASSIGNÉ POUR VOS ÉPREUVES PHYSIQUES · DRIVEPRO ACADEMY'}
+                                ? 'PHYSICAL TEST COORDINATOR ASSIGNED · DRIVEO ACADEMY'
+                                : 'RESPONSABLE ASSIGNÉ POUR VOS ÉPREUVES PHYSIQUES · DRIVEO ACADEMY'}
                             </div>
                             <h4 className="text-lg font-bold">
                               {assignedInstructor.name} · {PARIS_HQ_CONTACT.displayPhone}
                             </h4>
                             <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
                               {isEn
-                                ? 'To receive your driving license, contact DrivePro Academy directly below to schedule your final physical driving tests. Review all exam corrections right underneath.'
+                                ? 'To receive your driving license, contact Driveo Academy directly below to schedule your final physical driving tests. Review all exam corrections right underneath.'
                                 : 'Pour obtenir votre permis proprement dit, contactez directement ce responsable par appel ou WhatsApp pour fixer votre rendez-vous et achever vos épreuves physiques. Retrouvez aussi votre correction complète ci-dessous.'}
                             </p>
                           </div>

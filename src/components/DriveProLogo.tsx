@@ -9,49 +9,35 @@ export const DriveProLogo: React.FC<DriveProLogoProps> = ({
   dark = false,
   size = 'md',
 }) => {
-  const iconDim = size === 'sm' ? 'w-8 h-8' : 'w-10 h-10';
-  const textSize = size === 'sm' ? 'text-base' : 'text-lg sm:text-xl';
+  const iconDim = size === 'sm' ? 'w-7 h-7' : 'w-9 h-9';
+  const textSize = size === 'sm' ? 'text-base' : 'text-lg';
 
   return (
     <span className="inline-flex items-center gap-2.5 whitespace-nowrap shrink-0">
       <svg
-        viewBox="0 0 44 44"
-        className={`${iconDim} shrink-0 drop-shadow-sm`}
+        viewBox="0 0 40 40"
+        className={`${iconDim} shrink-0`}
         aria-hidden="true"
       >
         <defs>
-          <linearGradient id="drivAcadCrest" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id="dpShieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#1D4ED8" />
-            <stop offset="55%" stopColor="#0F172A" />
-            <stop offset="100%" stopColor="#1E3A8A" />
-          </linearGradient>
-          <linearGradient id="drivAcadGold" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#FBBF24" />
-            <stop offset="100%" stopColor="#D97706" />
+            <stop offset="100%" stopColor="#0F172A" />
           </linearGradient>
         </defs>
-        <rect
-          x="1"
-          y="1"
-          width="42"
-          height="42"
-          rx="11"
-          fill="url(#drivAcadCrest)"
-          stroke="url(#drivAcadGold)"
-          strokeWidth="1.8"
-        />
-        {/* Institutional Steering Crest & Road Horizon */}
+        <rect width="40" height="40" rx="10" fill="url(#dpShieldGrad)" />
+        {/* Original Steering Wheel + Emerald Center Hub */}
         <circle
-          cx="22"
-          cy="22"
-          r="12"
+          cx="20"
+          cy="20"
+          r="11.5"
           fill="none"
           stroke="#FFFFFF"
           strokeWidth="2.4"
         />
-        <circle cx="22" cy="22" r="3.4" fill="#FBBF24" />
+        <circle cx="20" cy="20" r="3.2" fill="#34D399" />
         <path
-          d="M11 20.5h7.4M25.6 20.5H33M22 25.4V33.5"
+          d="M9.5 18.5h7.2M23.3 18.5h7.2M20 23.2V31"
           stroke="#FFFFFF"
           strokeWidth="2.2"
           strokeLinecap="round"
@@ -62,8 +48,8 @@ export const DriveProLogo: React.FC<DriveProLogoProps> = ({
           dark ? 'text-white' : 'text-slate-900'
         }`}
       >
-        Driv’{' '}
-        <span className={dark ? 'text-amber-400' : 'text-blue-700'}>
+        <span className={dark ? 'text-blue-400' : 'text-blue-700'}>Driveo</span>{' '}
+        <span className={`font-semibold ${dark ? 'text-slate-200' : 'text-slate-700'}`}>
           Academy
         </span>
       </span>

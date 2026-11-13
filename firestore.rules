@@ -179,6 +179,23 @@ service cloud.firestore {
       && data.createdAt is timestamp;
     }
 
+    function isValidContactMessage(data) {
+      return data.keys().hasAll([
+        'id', 'fullName', 'email', 'phone', 'subject', 'message', 'status', 'createdAt'
+      ])
+      && data.keys().hasOnly([
+        'id', 'fullName', 'email', 'phone', 'subject', 'message', 'status', 'createdAt'
+      ])
+      && isValidId(data.id)
+      && data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 100
+      && data.email is string && data.email.size() >= 5 && data.email.size() <= 150
+      && data.phone is string && data.phone.size() >= 1 && data.phone.size() <= 40
+      && data.subject is string && data.subject.size() >= 1 && data.subject.size() <= 120
+      && data.message is string && data.message.size() >= 5 && data.message.size() <= 1500
+      && data.status in ['new', 'replied']
+      && data.createdAt is timestamp;
+    }
+
     match /admins/{adminId} {
       allow get: if isVerified() && (request.auth.uid == adminId || isBootstrappedAdmin());
       allow list: if isBootstrappedAdmin();
@@ -338,6 +355,25 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/registrations/$(incoming().registrationId)).data.paymentStatus in ['paid', 'verified'];
 
       allow update, delete: if isAdmin() && isValidId(attemptId);
+    }
+
+    match /contact_messages/{messageId} {
+      allow get: if isAdmin() && isValidId(messageId);
+      allow list: if isBootstrappedAdmin();
+
+      allow create: if isValidId(messageId)
+        && isValidContactMessage(incoming())
+        && incoming().id == messageId
+        && incoming().status == 'new'
+        && incoming().createdAt == request.time;
+
+      allow update: if isAdmin()
+        && isValidId(messageId)
+        && isValidContactMessage(incoming())
+        && incoming().id == existing().id
+        && incoming().createdAt == existing().createdAt;
+
+      allow delete: if isAdmin() && isValidId(messageId);
     }
   }
 }

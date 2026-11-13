@@ -50,7 +50,7 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
     WORLD_LANGUAGES.find((l) => l.code === lang) || WORLD_LANGUAGES[0];
 
   return (
-    <div className="relative z-40 bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-sm">
+    <div className="relative z-40 flex justify-start">
       {openMenu && (
         <div
           className="fixed inset-0 z-40"
@@ -59,30 +59,27 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
         />
       )}
 
-      <div className="relative z-50 flex flex-wrap items-center justify-between gap-3">
-        {/* Left: Permit Display Currency Selector (World Currencies) */}
-        <div className="relative flex-1 min-w-[230px]">
+      {/* Compact Side-by-Side Frame: Globe Country + Language */}
+      <div className="relative z-50 inline-flex flex-wrap items-center gap-2 bg-white/95 backdrop-blur border border-slate-200 rounded-xl p-1.5 shadow-sm">
+        {/* Compact Globe / Country Picker */}
+        <div className="relative">
           <button
             type="button"
             onClick={() =>
               setOpenMenu((prev) => (prev === 'country' ? null : 'country'))
             }
-            className="w-full flex items-center justify-between gap-3 px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-300 rounded-lg text-sm font-semibold text-slate-900 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 transition-colors cursor-pointer whitespace-nowrap"
           >
-            <span className="flex items-center gap-2.5 truncate">
-              <Globe className="w-4 h-4 text-blue-700 shrink-0" />
-              <span className="truncate">
-                {isEn ? 'Permit Currency:' : 'Permis · Devise :'} {selectedCountry.currency}
-              </span>
-              <span className="text-xs font-mono text-slate-500">
-                ({getCountryFlagEmoji(selectedCountry.code)})
-              </span>
+            <Globe className="w-4 h-4 text-blue-700 shrink-0" />
+            <span>{getCountryFlagEmoji(selectedCountry.code)}</span>
+            <span className="max-w-[135px] truncate">
+              {isEn ? selectedCountry.nameEn : selectedCountry.nameFr}
             </span>
-            <ChevronDown className="w-4 h-4 text-slate-500 shrink-0" />
+            <ChevronDown className="w-3.5 h-3.5 text-slate-500 shrink-0" />
           </button>
 
           {openMenu === 'country' && (
-            <div className="absolute left-0 top-full mt-2 z-[70] w-full sm:w-80 bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden">
+            <div className="absolute left-0 top-full mt-2 z-[70] w-72 bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden">
               <div className="p-2.5 border-b border-slate-100 bg-slate-50">
                 <div className="relative">
                   <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -91,7 +88,7 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
                     value={countrySearch}
                     onChange={(e) => setCountrySearch(e.target.value)}
                     placeholder={
-                      isEn ? 'Search currency or zone...' : 'Rechercher une devise...'
+                      isEn ? 'Search country...' : 'Rechercher un pays...'
                     }
                     className="w-full pl-8 pr-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
                     autoFocus
@@ -110,7 +107,7 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
                         setOpenMenu(null);
                         setCountrySearch('');
                       }}
-                      className={`w-full px-3.5 py-2.5 flex items-center justify-between text-left text-xs transition-colors cursor-pointer ${
+                      className={`w-full px-3.5 py-2 flex items-center justify-between text-left text-xs transition-colors cursor-pointer ${
                         active
                           ? 'bg-blue-50 text-blue-900 font-semibold'
                           : 'hover:bg-slate-50 text-slate-800'
@@ -131,27 +128,25 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
           )}
         </div>
 
-        {/* Right: Language Picker */}
-        <div className="relative min-w-[215px]">
+        {/* Compact Language Picker */}
+        <div className="relative">
           <button
             type="button"
             onClick={() =>
               setOpenMenu((prev) => (prev === 'lang' ? null : 'lang'))
             }
-            className="w-full flex items-center justify-between gap-3 px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-300 rounded-lg text-sm font-semibold text-slate-900 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 transition-colors cursor-pointer whitespace-nowrap"
           >
-            <span className="flex items-center gap-2 truncate">
-              <Languages className="w-4 h-4 text-blue-700 shrink-0" />
-              <span className="truncate">{currentLangObj.nativeName}</span>
-              <span className="text-xs font-mono text-slate-500 uppercase">
-                {currentLangObj.code}
-              </span>
+            <Languages className="w-4 h-4 text-blue-700 shrink-0" />
+            <span className="max-w-[110px] truncate">{currentLangObj.nativeName}</span>
+            <span className="text-[11px] font-mono text-slate-500 uppercase">
+              {currentLangObj.code}
             </span>
-            <ChevronDown className="w-4 h-4 text-slate-500 shrink-0" />
+            <ChevronDown className="w-3.5 h-3.5 text-slate-500 shrink-0" />
           </button>
 
           {openMenu === 'lang' && (
-            <div className="absolute right-0 top-full mt-2 z-[70] w-72 bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden">
+            <div className="absolute left-0 sm:right-0 sm:left-auto top-full mt-2 z-[70] w-68 bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden">
               <div className="p-2.5 border-b border-slate-100 bg-slate-50">
                 <div className="relative">
                   <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -160,7 +155,7 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
                     value={langSearch}
                     onChange={(e) => setLangSearch(e.target.value)}
                     placeholder={
-                      isEn ? 'Search any language...' : 'Rechercher une langue...'
+                      isEn ? 'Search language...' : 'Rechercher une langue...'
                     }
                     className="w-full pl-8 pr-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
                     autoFocus
@@ -179,7 +174,7 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
                         setOpenMenu(null);
                         setLangSearch('');
                       }}
-                      className={`w-full px-3.5 py-2.5 flex items-center justify-between text-left text-xs transition-colors cursor-pointer ${
+                      className={`w-full px-3.5 py-2 flex items-center justify-between text-left text-xs transition-colors cursor-pointer ${
                         active
                           ? 'bg-blue-50 text-blue-900 font-semibold'
                           : 'hover:bg-slate-50 text-slate-800'

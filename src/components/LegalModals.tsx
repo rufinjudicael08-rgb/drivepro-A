@@ -76,12 +76,12 @@ export const LegalModal: React.FC<LegalModalProps> = ({
           {activeDoc === 'politique' && (
             <>
               <p>
-                <strong>Driv’ Academy</strong> (Agrément officiel{' '}
+                <strong>Driveo Academy</strong> (Agrément officiel{' '}
                 <span className="font-mono">{PARIS_HQ_CONTACT.accreditation}</span>)
-                fournit une plateforme internationale de formation théorique et pratique au permis international et national (Catégories A, B, C, D). Ouvert 24h/24 · 5j/7.
+                fournit une plateforme internationale de formation théorique et pratique au permis de conduire (Catégories A, B, C, D).
               </p>
               <p>
-                Toute inscription nécessite la création d’un compte authentifié, un dossier complet avec pièce d’identité officielle et la validation effective d’un paiement TapTap Send vérifié avec reçu et code déclencheur.
+                Toute inscription nécessite la création d’un compte authentifié, un dossier complet avec pièce d’identité officielle et la validation effective d’un paiement vérifié avec code et ID de transaction.
               </p>
             </>
           )}
@@ -157,7 +157,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                 </span>
               </div>
               <p>
-                Chaque transfert TapTap Send est contrôlé par un code déclencheur unique, une référence de transaction et une capture d’écran du reçu afin d’empêcher toute fausse simulation de paiement.
+                Chaque télépaiement est contrôlé par un code de vérification unique et une référence de transaction afin d’empêcher toute fausse simulation de paiement.
               </p>
             </div>
           )}
@@ -167,7 +167,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
               <div className="flex items-start gap-2.5">
                 <Building2 className="w-4 h-4 text-blue-700 shrink-0 mt-1" />
                 <div>
-                  <div className="font-semibold text-slate-900">Siège Social Paris · Ouvert 24h/24 · 5j/7</div>
+                  <div className="font-semibold text-slate-900">Siège Social Paris · Driveo Academy</div>
                   <div className="text-xs text-slate-600">
                     {PARIS_HQ_CONTACT.addressFr} · Agrément {PARIS_HQ_CONTACT.accreditation} · Code Centre +103
                   </div>

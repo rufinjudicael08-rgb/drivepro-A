@@ -1,7 +1,7 @@
 {
   "name": "drivepro-academy",
   "private": true,
-  "version": "4.3.0",
+  "version": "4.3.1",
   "type": "module",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
@@ -19,6 +19,7 @@
     "eslint": "^10.14.0",
     "express": "^4.21.2",
     "firebase": "^13.3.0",
+    "jspdf": "^4.2.1",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
     "react": "^19.0.1",

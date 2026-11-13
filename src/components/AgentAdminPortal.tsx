@@ -48,6 +48,7 @@ import {
   OperationType,
 } from '../firebase';
 import {
+  ContactMessageRecord,
   Language,
   PaymentLogRecord,
   RegistrationRecord,
@@ -67,6 +68,7 @@ interface AgentAdminPortalProps {
   registrations: RegistrationRecord[];
   payments: PaymentLogRecord[];
   socialLinks: SocialLinkRecord[];
+  contactMessages: ContactMessageRecord[];
   onSignIn: () => Promise<void>;
   onSimulateTrackedVisit: (trackingCode: string, platform: SocialPlatform) => void;
 }
@@ -77,6 +79,7 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
   registrations,
   payments,
   socialLinks,
+  contactMessages,
   onSignIn,
   onSimulateTrackedVisit,
 }) => {
@@ -87,13 +90,13 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
 
   // Agent Social Link Generator state
   const [platform, setPlatform] = useState<SocialPlatform>('TikTok');
-  const [campaignName, setCampaignName] = useState("Driv' Academy — Permis Express 24h/48h");
+  const [campaignName, setCampaignName] = useState('Driveo Academy — Permis en moins de 48h');
   const [targetCountry, setTargetCountry] = useState('FR');
   const [creatingLink, setCreatingLink] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [copiedAdId, setCopiedAdId] = useState<string | null>(null);
 
-  // Admin Console filters, ID & TapTap Receipt preview modals
+  // Admin Console filters, ID & Payment Proof preview modals
   const [searchQuery, setSearchQuery] = useState('');
   const [platformFilter, setPlatformFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
@@ -103,7 +106,7 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
   const [copiedDomain, setCopiedDomain] = useState(false);
 
   const appOrigin =
-    typeof window !== 'undefined' ? window.location.origin : 'https://drivepro.academy';
+    typeof window !== 'undefined' ? window.location.origin : 'https://driveo.academy';
   const currentHostname =
     typeof window !== 'undefined' ? window.location.hostname : 'localhost';
 
@@ -130,7 +133,7 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
       await setDoc(doc(db, 'social_links', linkId), {
         id: linkId,
         agentId: user.uid,
-        agentName: (user.displayName || user.email || 'DrivePro Creator').slice(0, 80),
+        agentName: (user.displayName || user.email || 'Driveo Creator').slice(0, 80),
         platform,
         campaignName: campaignName.trim().slice(0, 100) || `${platform} Bio Link`,
         trackingCode,
@@ -324,7 +327,7 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-lg whitespace-nowrap"
             >
               <Mail className="w-4 h-4" />
-              <span>Modèle E-mail « Drive Academy »</span>
+              <span>Modèle E-mail « Driveo Academy »</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
           </div>
@@ -336,7 +339,7 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
               1. Base de données Firebase ({FIREBASE_DATABASE_ID})
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
-              Vos comptes (<span className="font-mono text-white">users</span>), inscriptions, paiements, liens TikTok/Instagram/Facebook/LinkedIn et QCM sont enregistrés dans la base{' '}
+              Vos comptes (<span className="font-mono text-white">users</span>), inscriptions, paiements, messages contact, liens TikTok/Instagram/Facebook/LinkedIn et QCM sont enregistrés dans la base{' '}
               <span className="font-mono text-white font-semibold">{FIREBASE_DATABASE_ID}</span> (Projet{' '}
               <span className="font-mono text-white">{FIREBASE_PROJECT_ID}</span>).
             </p>
@@ -344,12 +347,12 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
 
           <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-4 space-y-2">
             <div className="text-xs font-semibold text-amber-300">
-              2. Nom d’expéditeur « Drive Academy » (Mot de passe oublié) :
+              2. Nom d’expéditeur « Driveo Academy » (Mot de passe oublié) :
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
-              Cliquez sur <span className="font-semibold text-white">Modèle E-mail « Drive Academy »</span> ci-dessus →{' '}
+              Cliquez sur <span className="font-semibold text-white">Modèle E-mail « Driveo Academy »</span> ci-dessus →{' '}
               <span className="font-semibold text-white">Réinitialisation du mot de passe</span> → icône crayon → mettez{' '}
-              <span className="font-mono text-amber-300">Nom de l’expéditeur : Drive Academy</span> et{' '}
+              <span className="font-mono text-amber-300">Nom de l’expéditeur : Driveo Academy</span> et{' '}
               <span className="font-mono text-emerald-300">Adresse de réponse : {ADMIN_EMAIL}</span> → Enregistrer.
             </p>
             <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5">
@@ -398,44 +401,44 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
           </div>
         </div>
 
-        {/* Operational Social Automation Playbooks — Branded Driv' Academy */}
+        {/* Operational Social Automation Playbooks — Branded Driveo Academy */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             {
-              platform: 'TikTok · Driv’ Academy',
+              platform: 'TikTok · Driveo Academy',
               titleFr: '01. Bio TikTok & Auto-DM',
               titleEn: '01. TikTok Bio & Auto-DM',
               descFr:
-                'Placez ?src=tiktok en bio sur votre compte « Driv’ Academy » ou en réponse automatique aux commentaires « PERMIS ».',
+                'Placez ?src=tiktok en bio sur votre compte « Driveo Academy » ou en réponse automatique aux commentaires « PERMIS ».',
               descEn:
-                'Place ?src=tiktok in your Driv’ Academy TikTok bio or automated comment replies.',
+                'Place ?src=tiktok in your Driveo Academy TikTok bio or automated comment replies.',
             },
             {
-              platform: 'Facebook · Driv’ Academy',
+              platform: 'Facebook · Driveo Academy',
               titleFr: '02. Page Facebook & Ads',
               titleEn: '02. Facebook Lead Ads',
               descFr:
-                'Reliez vos publications et campagnes automatiques Facebook « Driv’ Academy » directement au télépaiement.',
+                'Reliez vos publications et campagnes automatiques Facebook « Driveo Academy » directement au télépaiement.',
               descEn:
-                'Route Driv’ Academy Facebook Posts & Lead Ads straight to your verified checkout URL.',
+                'Route Driveo Academy Facebook Posts & Lead Ads straight to your verified checkout URL.',
             },
             {
-              platform: 'Instagram · Driv’ Academy',
+              platform: 'Instagram · Driveo Academy',
               titleFr: '03. Bio Instagram & Reels',
               titleEn: '03. Instagram Bio & Reels',
               descFr:
-                'Ajoutez le lien traqué en bio et en sticker Story sur « Driv’ Academy » pour capter vos candidats 24h/24.',
+                'Ajoutez le lien traqué en bio et en sticker Story sur « Driveo Academy » pour capter vos candidats.',
               descEn:
-                'Add the tracked URL in your Driv’ Academy Instagram bio and Story stickers 24/7.',
+                'Add the tracked URL in your Driveo Academy Instagram bio and Story stickers.',
             },
             {
-              platform: 'LinkedIn · Driv’ Academy',
+              platform: 'LinkedIn · Driveo Academy',
               titleFr: '04. Page LinkedIn Pro',
               titleEn: '04. LinkedIn Pro Page',
               descFr:
-                'Ciblez les professionnels et conducteurs (Permis B & C) via votre page « Driv’ Academy » avec inscription directe.',
+                'Ciblez les professionnels et conducteurs (Permis B & C) via votre page « Driveo Academy » avec inscription directe.',
               descEn:
-                'Capture professionals seeking Permit B & C directly from your Driv’ Academy LinkedIn page.',
+                'Capture professionals seeking Permit B & C directly from your Driveo Academy LinkedIn page.',
             },
           ].map((card) => (
             <div
@@ -469,10 +472,10 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
               onChange={(e) => setPlatform(e.target.value as SocialPlatform)}
               className="w-full px-3 py-2.5 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-700"
             >
-              <option value="TikTok">TikTok (Driv&apos; Academy)</option>
-              <option value="Facebook">Facebook (Driv&apos; Academy)</option>
-              <option value="Instagram">Instagram (Driv&apos; Academy)</option>
-              <option value="LinkedIn">LinkedIn (Driv&apos; Academy)</option>
+              <option value="TikTok">TikTok (Driveo Academy)</option>
+              <option value="Facebook">Facebook (Driveo Academy)</option>
+              <option value="Instagram">Instagram (Driveo Academy)</option>
+              <option value="LinkedIn">LinkedIn (Driveo Academy)</option>
             </select>
           </div>
 
@@ -626,7 +629,7 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
                 <Megaphone className="w-5 h-5 text-amber-400 shrink-0" />
                 <div>
                   <h3 className="text-base font-bold text-white">
-                    Pack Publicités Automatisées · Driv&apos; Academy (Facebook, Instagram, LinkedIn, TikTok)
+                    Pack Publicités Automatisées · Driveo Academy (Facebook, Instagram, LinkedIn, TikTok)
                   </h3>
                   <p className="text-xs text-slate-300">
                     Copiez vos annonces prêtes à l’emploi et lancez vos campagnes automatiques avec votre lien traqué.
@@ -665,13 +668,13 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
               {[
                 {
                   id: 'fb_ig',
-                  network: "Facebook & Instagram Ads · Driv' Academy",
-                  text: `🚗 Votre permis international et national en moins de 24h à 48h avec Driv' Academy !\n✅ Auto-école internationale agréée (UE · France · USA)\n✅ Télépaiement vérifié et sécurisé\n✅ Cours audio multilingues · Ouvert 24h/24, 5j/7\n👉 Inscrivez-vous maintenant : ${appOrigin}/?src=facebook&ref=FB_AUTO`,
+                  network: 'Facebook & Instagram Ads · Driveo Academy',
+                  text: `🚗 Votre permis international en moins de 48h avec Driveo Academy !\n✅ Auto-école internationale agréée (UE · France · USA)\n✅ Télépaiement vérifié et sécurisé + Facture PDF\n✅ Cours audio multilingues\n👉 Inscrivez-vous maintenant : ${appOrigin}/?src=facebook&ref=FB_AUTO`,
                 },
                 {
                   id: 'tiktok_li',
-                  network: "TikTok & LinkedIn Ads · Driv' Academy",
-                  text: `🔥 Permis A (200€) · Permis B (350€) · Permis C (500€) en 24h à 48h !\nDriv' Academy accompagne votre dossier complet, votre code audio et vos épreuves physiques.\n🕒 Ouvert 24h/24 · 5j/7 — Lien officiel : ${appOrigin}/?src=tiktok&ref=TT_AUTO`,
+                  network: 'TikTok & LinkedIn Ads · Driveo Academy',
+                  text: `🔥 Permis A (200€) · Permis B (350€) · Permis C (500€) en moins de 48h !\nDriveo Academy accompagne votre dossier complet, votre code audio et vos épreuves physiques.\n👉 Lien officiel : ${appOrigin}/?src=tiktok&ref=TT_AUTO`,
                 },
               ].map((ad) => (
                 <div
@@ -724,8 +727,8 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
             </h2>
             <p className="text-sm text-slate-600 mt-1">
               {isEn
-                ? 'Live Firestore stream of candidate dossiers (addresses, legal ID documents, TapTap Send senders) and CSV/Excel exports.'
-                : 'Flux temps réel des dossiers complets (adresses, pièces d’identité, paiements TapTap Send / locaux) et exports CSV / Excel.'}
+                ? 'Live Firestore stream of candidate dossiers (addresses, legal ID documents, verified senders) and CSV/Excel exports.'
+                : 'Flux temps réel des dossiers complets (adresses, pièces d’identité, paiements vérifiés) et exports CSV / Excel.'}
             </p>
           </div>
 
@@ -954,7 +957,7 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
                                 className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded hover:bg-emerald-100 cursor-pointer"
                               >
                                 <Receipt className="w-3 h-3" />
-                                <span>{isEn ? 'TapTap Receipt' : 'Voir Reçu'}</span>
+                                <span>{isEn ? 'Payment Proof' : 'Voir Paiement'}</span>
                               </button>
                             );
                           })()}
@@ -1053,12 +1056,12 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
           </table>
         </div>
 
-        {/* Payment Logs Preview (Includes Sender Name, Trigger Code & TapTap Receipt Screenshot) */}
+        {/* Payment Logs Preview (Sender Name, Transaction ID & Trigger Code) */}
         <div className="space-y-3 pt-2">
           <h3 className="text-sm font-semibold text-slate-900">
             {isEn
               ? `Recent Payment Audit Logs (${payments.length})`
-              : `Journal des paiements TapTap Send (${payments.length})`}
+              : `Journal des paiements vérifiés (${payments.length})`}
           </h3>
           <div className="border border-slate-200 rounded-xl overflow-x-auto bg-white">
             <table className="w-full text-left text-xs">
@@ -1073,7 +1076,7 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
                     {isEn ? 'Sender Details' : 'Expéditeur paiement'}
                   </th>
                   <th className="py-2.5 px-4 font-semibold">
-                    {isEn ? 'Receipt Proof' : 'Reçu TapTap'}
+                    {isEn ? 'Verification' : 'Justificatif'}
                   </th>
                   <th className="py-2.5 px-4 font-semibold text-right">
                     {isEn ? 'Amount' : 'Montant'}
@@ -1125,7 +1128,7 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
                           className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 rounded hover:bg-emerald-100 cursor-pointer"
                         >
                           <Receipt className="w-3 h-3" />
-                          <span>{isEn ? 'Inspect' : 'Voir Reçu'}</span>
+                          <span>{isEn ? 'Details' : 'Détails'}</span>
                         </button>
                       </td>
                       <td className="py-2.5 px-4 text-right font-mono tabular-nums font-semibold text-slate-900">
@@ -1140,6 +1143,103 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
               </tbody>
             </table>
           </div>
+        </div>
+      </section>
+
+      {/* Section 3: Client Contact & Questions Inbox (Creator Only) */}
+      <section className="bg-white/95 backdrop-blur border border-slate-200 rounded-xl p-6 md:p-8 space-y-5 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+          <div>
+            <h2 className="text-xl font-semibold text-slate-900 flex items-center gap-2">
+              <Mail className="w-5 h-5 text-blue-700" />
+              <span>
+                {isEn
+                  ? `Visitor Questions & Contact Messages (${contactMessages.length})`
+                  : `Questions & Messages Clients reçus (${contactMessages.length})`}
+              </span>
+            </h2>
+            <p className="text-xs text-slate-600 mt-1">
+              {isEn
+                ? `Every inquiry submitted from Contact is stored in Firebase and forwarded to ${ADMIN_EMAIL}.`
+                : `Chaque question envoyée via Contact est enregistrée dans Firebase et transmise à ${ADMIN_EMAIL}.`}
+            </p>
+          </div>
+        </div>
+
+        <div className="border border-slate-200 rounded-xl overflow-x-auto bg-white">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500">
+              <tr>
+                <th className="py-2.5 px-4 font-semibold">
+                  {isEn ? 'Sender' : 'Expéditeur'}
+                </th>
+                <th className="py-2.5 px-4 font-semibold">
+                  {isEn ? 'Subject & Question' : 'Sujet & Question'}
+                </th>
+                <th className="py-2.5 px-4 font-semibold">
+                  {isEn ? 'Status' : 'Statut'}
+                </th>
+                <th className="py-2.5 px-4 font-semibold text-right">
+                  {isEn ? 'Reply' : 'Répondre'}
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {contactMessages.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="py-6 px-4 text-center text-slate-500">
+                    {isEn
+                      ? 'No contact questions received yet.'
+                      : 'Aucune question reçue pour le moment.'}
+                  </td>
+                </tr>
+              ) : (
+                contactMessages.map((msg) => (
+                  <tr key={msg.id} className="hover:bg-slate-50/70">
+                    <td className="py-3 px-4 align-top">
+                      <div className="font-semibold text-slate-900">
+                        {msg.fullName}
+                      </div>
+                      <div className="text-slate-600">{msg.email}</div>
+                      {msg.phone && (
+                        <div className="font-mono text-[11px] text-slate-500">
+                          {msg.phone}
+                        </div>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 align-top max-w-md">
+                      <div className="font-semibold text-blue-800">
+                        {msg.subject}
+                      </div>
+                      <p className="text-slate-700 mt-1 whitespace-pre-line leading-relaxed">
+                        {msg.message}
+                      </p>
+                    </td>
+                    <td className="py-3 px-4 align-top font-mono text-slate-600">
+                      {msg.status === 'replied'
+                        ? isEn
+                          ? 'Replied'
+                          : 'Répondu'
+                        : isEn
+                        ? 'New'
+                        : 'Nouveau'}
+                    </td>
+                    <td className="py-3 px-4 align-top text-right">
+                      <a
+                        href={`mailto:${msg.email}?subject=${encodeURIComponent(
+                          `Re: ${msg.subject} — Driveo Academy`
+                        )}`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold rounded-md whitespace-nowrap"
+                      >
+                        <Mail className="w-3.5 h-3.5" />
+                        <span>{isEn ? 'Reply' : 'Répondre'}</span>
+                      </a>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </section>
 
@@ -1204,7 +1304,7 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
         </div>
       )}
 
-      {/* TapTap Send Receipt Proof Screenshot Modal */}
+      {/* Verified Payment Details Modal */}
       {previewReceiptPayment && (
         <div
           className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4"
@@ -1215,7 +1315,7 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
             <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-3">
               <div>
                 <h3 className="text-base font-semibold text-slate-900">
-                  {isEn ? 'TapTap Send Receipt Proof' : 'Justificatif Reçu TapTap Send'}
+                  {isEn ? 'Verified Payment Audit' : 'Justificatif Paiement Vérifié'}
                 </h3>
                 <p className="text-xs font-mono text-slate-600 mt-0.5">
                   {previewReceiptPayment.transactionRef} · Code{' '}
@@ -1235,17 +1335,18 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
             {previewReceiptPayment.receiptThumbnail ? (
               <img
                 src={previewReceiptPayment.receiptThumbnail}
-                alt={`Reçu TapTap Send ${previewReceiptPayment.candidateName}`}
+                alt={`Justificatif paiement ${previewReceiptPayment.candidateName}`}
                 referrerPolicy="no-referrer"
                 className="w-full max-h-80 object-contain rounded-lg border border-slate-200 bg-slate-50"
               />
             ) : (
-              <div className="p-6 text-center text-xs text-slate-500 bg-slate-50 rounded-lg">
-                <Receipt className="w-5 h-5 mx-auto mb-1 text-slate-400" />
-                {previewReceiptPayment.receiptFileName ||
-                  (isEn
-                    ? 'No image preview uploaded.'
-                    : 'Aucun aperçu miniature disponible.')}
+              <div className="p-5 text-center text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg font-medium space-y-1">
+                <Receipt className="w-5 h-5 mx-auto text-emerald-700" />
+                <div>
+                  {isEn
+                    ? 'Verified by unique transaction ID & security trigger code (no screenshot required).'
+                    : 'Validé par ID de transaction et code déclencheur unique (sans envoi de photo).'}
+                </div>
               </div>
             )}
 
@@ -1259,7 +1360,7 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
               </div>
               <div>
                 <span className="font-semibold text-slate-800">
-                  {isEn ? 'TapTap Sender: ' : 'Expéditeur TapTap : '}
+                  {isEn ? 'Sender: ' : 'Expéditeur : '}
                 </span>
                 {previewReceiptPayment.senderName} · {previewReceiptPayment.senderPhone}
               </div>

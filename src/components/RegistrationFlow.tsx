@@ -187,15 +187,13 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
   );
   const [acceptedTerms, setAcceptedTerms] = useState(false);
 
-  // Step 3 TapTap Send Strict Payment Proof State
+  // Step 3 Strict Payment Verification State (without receipt photo upload)
   const [senderName, setSenderName] = useState(
     registration?.fullName || user?.displayName || ''
   );
   const [senderPhone, setSenderPhone] = useState(registration?.phone || '');
   const [txIdInput, setTxIdInput] = useState('');
   const [triggerCodeInput, setTriggerCodeInput] = useState('');
-  const [receiptFileName, setReceiptFileName] = useState('');
-  const [receiptThumbnail, setReceiptThumbnail] = useState('');
   const [linkOpened, setLinkOpened] = useState(false);
   const [transferConfirmed, setTransferConfirmed] = useState(false);
   const [copiedTrigger, setCopiedTrigger] = useState(false);
@@ -281,16 +279,6 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
     setIdCardThumbnail(thumb);
   };
 
-  const handleReceiptFileChange = async (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setReceiptFileName(file.name.slice(0, 120));
-    const thumb = await compressUploadImage(file);
-    setReceiptThumbnail(thumb);
-  };
-
   const expectedTriggerCode = registration
     ? `DP-${registration.queueNumber}-${registration.licenseCategory}`
     : '';
@@ -366,7 +354,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
     if (!acceptedTerms) {
       setFormError(
         isEn
-          ? 'You must accept the DrivePro Academy enrollment policy.'
+          ? 'You must accept the Driveo Academy enrollment policy.'
           : 'Vous devez confirmer l’exactitude des informations de votre dossier.'
       );
       return;
@@ -411,7 +399,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
       currency: country.currency,
       baseFeeEur: CATEGORY_FEES_EUR[category],
       convertedAmount: convertEurFee(CATEGORY_FEES_EUR[category], country),
-      paymentMethod: 'TapTap Send',
+      paymentMethod: 'Télépaiement',
       paymentStatus: 'pending',
       dossierStatus: 'locked',
       latestPaymentId: '',
@@ -455,8 +443,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
     if (!linkOpened && !transferConfirmed) {
       setFormError(
         isEn
-          ? 'Please open the official TapTap Send payment link and confirm your actual transfer first.'
-          : 'Veuillez d’abord ouvrir le lien officiel TapTap Send et cocher la confirmation de transfert réel.'
+          ? 'Please open the official payment link and confirm your completed payment first.'
+          : 'Veuillez d’abord ouvrir le lien officiel de paiement et cocher la confirmation de règlement réel.'
       );
       return;
     }
@@ -481,13 +469,13 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
     ) {
       setFormError(
         isEn
-          ? 'Invalid TapTap Send Transaction ID. Please enter your real transfer reference (at least 6 valid alphanumeric characters).'
-          : 'ID de transaction TapTap Send invalide ou fictif refusé. Saisissez votre véritable référence de transfert reçue (minimum 6 caractères réels).'
+          ? 'Invalid Transaction ID. Please enter your real transfer reference (at least 6 valid alphanumeric characters).'
+          : 'ID de transaction invalide ou fictif refusé. Saisissez votre véritable référence de paiement reçue (minimum 6 caractères réels).'
       );
       return;
     }
 
-    // Strict Trigger Verification Code match
+    // Strict Trigger Verification Code match (no image/file upload required)
     const cleanedTrigger = triggerCodeInput.trim().toUpperCase();
     if (cleanedTrigger !== expectedTriggerCode) {
       setFormError(
@@ -498,19 +486,9 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
       return;
     }
 
-    // Mandatory TapTap Send Receipt Screenshot
-    if (receiptFileName.trim().length < 3) {
-      setFormError(
-        isEn
-          ? 'Mandatory proof: please attach the screenshot or receipt photo from TapTap Send.'
-          : 'Preuve obligatoire : veuillez joindre la capture d’écran ou photo du reçu TapTap Send pour déclencher votre facture.'
-      );
-      return;
-    }
-
     setIsSubmitting(true);
     const paymentId = `pay_${user.uid}_${Date.now()}`;
-    const formattedTxRef = rawTx.startsWith('TTS-') ? rawTx : `TTS-${rawTx}`;
+    const formattedTxRef = rawTx.startsWith('TP-') ? rawTx : `TP-${rawTx}`;
 
     const newPaymentObj: PaymentLogRecord = {
       id: paymentId,
@@ -523,11 +501,11 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
       currency: registration.currency,
       baseAmountEur: registration.baseFeeEur,
       amountPaid: registration.convertedAmount,
-      method: 'TapTap Send',
+      method: 'Télépaiement',
       transactionRef: formattedTxRef.slice(0, 80),
       verificationCode: expectedTriggerCode,
-      receiptFileName: receiptFileName.trim().slice(0, 120),
-      receiptThumbnail: receiptThumbnail.slice(0, 88000),
+      receiptFileName: 'CODE-VERIFIE',
+      receiptThumbnail: '',
       status: 'completed',
     };
 
@@ -544,7 +522,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
       batch.update(regRef, {
         paymentStatus: 'paid',
         dossierStatus: 'code_unlocked',
-        paymentMethod: 'TapTap Send',
+        paymentMethod: 'Télépaiement',
         latestPaymentId: paymentId,
         updatedAt: serverTimestamp(),
       });
@@ -656,8 +634,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
             <p className="text-sm text-slate-200 max-w-3xl leading-relaxed">
               {isUnlocked
                 ? isEn
-                  ? 'Your TapTap Send payment and invoice are recorded. Study all 5 modules, pass the quiz, or book your final physical tests.'
-                  : 'Votre paiement TapTap Send et votre facture officielle sont enregistrés. Suivez les 5 modules, passez le QCM et fixez vos épreuves physiques.'
+                  ? 'Your verified payment and PDF invoice are recorded. Study all 5 modules, pass the quiz, or book your final physical tests.'
+                  : 'Votre paiement vérifié et votre facture PDF officielle sont enregistrés. Suivez les 5 modules, passez le QCM et fixez vos épreuves physiques.'
                 : t.lockedNoticeBody}
             </p>
           </div>
@@ -1207,7 +1185,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                   {isEn ? 'Payment' : 'Paiement'} · {registration.baseFeeEur} €
                 </div>
                 <div className="text-xs text-blue-200 font-medium">
-                  Driv&apos; Academy · TapTap Send
+                  Driveo Academy · Télépaiement vérifié
                 </div>
               </div>
 
@@ -1262,21 +1240,21 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
             </div>
           </div>
 
-          {/* Anti-Fake Real Payment Verification Inputs */}
+          {/* Anti-Fake Real Payment Verification Inputs (Zero File/Photo Upload Required) */}
           <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-5">
             <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
               <Receipt className="w-4 h-4 text-blue-700 shrink-0" />
               <span>
                 {isEn
-                  ? 'Confirm Real TapTap Send Payment & Generate Invoice'
-                  : 'Validation du reçu TapTap Send & Émission de la Facture'}
+                  ? 'Confirm Verified Payment & Download Official PDF Invoice'
+                  : 'Validation du paiement & Émission de la Facture PDF'}
               </span>
             </div>
 
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="block text-sm font-semibold text-slate-800">
-                  {isEn ? 'Your Full Name (Sender) *' : 'Votre nom complet (expéditeur TapTap) *'}
+                  {isEn ? 'Your Full Name (Sender) *' : 'Votre nom complet (expéditeur) *'}
                 </label>
                 <input
                   type="text"
@@ -1289,7 +1267,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
 
               <div className="space-y-1.5">
                 <label className="block text-sm font-semibold text-slate-800">
-                  {isEn ? 'Your TapTap Send Phone Number *' : 'Votre numéro utilisé sur TapTap Send *'}
+                  {isEn ? 'Phone Number Used for Payment *' : 'Numéro utilisé pour le paiement *'}
                 </label>
                 <input
                   type="text"
@@ -1303,14 +1281,14 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
 
               <div className="space-y-1.5">
                 <label className="block text-sm font-semibold text-slate-800">
-                  {isEn ? 'TapTap Send Transaction ID *' : 'ID de transaction TapTap Send *'}
+                  {isEn ? 'Payment Transaction ID *' : 'ID de transaction reçu *'}
                 </label>
                 <input
                   type="text"
                   required
                   value={txIdInput}
                   onChange={(e) => setTxIdInput(e.target.value)}
-                  placeholder="Ex : TTS928410K / TT-884129"
+                  placeholder="Ex : TX928410K / PAY-884129"
                   className="w-full px-3.5 py-2.5 text-sm font-mono text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
                 />
               </div>
@@ -1318,7 +1296,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
               <div className="space-y-1.5">
                 <label className="block text-sm font-semibold text-slate-800">
                   {isEn
-                    ? `Type Receipt Trigger Code (${expectedTriggerCode}) *`
+                    ? `Type Verification Trigger Code (${expectedTriggerCode}) *`
                     : `Tapez le Code Déclencheur (${expectedTriggerCode}) *`}
                 </label>
                 <input
@@ -1332,46 +1310,6 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
               </div>
             </div>
 
-            {/* TapTap Send Receipt Screenshot Upload */}
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-slate-800">
-                {isEn
-                  ? 'Upload TapTap Send Receipt Screenshot (Required) *'
-                  : 'Joindre la capture d’écran du reçu TapTap Send (Obligatoire) *'}
-              </label>
-              <label className="flex items-center justify-between gap-3 px-4 py-3 text-sm font-semibold bg-white border border-dashed border-slate-400 hover:border-blue-700 rounded-lg cursor-pointer">
-                <span className="truncate text-slate-800">
-                  {receiptFileName
-                    ? receiptFileName
-                    : isEn
-                    ? 'Click to select TapTap Send receipt screenshot (JPG/PNG/PDF)'
-                    : 'Cliquez pour joindre votre capture d’écran / reçu TapTap Send'}
-                </span>
-                <Upload className="w-4 h-4 text-blue-700 shrink-0" />
-                <input
-                  type="file"
-                  accept="image/*,.pdf"
-                  onChange={handleReceiptFileChange}
-                  className="sr-only"
-                />
-              </label>
-
-              {receiptThumbnail && (
-                <div className="flex items-center gap-3 pt-1">
-                  <img
-                    src={receiptThumbnail}
-                    alt="Reçu TapTap Send"
-                    className="h-16 w-24 object-cover rounded-md border border-slate-300"
-                  />
-                  <span className="text-xs font-semibold text-emerald-700">
-                    {isEn
-                      ? 'TapTap Send receipt image attached.'
-                      : 'Capture du reçu TapTap Send jointe pour vérification.'}
-                  </span>
-                </div>
-              )}
-            </div>
-
             <label className="flex items-start gap-3 text-sm text-slate-800 cursor-pointer pt-1">
               <input
                 type="checkbox"
@@ -1381,8 +1319,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
               />
               <span>
                 {isEn
-                  ? 'I certify that I completed the real TapTap Send transfer and that any false declaration blocks license issuance.'
-                  : 'Je certifie avoir effectué le transfert réel sur TapTap Send (toute fausse simulation bloque le dossier).'}
+                  ? 'I certify that I completed the real payment transfer and that any false declaration blocks license issuance.'
+                  : 'Je certifie avoir effectué le règlement réel (toute fausse simulation bloque le dossier).'}
               </span>
             </label>
           </div>
@@ -1416,8 +1354,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
               <CheckCircle2 className="w-5 h-5" />
               <span>
                 {isEn
-                  ? 'TapTap Send Payment Confirmed & Invoice Generated'
-                  : 'Paiement TapTap Send validé & Facture officielle générée'}
+                  ? 'Payment Confirmed & Official PDF Invoice Ready'
+                  : 'Paiement validé & Facture PDF officielle générée'}
               </span>
             </div>
             <h3 className="text-2xl font-bold text-slate-900">
@@ -1427,8 +1365,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
             </h3>
             <p className="text-[15px] text-slate-700 max-w-2xl leading-relaxed">
               {isEn
-                ? 'Download your official invoice below, then study the 5 audio-guided courses and complete your quiz & physical tests.'
-                : 'Téléchargez votre facture officielle ci-contre, puis accédez à vos 5 cours audio illustrés, au QCM et au rendez-vous pour les épreuves physiques.'}
+                ? 'Download your official PDF invoice below, then study the 5 audio-guided courses and complete your quiz & physical tests.'
+                : 'Téléchargez votre facture officielle en PDF ci-contre, puis accédez à vos 5 cours audio illustrés, au QCM et au rendez-vous pour les épreuves physiques.'}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3 shrink-0">
@@ -1439,7 +1377,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
             >
               <FileText className="w-4 h-4 text-emerald-400" />
               <span>
-                {isEn ? 'Open Official Invoice' : 'Voir / Télécharger ma Facture'}
+                {isEn ? 'Download PDF Invoice' : 'Voir / Télécharger Facture PDF'}
               </span>
             </button>
             <button

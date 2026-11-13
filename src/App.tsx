@@ -15,13 +15,12 @@ import {
 } from 'firebase/firestore';
 import {
   ArrowRight,
-  Award,
   Building2,
   CarFront,
   CheckCircle2,
-  Clock,
   GraduationCap,
   Lock,
+  Mail,
   MailCheck,
   MapPin,
   MessageCircle,
@@ -35,6 +34,7 @@ import { AgentAdminPortal } from './components/AgentAdminPortal';
 import { AnimatedStageBackdrop } from './components/AnimatedStageBackdrop';
 import { AuthModal } from './components/AuthModal';
 import { CandidatePortal } from './components/CandidatePortal';
+import { ContactQuestionModal } from './components/ContactQuestionModal';
 import { CountrySelector } from './components/CountrySelector';
 import { DriveProLogo } from './components/DriveProLogo';
 import { LegalDocKey, LegalModal } from './components/LegalModals';
@@ -58,6 +58,7 @@ import {
   translateAuthErrorFr,
 } from './firebase';
 import {
+  ContactMessageRecord,
   CountryConfig,
   Language,
   LicenseCategory,
@@ -215,6 +216,7 @@ export default function App() {
   const [allRegistrations, setAllRegistrations] = useState<RegistrationRecord[]>([]);
   const [allPayments, setAllPayments] = useState<PaymentLogRecord[]>([]);
   const [socialLinks, setSocialLinks] = useState<SocialLinkRecord[]>([]);
+  const [contactMessages, setContactMessages] = useState<ContactMessageRecord[]>([]);
 
   // Animated carousels in Hero & Lower Classroom Gallery
   const [heroSlideIdx, setHeroSlideIdx] = useState(0);
@@ -222,8 +224,9 @@ export default function App() {
   const [heroImgFailed, setHeroImgFailed] = useState(false);
   const [classImgFailed, setClassImgFailed] = useState(false);
 
-  // Corporate Legal Footer Modal
+  // Corporate Legal & Contact Modals
   const [legalDocOpen, setLegalDocOpen] = useState<LegalDocKey | null>(null);
+  const [contactModalOpen, setContactModalOpen] = useState(false);
 
   const isCreatorAdmin =
     user !== null && user.emailVerified && user.email === ADMIN_EMAIL;
@@ -448,12 +451,13 @@ export default function App() {
     };
   }, [authReady, user]);
 
-  // Subscribe to Social Links, All Registrations, and Payments ONLY for verified Creator Admin
+  // Subscribe to Social Links, All Registrations, Payments, and Contact Messages ONLY for verified Creator Admin
   useEffect(() => {
     if (!authReady || !isCreatorAdmin) {
       setSocialLinks([]);
       setAllRegistrations([]);
       setAllPayments([]);
+      setContactMessages([]);
       return;
     }
 
@@ -501,10 +505,27 @@ export default function App() {
       }
     );
 
+    const contactQuery = query(
+      collection(db, 'contact_messages'),
+      orderBy('createdAt', 'desc')
+    );
+    const unsubContacts = onSnapshot(
+      contactQuery,
+      (snapshot) => {
+        setContactMessages(
+          snapshot.docs.map((d) => d.data() as ContactMessageRecord)
+        );
+      },
+      (error) => {
+        handleFirestoreError(error, OperationType.GET, 'contact_messages');
+      }
+    );
+
     return () => {
       unsubLinks();
       unsubAllReg();
       unsubAllPay();
+      unsubContacts();
     };
   }, [authReady, isCreatorAdmin]);
 
@@ -629,7 +650,7 @@ export default function App() {
                 type="button"
                 onClick={() => setActiveView('home')}
                 className="cursor-pointer whitespace-nowrap shrink-0"
-                aria-label="DrivePro Academy Accueil"
+                aria-label="Driveo Academy Accueil"
               >
                 <DriveProLogo size="md" />
               </button>
@@ -652,6 +673,14 @@ export default function App() {
                     </button>
                   );
                 })}
+                <button
+                  type="button"
+                  onClick={() => setContactModalOpen(true)}
+                  className="py-1 inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 text-slate-600 hover:text-blue-700 transition-colors cursor-pointer"
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                  <span>{isEn ? 'Contact' : 'Contact / Question'}</span>
+                </button>
               </nav>
 
               <div className="flex items-center gap-2 shrink-0">
@@ -701,6 +730,13 @@ export default function App() {
                   {item.label}
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => setContactModalOpen(true)}
+                className="px-2.5 py-1 text-xs font-medium text-blue-700 rounded-md whitespace-nowrap shrink-0 cursor-pointer"
+              >
+                {isEn ? 'Contact' : 'Question'}
+              </button>
             </div>
           </header>
 
@@ -759,15 +795,9 @@ export default function App() {
                 <section className="grid lg:grid-cols-12 gap-7 items-stretch">
                   <div className="lg:col-span-6 bg-white/95 backdrop-blur border border-slate-200 rounded-2xl p-7 md:p-9 flex flex-col justify-between gap-6 shadow-lg">
                     <div className="space-y-4">
-                      <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-semibold">
-                        <span className="inline-flex items-center gap-1.5 text-blue-800">
-                          <MapPin className="w-4 h-4 text-blue-700 shrink-0" />
-                          <span>Résumé en images animées · Driv&apos; Academy</span>
-                        </span>
-                        <span className="inline-flex items-center gap-1.5 text-emerald-700 font-mono font-bold">
-                          <Clock className="w-3.5 h-3.5 shrink-0" />
-                          <span>Ouvert 24h/24 · 5j/7</span>
-                        </span>
+                      <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-800">
+                        <MapPin className="w-4 h-4 text-blue-700 shrink-0" />
+                        <span>{t.hqLabel}</span>
                       </div>
                       <h1
                         className="font-display text-3xl sm:text-4xl lg:text-[2.75rem] font-extrabold tracking-tight text-slate-900 leading-[1.12]"
@@ -775,16 +805,16 @@ export default function App() {
                       >
                         {lang === 'fr' ? (
                           <>
-                            Votre permis international et national{' '}
+                            Votre permis international{' '}
                             <span className="text-blue-700">
-                              en moins de 24h à 48h.
+                              en moins de 48 heures.
                             </span>
                           </>
                         ) : lang === 'en' ? (
                           <>
-                            Your international and national driver’s license{' '}
+                            Your international driver’s license{' '}
                             <span className="text-blue-700">
-                              in 24h to 48h.
+                              in under 48 hours.
                             </span>
                           </>
                         ) : (
@@ -816,6 +846,14 @@ export default function App() {
                           )}
                           <span>{t.heroCtaSecondary}</span>
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => setContactModalOpen(true)}
+                          className="inline-flex items-center gap-2 px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-sm font-semibold rounded-xl transition-colors cursor-pointer whitespace-nowrap"
+                        >
+                          <Mail className="w-4 h-4 text-blue-700" />
+                          <span>{isEn ? 'Ask a Question' : 'Poser une question'}</span>
+                        </button>
                       </div>
                       <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono tabular-nums text-slate-700 pt-1 border-t border-slate-100">
                         <span>
@@ -830,18 +868,8 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Animated Course Showcase Carousel in Hero Right Column */}
-                  <div className="lg:col-span-6 relative rounded-2xl overflow-hidden border border-slate-200/80 bg-slate-950 min-h-[360px] shadow-lg flex flex-col justify-between">
-                    <div className="relative z-10 px-5 py-3.5 bg-slate-950/75 backdrop-blur-md border-b border-white/10 flex items-center justify-between text-white">
-                      <span className="text-xs font-mono font-bold text-amber-300">
-                        {isEn
-                          ? "ANIMATED SUMMARY · DRIV' ACADEMY"
-                          : "RÉSUMÉ EN IMAGES ANIMÉES · DRIV' ACADEMY"}
-                      </span>
-                      <span className="text-[11px] font-mono font-semibold text-emerald-300">
-                        24h / 48h
-                      </span>
-                    </div>
+                  {/* Animated Course Showcase Carousel in Hero Right Column (Clean Image without Overlay Header) */}
+                  <div className="lg:col-span-6 relative rounded-2xl overflow-hidden border border-slate-200/80 bg-slate-950 min-h-[360px] shadow-lg flex flex-col justify-end">
                     {!heroImgFailed ? (
                       <>
                         {HERO_SHOWCASE_GALLERY.map((imgSrc, idx) => (
@@ -862,7 +890,7 @@ export default function App() {
                             }`}
                           />
                         ))}
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/35 to-slate-950/40 pointer-events-none" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent pointer-events-none" />
 
                         {/* Animated Mini Interactive Course Card Overlay */}
                         <div className="relative z-10 p-5 sm:p-6 space-y-4">
@@ -923,17 +951,14 @@ export default function App() {
                       <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center text-white bg-gradient-to-br from-slate-900 to-blue-950">
                         <CarFront className="w-12 h-12 text-blue-400 mb-3" />
                         <div className="font-display text-xl font-semibold">
-                          Driv&apos; Academy International
+                          Driveo Academy International
                         </div>
                       </div>
                     )}
                   </div>
                 </section>
 
-                {/* Institutional Partners & Accreditations Strip (UE, France, USA, Permis International & National) */}
-                <PartnerLogos lang={lang} />
-
-                {/* Full-Width 4-Column Tariff Strip (Permis Seulement) */}
+                {/* Full-Width 4-Column Tariff Strip (Permis Seulement — Partners Moved to Bottom Footer) */}
                 <section className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {[
                     {
@@ -957,11 +982,11 @@ export default function App() {
                       accent: 'text-emerald-700',
                       titleFr: 'Permis C · 500 €',
                       titleEn: 'Permit C · €500',
-                      descFr: 'Paiement vérifié · Facture officielle générée immédiatement.',
-                      descEn: 'Verified payment · Official invoice generated instantly.',
+                      descFr: 'Paiement vérifié · Facture PDF officielle générée immédiatement.',
+                      descEn: 'Verified payment · Official PDF invoice generated instantly.',
                     },
                     {
-                      metric: '24h · 48h',
+                      metric: '< 48h',
                       accent: 'text-blue-700',
                       titleFr: 'QCM → Épreuves Physiques',
                       titleEn: 'Quiz → Physical Tests',
@@ -990,7 +1015,7 @@ export default function App() {
                   ))}
                 </section>
 
-                {/* Lower Animated Multi-Image Community Classroom + Résumé de la plateforme */}
+                {/* Lower Animated Multi-Image Community Classroom + Parcours complet */}
                 <section className="grid lg:grid-cols-12 gap-6 items-stretch">
                   <div className="lg:col-span-5 relative rounded-2xl overflow-hidden border border-slate-200/80 bg-slate-900 min-h-[290px] shadow-md flex flex-col justify-end">
                     {!classImgFailed ? (
@@ -1011,11 +1036,6 @@ export default function App() {
                         ))}
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent pointer-events-none" />
                         <div className="relative z-10 p-5 space-y-2.5 text-white">
-                          <div className="text-xs font-mono text-amber-300 font-semibold">
-                            {isEn
-                              ? "ANIMATED SUMMARY · DRIV' ACADEMY"
-                              : "RÉSUMÉ EN IMAGES ANIMÉES · DRIV' ACADEMY"}
-                          </div>
                           <div className="text-sm font-bold">
                             {isEn
                               ? COMMUNITY_GALLERY_SLIDES[communitySlideIdx].captionEn
@@ -1197,25 +1217,23 @@ export default function App() {
                 registrations={allRegistrations}
                 payments={allPayments}
                 socialLinks={socialLinks}
+                contactMessages={contactMessages}
                 onSignIn={() => openAuthModal('login')}
                 onSimulateTrackedVisit={handleSimulateTrackedVisit}
               />
             )}
           </main>
 
-          {/* Complete Official Corporate & Legal Footer with Trust Badges, Hours & Socials */}
-          <footer className="bg-slate-950 text-slate-300 border-t border-slate-800 mt-12">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8 text-xs">
+          {/* Clean Corporate Footer + Single-Line Socials + Scrolling Partenaire Officiel at Very Bottom */}
+          <footer className="bg-slate-900 text-slate-200 border-t border-slate-800 mt-12">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-7 text-xs">
+              {/* Top Row: Contact & Siège (Left) + Policy Links (Right, no heading, no Certifications box) */}
               <div className="grid md:grid-cols-12 gap-8 items-start">
-                <div className="md:col-span-5 space-y-3.5">
+                <div className="md:col-span-7 space-y-3.5">
                   <div className="flex flex-wrap items-center gap-3">
                     <DriveProLogo dark size="sm" />
-                    <span className="text-emerald-400 font-mono text-xs font-semibold">
-                      v4.3.0
-                    </span>
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-mono font-bold text-[11px]">
-                      <Clock className="w-3.5 h-3.5" />
-                      <span>Ouvert 24h/24 · 5j/7</span>
+                    <span className="text-slate-400 font-mono text-xs font-semibold">
+                      v4.3.1
                     </span>
                   </div>
                   <div className="flex items-start gap-2 text-slate-300 leading-relaxed">
@@ -1248,94 +1266,54 @@ export default function App() {
                       <MessageCircle className="w-3.5 h-3.5" />
                       <span>WhatsApp Direct</span>
                     </a>
+                    <button
+                      type="button"
+                      onClick={() => setContactModalOpen(true)}
+                      className="inline-flex items-center gap-2 px-3.5 py-2 bg-blue-700 hover:bg-blue-600 text-white rounded-lg font-semibold whitespace-nowrap transition-colors cursor-pointer"
+                    >
+                      <Mail className="w-3.5 h-3.5" />
+                      <span>{isEn ? 'Ask a Question' : 'Poser une question'}</span>
+                    </button>
                   </div>
                 </div>
 
-                {/* Official Legal & Policy Links */}
-                <div className="md:col-span-4 space-y-2.5">
-                  <div className="text-white font-bold text-xs uppercase tracking-wider">
-                    {isEn ? 'Legal & Compliance' : 'Informations Légales & Conformité'}
-                  </div>
-                  <div className="grid grid-cols-2 gap-y-2 gap-x-4">
-                    {(
-                      [
-                        { key: 'politique', labelFr: 'Politique d’utilisation', labelEn: 'Usage Policy' },
-                        { key: 'conditions', labelFr: 'Conditions d’utilisation', labelEn: 'Terms of Service' },
-                        { key: 'confidentialite', labelFr: 'Confidentialité (RGPD)', labelEn: 'Privacy Policy' },
-                        { key: 'cookies', labelFr: 'Préférence de cookies', labelEn: 'Cookie Preferences' },
-                        { key: 'securite', labelFr: 'Sécurité & Paiement', labelEn: 'Payment Security' },
-                        { key: 'contact', labelFr: 'Contact & Siège Paris', labelEn: 'Contact & Paris HQ' },
-                      ] as const
-                    ).map((item) => (
-                      <button
-                        key={item.key}
-                        type="button"
-                        onClick={() => setLegalDocOpen(item.key)}
-                        className="text-left text-slate-300 hover:text-white hover:underline cursor-pointer"
-                      >
-                        {isEn ? item.labelEn : item.labelFr}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Official Trust & Certification SVG Badges */}
-                <div className="md:col-span-3 space-y-2.5">
-                  <div className="text-white font-bold text-xs uppercase tracking-wider">
-                    {isEn ? 'Official Certifications' : 'Certifications & Sécurité'}
-                  </div>
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <div className="bg-slate-800/80 border border-slate-700 rounded-lg p-2.5 flex items-center gap-2">
-                      <Award className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span className="text-[11px] font-semibold text-white">
-                        Agréé État FR
-                      </span>
-                    </div>
-                    <div className="bg-slate-800/80 border border-slate-700 rounded-lg p-2.5 flex items-center gap-2">
-                      <ShieldCheck className="w-4 h-4 text-blue-400 shrink-0" />
-                      <span className="text-[11px] font-semibold text-white">
-                        Télépaiement Vérifié
-                      </span>
-                    </div>
-                    <div className="bg-slate-800/80 border border-slate-700 rounded-lg p-2.5 flex items-center gap-2">
-                      <Lock className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span className="text-[11px] font-semibold text-white">
-                        SSL 256-bit
-                      </span>
-                    </div>
-                    <div className="bg-slate-800/80 border border-slate-700 rounded-lg p-2.5 flex items-center gap-2">
-                      <Building2 className="w-4 h-4 text-amber-400 shrink-0" />
-                      <span className="text-[11px] font-semibold text-white">
-                        24h/24 · 5j/7
-                      </span>
-                    </div>
-                  </div>
+                {/* Legal & Policy Links (Clean grid, no header) */}
+                <div className="md:col-span-5 grid grid-cols-2 gap-y-2.5 gap-x-4 pt-1">
+                  {(
+                    [
+                      { key: 'politique', labelFr: 'Politique d’utilisation', labelEn: 'Usage Policy' },
+                      { key: 'conditions', labelFr: 'Conditions d’utilisation', labelEn: 'Terms of Service' },
+                      { key: 'confidentialite', labelFr: 'Confidentialité (RGPD)', labelEn: 'Privacy Policy' },
+                      { key: 'cookies', labelFr: 'Préférence de cookies', labelEn: 'Cookie Preferences' },
+                      { key: 'securite', labelFr: 'Sécurité & Paiement', labelEn: 'Payment Security' },
+                      { key: 'contact', labelFr: 'Contact & Siège Paris', labelEn: 'Contact & Paris HQ' },
+                    ] as const
+                  ).map((item) => (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => setLegalDocOpen(item.key)}
+                      className="text-left text-slate-300 hover:text-white hover:underline cursor-pointer"
+                    >
+                      {isEn ? item.labelEn : item.labelFr}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* Official Social Media Accounts (Driv' Academy) + Institutional Partner Emblems */}
-              <div className="border-t border-slate-800 pt-6 space-y-4">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                  <div className="space-y-2">
-                    <div className="text-[11px] font-mono uppercase tracking-wider text-amber-300 font-semibold">
-                      {isEn
-                        ? "Official Social Networks · Driv' Academy"
-                        : "Réseaux Sociaux Officiels · Driv' Academy"}
-                    </div>
-                    <SocialAccountsStrip dark />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold">
-                      {isEn ? 'Institutional Partners' : 'Partenaires Officiels'}
-                    </div>
-                    <PartnerLogos lang={lang} compact />
-                  </div>
-                </div>
+              {/* Single-Line Official Social Networks (Facebook · Instagram · LinkedIn · TikTok — Driveo Academy) */}
+              <div className="border-t border-slate-800 pt-5">
+                <SocialAccountsStrip dark />
+              </div>
+
+              {/* Official Partners Scrolling at the Very Bottom of the Page (Partenaire Officiel) */}
+              <div className="border-t border-slate-800 pt-6">
+                <PartnerLogos lang={lang} dark />
               </div>
 
               <div className="border-t border-slate-800 pt-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[11px] text-slate-400">
                 <div>
-                  © {new Date().getFullYear()} Driv&apos; Academy International · Ouvert 24h/24 · 5j/7 · Tous droits réservés.
+                  © {new Date().getFullYear()} Driveo Academy · Tous droits réservés.
                 </div>
                 <div className="flex flex-wrap items-center gap-4">
                   <button
@@ -1351,6 +1329,13 @@ export default function App() {
                     className="hover:text-white cursor-pointer"
                   >
                     {t.navCandidate}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setContactModalOpen(true)}
+                    className="hover:text-white cursor-pointer"
+                  >
+                    {isEn ? 'Contact' : 'Contact / Question'}
                   </button>
                   {isCreatorAdmin && (
                     <button
@@ -1386,6 +1371,16 @@ export default function App() {
           activeDoc={legalDocOpen}
           lang={lang}
           onClose={() => setLegalDocOpen(null)}
+        />
+
+        {/* Visitor Contact & Question Modal -> Saved to Firebase & Emailed to firefile486@gmail.com */}
+        <ContactQuestionModal
+          isOpen={contactModalOpen}
+          lang={lang}
+          defaultName={userProfile?.fullName || user?.displayName || ''}
+          defaultEmail={user?.email || ''}
+          defaultPhone={userProfile?.phone || ''}
+          onClose={() => setContactModalOpen(false)}
         />
       </div>
     </ErrorBoundary>

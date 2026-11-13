@@ -61,7 +61,7 @@ export interface QuizQuestion {
 export const CERTIFIED_INSTRUCTORS: InstructorProfile[] = [
   {
     id: 'inst_paris_01',
-    name: "Driv' Academy — Service Examens",
+    name: 'Driveo Academy — Service Examens',
     titleFr: 'Coordination Officielle des Épreuves Physiques & Délivrance Permis',
     titleEn: 'Official Physical Exam & License Issuance Coordination',
     city: 'Siège International Paris · Réseau Mondial',
@@ -74,12 +74,12 @@ export const CERTIFIED_INSTRUCTORS: InstructorProfile[] = [
   },
   {
     id: 'inst_benin_01',
-    name: 'DrivePro Academy — Afrique & International',
+    name: 'Driveo Academy — Afrique & International',
     titleFr: 'Coordination Épreuves Physiques & Délivrance Permis',
     titleEn: 'Physical Exam Appointment & License Issuance Desk',
-    city: 'Réseau Agréé International DrivePro Academy',
+    city: 'Réseau Agréé International Driveo Academy',
     languages: ['Français', 'English'],
-    certification: 'Agrément DrivePro · Coordination Examens',
+    certification: 'Agrément Driveo · Coordination Examens',
     phone: PARIS_HQ_CONTACT.phone,
     whatsapp: PARIS_HQ_CONTACT.whatsappDigits,
     experienceYears: 11,
@@ -87,10 +87,10 @@ export const CERTIFIED_INSTRUCTORS: InstructorProfile[] = [
   },
   {
     id: 'inst_eu_01',
-    name: 'DrivePro Academy — Pôle Europe',
+    name: 'Driveo Academy — Pôle Europe',
     titleFr: 'Coordination Épreuves Physiques UE — Multilingue',
     titleEn: 'Certified EU Physical Exam Desk — Multilingual Track',
-    city: 'Réseau DrivePro Academy Europe',
+    city: 'Réseau Driveo Academy Europe',
     languages: ['English', 'Français', 'Deutsch', 'Български', 'Español'],
     certification: 'EU Directive 2006/126/EC Exam Desk',
     phone: PARIS_HQ_CONTACT.phone,
@@ -120,14 +120,14 @@ export const CODE_MODULES: CodeLessonModule[] = [
       'Observation réelle depuis le poste de conduite : panneau Cédez-le-passage, sens giratoire, passages piétons et marquage directionnel au sol.',
     visualCaptionEn:
       'Real driver-view study: Yield sign, roundabout indicator, pedestrian crosswalks, and directional lane markings.',
-    speakerName: 'DrivePro Academy',
+    speakerName: 'Driveo Academy',
     speakerRoleFr: 'Moniteur Principal · Explication audio du cours & de l’image',
     speakerRoleEn: 'Lead Instructor · Full Audio Course & Visual Explanation',
     speakerAvatarUrl: APP_MEDIA.instructorPortraitParis,
     audioScriptFr:
-      'Bonjour et bienvenue dans ce premier cours DrivePro Academy. Regardez attentivement l’image de la route devant vous et l’animation ci-dessous. La règle numéro un du Code de la Route est la hiérarchie stricte des signaux. En haut de l’échelle, les gestes de l’agent de police annulent toujours les feux et les panneaux. Ensuite viennent les feux tricolores, puis les panneaux verticaux, et enfin les marquages blancs peints au sol. Sur l’illustration réelle, notez le panneau triangulaire inversé rouge : il signifie Cédez-le-passage et se lit même recouvert de neige grâce à sa pointe vers le bas. N’oubliez jamais : devant une ligne continue blanche, interdiction absolue de chevaucher, sauf pour dépasser un cycliste en laissant un mètre en ville et un mètre cinquante hors agglomération.',
+      'Bonjour et bienvenue dans ce premier cours Driveo Academy. Regardez attentivement l’image de la route devant vous et l’animation ci-dessous. La règle numéro un du Code de la Route est la hiérarchie stricte des signaux. En haut de l’échelle, les gestes de l’agent de police annulent toujours les feux et les panneaux. Ensuite viennent les feux tricolores, puis les panneaux verticaux, et enfin les marquages blancs peints au sol. Sur l’illustration réelle, notez le panneau triangulaire inversé rouge : il signifie Cédez-le-passage et se lit même recouvert de neige grâce à sa pointe vers le bas. N’oubliez jamais : devant une ligne continue blanche, interdiction absolue de chevaucher, sauf pour dépasser un cycliste en laissant un mètre en ville et un mètre cinquante hors agglomération.',
     audioScriptEn:
-      'Welcome to Course 01 at DrivePro Academy. Observe the road photograph and interactive diagram below. Rule number one is the strict hierarchy of traffic controls: police officer gestures always override traffic lights, lights override signs, and signs override painted road markings. Notice the inverted red triangle Yield sign on the photo, designed so drivers recognize it instantly even in heavy snow. Never cross a solid white center line unless safely passing a cyclist with at least 1 meter clearance in urban areas and 1.5 meters on rural roads.',
+      'Welcome to Course 01 at Driveo Academy. Observe the road photograph and interactive diagram below. Rule number one is the strict hierarchy of traffic controls: police officer gestures always override traffic lights, lights override signs, and signs override painted road markings. Notice the inverted red triangle Yield sign on the photo, designed so drivers recognize it instantly even in heavy snow. Never cross a solid white center line unless safely passing a cyclist with at least 1 meter clearance in urban areas and 1.5 meters on rural roads.',
     titleFr: 'Cours 01 — Signalisation routière & marquages au sol',
     titleEn: 'Course 01 — Road Signage & Lane Markings',
     durationMin: 25,
@@ -187,7 +187,7 @@ export const CODE_MODULES: CodeLessonModule[] = [
       'Séance explicative en salle : analyse détaillée des trajectoires en intersection et règles de priorité entre véhicules.',
     visualCaptionEn:
       'Classroom briefing photo: analyzing intersection turning priorities and multi-vehicle trajectories.',
-    speakerName: 'DrivePro Academy',
+    speakerName: 'Driveo Academy',
     speakerRoleFr: 'Monitrice Certifiée · Explication audio des priorités',
     speakerRoleEn: 'Certified Instructor · Right-of-Way Audio Coaching',
     speakerAvatarUrl: APP_MEDIA.instructorPortraitParis,
@@ -254,7 +254,7 @@ export const CODE_MODULES: CodeLessonModule[] = [
       'Perspective autoroutière : chevrons blancs de distance de sécurité (2 secondes) et bande d’arrêt d’urgence protégée.',
     visualCaptionEn:
       'Motorway driver view: white two-second following distance chevrons and protected hard shoulder.',
-    speakerName: 'DrivePro Academy',
+    speakerName: 'Driveo Academy',
     speakerRoleFr: 'Moniteur Principal · Explication audio vitesse & freinage',
     speakerRoleEn: 'Lead Instructor · Braking & Physics Audio Coaching',
     speakerAvatarUrl: APP_MEDIA.instructorPortraitParis,
@@ -321,7 +321,7 @@ export const CODE_MODULES: CodeLessonModule[] = [
       'Mise en situation en voiture double-commande : posture des mains, prise d’information permanente et accompagnement du moniteur.',
     visualCaptionEn:
       'Dual-control vehicle training session: hand position, constant scanning, and live instructor guidance.',
-    speakerName: 'DrivePro Academy',
+    speakerName: 'Driveo Academy',
     speakerRoleFr: 'Moniteur Principal · Coaching audio sécurité & éco-conduite',
     speakerRoleEn: 'Lead Instructor · Safety & Eco-Driving Audio Coaching',
     speakerAvatarUrl: APP_MEDIA.instructorPortraitParis,
@@ -389,7 +389,7 @@ export const CODE_MODULES: CodeLessonModule[] = [
       'Préparation collective à l’examen : révision structurée des séries visuelles sur tablette avant le passage du QCM officiel.',
     visualCaptionEn:
       'Collaborative exam readiness: structured tablet review of official signage and scenario series.',
-    speakerName: 'DrivePro Academy',
+    speakerName: 'Driveo Academy',
     speakerRoleFr: 'Service Examens · Méthode audio Comment étudier',
     speakerRoleEn: 'Exam Desk · How to Study Audio Briefing',
     speakerAvatarUrl: APP_MEDIA.instructorPortraitParis,
