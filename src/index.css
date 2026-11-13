@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 @theme {
-  --font-display: "Outfit", system-ui, sans-serif;
-  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque", system-ui, sans-serif;
+  --font-sans: "DM Sans", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
@@ -11,10 +11,14 @@
     font-family: var(--font-sans);
     background-color: #020617;
     color: #0f172a;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
   }
 
-  h1, h2, h3, .font-display {
+  h1, h2, h3, h4, .font-display {
     font-family: var(--font-display);
+    letter-spacing: -0.02em;
   }
 
   .tabular-nums {
@@ -24,25 +28,37 @@
 
 @keyframes driveproKenBurnsA {
   0% {
-    transform: scale(1.02) translate3d(0%, 0%, 0);
+    transform: scale(1.03) translate3d(0%, 0%, 0);
   }
   50% {
-    transform: scale(1.11) translate3d(-2.2%, -1.5%, 0);
+    transform: scale(1.13) translate3d(-2.5%, -1.6%, 0);
   }
   100% {
-    transform: scale(1.02) translate3d(0%, 0%, 0);
+    transform: scale(1.03) translate3d(0%, 0%, 0);
   }
 }
 
 @keyframes driveproKenBurnsB {
   0% {
-    transform: scale(1.08) translate3d(-1.5%, 0%, 0);
+    transform: scale(1.1) translate3d(-1.8%, 0.8%, 0);
   }
   50% {
-    transform: scale(1.02) translate3d(2%, -1.8%, 0);
+    transform: scale(1.03) translate3d(2.2%, -1.8%, 0);
   }
   100% {
-    transform: scale(1.08) translate3d(-1.5%, 0%, 0);
+    transform: scale(1.1) translate3d(-1.8%, 0.8%, 0);
+  }
+}
+
+@keyframes driveproKenBurnsC {
+  0% {
+    transform: scale(1.05) translate3d(1.6%, -1%, 0);
+  }
+  50% {
+    transform: scale(1.14) translate3d(-1.6%, 1.2%, 0);
+  }
+  100% {
+    transform: scale(1.05) translate3d(1.6%, -1%, 0);
   }
 }
 
@@ -56,12 +72,17 @@
 }
 
 .animate-kenburns-a {
-  animation: driveproKenBurnsA 26s ease-in-out infinite;
+  animation: driveproKenBurnsA 22s ease-in-out infinite;
   will-change: transform;
 }
 
 .animate-kenburns-b {
-  animation: driveproKenBurnsB 30s ease-in-out infinite;
+  animation: driveproKenBurnsB 25s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-kenburns-c {
+  animation: driveproKenBurnsC 24s ease-in-out infinite;
   will-change: transform;
 }
 
@@ -73,6 +94,7 @@
 @media (prefers-reduced-motion: reduce) {
   .animate-kenburns-a,
   .animate-kenburns-b,
+  .animate-kenburns-c,
   .animate-audio-bar {
     animation: none !important;
     transform: none !important;

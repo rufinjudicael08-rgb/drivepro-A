@@ -7,8 +7,34 @@ const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 export const ADMIN_EMAIL = 'lokossoujudicael00@gmail.com';
+export const FIREBASE_PROJECT_ID = firebaseConfig.projectId;
+export const FIREBASE_DATABASE_ID = firebaseConfig.firestoreDatabaseId;
+export const FIRESTORE_CONSOLE_URL = `https://console.firebase.google.com/project/${firebaseConfig.projectId}/firestore/databases/${firebaseConfig.firestoreDatabaseId}/data`;
+export const FIREBASE_AUTH_SETTINGS_URL = `https://console.firebase.google.com/project/${firebaseConfig.projectId}/authentication/settings`;
+
+export function translateAuthErrorFr(error: unknown): string {
+  const errObj = error as { code?: string; message?: string } | null;
+  const code = errObj?.code || '';
+  const msg = errObj?.message || String(error);
+  const host = typeof window !== 'undefined' ? window.location.hostname : 'ce domaine';
+
+  if (code === 'auth/unauthorized-domain' || msg.includes('unauthorized-domain')) {
+    return `Domaine non autorisé (${host}). Ajoutez « ${host} » dans Firebase Console → Authentication → Settings → Authorized domains afin d’activer la connexion Google sur ce lien.`;
+  }
+  if (code === 'auth/popup-blocked') {
+    return 'Votre navigateur a bloqué la fenêtre Google. Redirection automatique en cours ou autorisez les fenêtres pop-up.';
+  }
+  if (code === 'auth/popup-closed-by-user') {
+    return 'La fenêtre de connexion Google a été fermée avant la validation. Veuillez réessayer.';
+  }
+  if (code === 'auth/network-request-failed') {
+    return 'Erreur réseau lors de la connexion Google. Vérifiez votre Wi-Fi ou connexion Internet et réessayez.';
+  }
+  return msg;
+}
 
 export enum OperationType {
   CREATE = 'create',

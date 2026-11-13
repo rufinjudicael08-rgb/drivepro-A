@@ -11,9 +11,11 @@ import {
   Check,
   CheckCircle2,
   Copy,
+  Database,
   Download,
   ExternalLink,
   Eye,
+  Globe,
   Link2,
   Lock,
   Search,
@@ -30,7 +32,16 @@ import {
   WORLD_COUNTRIES,
 } from '../data/countries';
 import { getTranslations } from '../data/i18n';
-import { ADMIN_EMAIL, db, handleFirestoreError, OperationType } from '../firebase';
+import {
+  ADMIN_EMAIL,
+  db,
+  FIREBASE_AUTH_SETTINGS_URL,
+  FIREBASE_DATABASE_ID,
+  FIREBASE_PROJECT_ID,
+  FIRESTORE_CONSOLE_URL,
+  handleFirestoreError,
+  OperationType,
+} from '../firebase';
 import {
   Language,
   PaymentLogRecord,
@@ -81,9 +92,18 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
   const [platformFilter, setPlatformFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [previewIdReg, setPreviewIdReg] = useState<RegistrationRecord | null>(null);
+  const [copiedDomain, setCopiedDomain] = useState(false);
 
   const appOrigin =
     typeof window !== 'undefined' ? window.location.origin : 'https://drivepro.academy';
+  const currentHostname =
+    typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+
+  const handleCopyHostname = () => {
+    navigator.clipboard.writeText(currentHostname);
+    setCopiedDomain(true);
+    setTimeout(() => setCopiedDomain(false), 2000);
+  };
 
   const handleCreateTrackedLink = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -238,6 +258,84 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
 
   return (
     <div className="space-y-8">
+      {/* Section 0: Firebase Database & Vercel Google Auth Diagnostics (Creator Only) */}
+      <section className="bg-slate-900 text-white rounded-xl p-6 md:p-7 border border-slate-800 shadow-lg space-y-5">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+          <div className="space-y-1">
+            <div className="text-xs font-mono text-blue-400 font-semibold">
+              Diagnostic Technique Firebase & Vercel · Réservé au créateur
+            </div>
+            <h2 className="font-display text-xl sm:text-2xl font-bold text-white">
+              Accès direct à vos données Firebase & <span className="text-emerald-400">Connexion Google</span>
+            </h2>
+          </div>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <a
+              href={FIRESTORE_CONSOLE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg whitespace-nowrap"
+            >
+              <Database className="w-4 h-4" />
+              <span>Ouvrir mes données Firestore</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+            <a
+              href={FIREBASE_AUTH_SETTINGS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg whitespace-nowrap"
+            >
+              <Globe className="w-4 h-4" />
+              <span>Authorized Domains (Google Auth)</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-4 space-y-2">
+            <div className="text-xs font-semibold text-blue-300">
+              1. Où voir toutes les données du site sur Firebase ?
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Vos inscriptions, paiements, liens TikTok/Instagram et QCM sont enregistrés dans la base nommée{' '}
+              <span className="font-mono text-white font-semibold">{FIREBASE_DATABASE_ID}</span> (Projet{' '}
+              <span className="font-mono text-white">{FIREBASE_PROJECT_ID}</span>), et non dans « (default) ».
+            </p>
+          </div>
+
+          <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-4 space-y-2">
+            <div className="text-xs font-semibold text-emerald-300">
+              2. Domaine actuel à autoriser dans Google Auth :
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2">
+              <span className="font-mono text-xs text-white truncate">{currentHostname}</span>
+              <button
+                type="button"
+                onClick={handleCopyHostname}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white rounded cursor-pointer shrink-0"
+              >
+                {copiedDomain ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Copié</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>Copier le domaine</span>
+                  </>
+                )}
+              </button>
+            </div>
+            <p className="text-[11px] text-slate-400">
+              Collez ce domaine dans Firebase Console → Authentication → Settings → Authorized domains → Add domain.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Section 1: Creator Social Bio Link Automation */}
       <section className="bg-white/95 backdrop-blur border border-slate-200 rounded-xl p-6 md:p-8 space-y-6 shadow-sm">
         <div className="border-b border-slate-100 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -247,10 +345,10 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
                 ? `Private Creator Workspace · ${ADMIN_EMAIL}`
                 : `Espace Direction Privé · Réservé à ${ADMIN_EMAIL}`}
             </div>
-            <h2 className="text-xl font-semibold text-slate-900 mt-1">
+            <h2 className="font-display text-xl sm:text-2xl font-bold text-slate-900 mt-1">
               {t.agentModuleTitle}
             </h2>
-            <p className="text-sm text-slate-600 mt-1">
+            <p className="text-[15px] text-slate-700 mt-1">
               {isEn
                 ? 'Generate tracked links for your TikTok, Facebook, and Instagram bios to capture enrollments without exposing this management console to clients.'
                 : 'Générez vos liens traqués pour vos bios TikTok, Facebook et Instagram afin de capter des candidats. Vos clients ne voient jamais cet onglet.'}

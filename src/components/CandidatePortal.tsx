@@ -59,7 +59,7 @@ const RoadSignIllustration: React.FC<{ type?: QuizQuestion['signType'] }> = ({
           fill="#FFFFFF"
           fontSize="26"
           fontWeight="700"
-          fontFamily="Outfit, sans-serif"
+          fontFamily="Bricolage Grotesque, DM Sans, sans-serif"
         >
           STOP
         </text>
@@ -87,7 +87,7 @@ const RoadSignIllustration: React.FC<{ type?: QuizQuestion['signType'] }> = ({
           fill="#0F172A"
           fontSize="36"
           fontWeight="700"
-          fontFamily="Outfit, sans-serif"
+          fontFamily="Bricolage Grotesque, DM Sans, sans-serif"
         >
           50
         </text>
@@ -205,21 +205,27 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
           <Lock className="w-6 h-6" />
         </div>
         <div className="max-w-xl mx-auto space-y-2">
-          <h2 className="text-2xl font-semibold text-slate-900">
-            {isEn
-              ? 'Candidate Portal Strictly Locked'
-              : 'Espace Candidat strictement verrouillé'}
+          <h2 className="font-display text-2xl sm:text-3xl font-bold text-slate-900">
+            {isEn ? (
+              <>
+                Candidate Portal <span className="text-blue-700">Strictly Locked</span>
+              </>
+            ) : (
+              <>
+                Espace Candidat <span className="text-blue-700">strictement verrouillé</span>
+              </>
+            )}
           </h2>
-          <p className="text-sm text-slate-600 leading-relaxed">
+          <p className="text-[15px] text-slate-700 leading-relaxed">
             {isEn
-              ? 'Access to the live queue, sequential audio courses, official practice quiz, and physical test scheduling remains locked until your legal dossier (ID document) and payment are validated.'
-              : 'Vous ne pouvez pas accéder à la file d’attente, aux cours audio animés, au QCM officiel ni à la prise de rendez-vous pour les épreuves physiques tant que votre dossier légal (avec pièce d’identité) et votre paiement ne sont pas validés.'}
+              ? 'Access to the live queue, sequential audio courses, official practice quiz, and physical test scheduling remains locked until your dossier and payment are validated.'
+              : 'Vous ne pouvez pas accéder à la file d’attente, aux cours audio animés, au QCM officiel ni à la prise de rendez-vous pour les épreuves physiques tant que votre dossier à fournir et votre paiement ne sont pas validés.'}
           </p>
         </div>
         <button
           type="button"
           onClick={onGoToRegistration}
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-lg transition-colors cursor-pointer"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap"
         >
           <span>
             {registration && registration.paymentStatus === 'pending'
@@ -227,8 +233,8 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                 ? 'Complete Payment Now'
                 : 'Finaliser mon paiement'
               : isEn
-              ? 'Complete Legal Dossier & Pay'
-              : 'Remplir mon dossier légal & payer'}
+              ? 'Complete Dossier & Pay'
+              : 'Remplir mon dossier à fournir & payer'}
           </span>
         </button>
       </section>
@@ -457,15 +463,21 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
         <div className="bg-white/95 backdrop-blur border border-slate-200 rounded-xl p-6 md:p-8 space-y-6 shadow-sm">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
             <div>
-              <h3 className="text-xl font-semibold text-slate-900">
-                {isEn
-                  ? `Official Candidate Queue — Position #${registration.queueNumber}`
-                  : `File d’attente officielle — Candidat #${registration.queueNumber}`}
+              <h3 className="font-display text-xl sm:text-2xl font-bold text-slate-900">
+                {isEn ? (
+                  <>
+                    Official Candidate Queue — <span className="text-blue-700">Position #{registration.queueNumber}</span>
+                  </>
+                ) : (
+                  <>
+                    File d’attente officielle — <span className="text-blue-700">Candidat #{registration.queueNumber}</span>
+                  </>
+                )}
               </h3>
-              <p className="text-sm text-slate-600 mt-1">
+              <p className="text-[15px] text-slate-700 mt-1">
                 {isEn
-                  ? 'Your legal dossier is validated. Complete all 5 audio-guided courses and pass the quiz (≥75%) to unlock your appointment contact for final physical driving tests.'
-                  : 'Votre dossier légal est validé. Terminez les 5 cours audio séquentiels puis réussissez le QCM (≥ 75 %) pour débloquer le contact afin de fixer votre rendez-vous d’épreuves physiques.'}
+                  ? 'Your dossier is validated. Complete all 5 audio-guided courses and pass the quiz (≥75%) to unlock your appointment contact for final physical driving tests.'
+                  : 'Votre dossier à fournir est validé. Terminez les 5 cours audio séquentiels puis réussissez le QCM (≥ 75 %) pour débloquer le contact afin de fixer votre rendez-vous d’épreuves physiques.'}
               </p>
             </div>
             <div className="text-xs font-mono text-slate-600 bg-slate-50 border border-slate-200 px-3 py-2 rounded-lg">
@@ -477,8 +489,8 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
             {[
               {
                 step: '01',
-                titleFr: 'Dossier légal (CNI) & Paiement',
-                titleEn: 'Legal Dossier (ID) & Payment',
+                titleFr: 'Dossier à fournir & Paiement',
+                titleEn: 'Dossier & Payment',
                 statusFr: 'Validé',
                 statusEn: 'Completed',
                 done: true,
@@ -559,12 +571,19 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
           <div className="bg-white/95 backdrop-blur border border-slate-200 rounded-xl p-6 md:p-8 space-y-6 shadow-sm">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
               <div>
-                <h3 className="text-xl font-semibold text-slate-900">
-                  {isEn
-                    ? 'Sequential Audio & Visual Highway Code Courses'
-                    : 'Programme séquentiel complet avec explications audio & images'}
+                <h3 className="font-display text-xl sm:text-2xl font-bold text-slate-900">
+                  {isEn ? (
+                    <>
+                      Sequential Audio & <span className="text-blue-700">Visual Highway Code</span> Courses
+                    </>
+                  ) : (
+                    <>
+                      Programme séquentiel complet avec{' '}
+                      <span className="text-blue-700">explications audio & images</span>
+                    </>
+                  )}
                 </h3>
-                <p className="text-sm text-slate-600 mt-1">
+                <p className="text-[15px] text-slate-700 mt-1">
                   {isEn
                     ? 'Listen to the instructor narration, inspect the real-road visual and interactive animation, and validate each course in strict order.'
                     : 'Écoutez les explications vocales du moniteur sur chaque image et schéma animé, puis validez chaque cours dans l’ordre strict pour débloquer le suivant.'}
@@ -629,10 +648,10 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                     {isEn ? 'Module' : 'Module'} {activeModule.number} ·{' '}
                     {activeModule.durationMin} min
                   </div>
-                  <h4 className="text-xl font-semibold text-slate-900">
+                  <h4 className="font-display text-xl sm:text-2xl font-bold text-slate-900">
                     {isEn ? activeModule.titleEn : activeModule.titleFr}
                   </h4>
-                  <p className="text-sm text-slate-700 leading-relaxed">
+                  <p className="text-[15px] text-slate-700 leading-relaxed">
                     {isEn ? activeModule.summaryEn : activeModule.summaryFr}
                   </p>
                 </div>
@@ -743,10 +762,10 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                           <span>{isEn ? 'Listen' : 'Écouter ce chapitre'}</span>
                         </button>
                       </div>
-                      <p className="text-sm text-slate-700 leading-relaxed">
+                      <p className="text-[15px] text-slate-700 leading-relaxed">
                         {isEn ? chapter.bodyEn : chapter.bodyFr}
                       </p>
-                      <div className="text-xs text-blue-900 bg-blue-50 border border-blue-100 rounded-lg px-3.5 py-2.5">
+                      <div className="text-sm text-blue-950 bg-blue-50 border border-blue-100 rounded-lg px-4 py-3 font-medium">
                         {isEn ? chapter.tipEn : chapter.tipFr}
                       </div>
                     </div>
@@ -807,12 +826,19 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
           <div className="bg-white/95 backdrop-blur border border-slate-200 rounded-xl p-6 md:p-8 space-y-6 shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
               <div>
-                <h3 className="text-xl font-semibold text-slate-900">
-                  {isEn
-                    ? 'Official State Theory Practice Exam (12 Questions)'
-                    : 'QCM officiel de préparation à l’examen de l’État'}
+                <h3 className="font-display text-xl sm:text-2xl font-bold text-slate-900">
+                  {isEn ? (
+                    <>
+                      Official State Theory <span className="text-blue-700">Practice Exam</span> (12 Questions)
+                    </>
+                  ) : (
+                    <>
+                      QCM officiel de préparation à{' '}
+                      <span className="text-blue-700">l’examen de l’État</span>
+                    </>
+                  )}
                 </h3>
-                <p className="text-sm text-slate-600 mt-1">
+                <p className="text-[15px] text-slate-700 mt-1">
                   {isEn
                     ? 'Requires completion of Courses 01–04 and Module 05 (How to Study). Pass with ≥75% to unlock the coordinator contact and book your final physical tests.'
                     : 'Débloqué après validation des Cours 01 à 04 et du Module 05 (Comment étudier). Réussite ≥ 75 % requise pour obtenir le contact de rendez-vous des épreuves physiques.'}
@@ -1114,15 +1140,15 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
               </div>
 
               <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 space-y-2">
-                <div className="text-sm font-semibold text-emerald-950">
+                <div className="text-base font-bold text-emerald-950">
                   {isEn
                     ? 'Final Step to Obtain Your License: Pass Your Physical Tests'
                     : 'Dernière étape pour retirer votre permis officiel : les épreuves physiques'}
                 </div>
-                <p className="text-xs text-emerald-900 leading-relaxed">
+                <p className="text-[15px] text-emerald-900 leading-relaxed">
                   {isEn
-                    ? 'You have successfully validated your theory preparation. To receive your actual driving license, you must complete a short series of in-person physical tests. Contact the coordinator below via direct phone call or WhatsApp to fix your appointment date, pass the physical tests, and receive your license.'
-                    : 'Félicitations pour votre réussite au QCM ! Pour obtenir votre permis de conduire proprement dit, vous devez maintenant passer quelques épreuves physiques pratiques avec notre examinateur. Contactez le responsable ci-dessous par appel ou WhatsApp pour fixer votre rendez-vous, achever les épreuves physiques et prendre votre permis.'}
+                    ? 'You have successfully validated your theory preparation. To receive your actual driving license, you must complete a short series of in-person physical tests. Contact DrivePro Academy below via direct phone call or WhatsApp to fix your appointment date, pass the physical tests, and receive your license.'
+                    : 'Félicitations pour votre réussite au QCM ! Pour obtenir votre permis de conduire proprement dit, vous devez maintenant passer quelques épreuves physiques pratiques avec notre examinateur. Contactez DrivePro Academy ci-dessous par appel direct ou WhatsApp pour fixer votre rendez-vous, achever les épreuves physiques et prendre votre permis.'}
                 </p>
               </div>
 

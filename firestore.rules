@@ -197,6 +197,14 @@ service cloud.firestore {
             && (
               (
                 existing().paymentStatus == 'pending'
+                && incoming().paymentStatus == 'pending'
+                && incoming().dossierStatus == 'locked'
+                && incoming().diff(existing()).affectedKeys().hasOnly([
+                  'countryCode', 'countryName', 'currency', 'convertedAmount', 'updatedAt'
+                ])
+              )
+              || (
+                existing().paymentStatus == 'pending'
                 && incoming().paymentStatus == 'paid'
                 && incoming().dossierStatus == 'code_unlocked'
                 && isValidId(incoming().latestPaymentId)

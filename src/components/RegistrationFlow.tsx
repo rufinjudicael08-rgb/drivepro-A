@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { User } from 'firebase/auth';
-import { doc, serverTimestamp, setDoc, writeBatch } from 'firebase/firestore';
+import { doc, serverTimestamp, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import {
   ArrowRight,
   CheckCircle2,
@@ -23,6 +23,7 @@ import {
   getCategoryFeeEur,
   getCountryFlagEmoji,
   TAPTAP_SEND_CHECKOUT,
+  WORLD_COUNTRIES,
 } from '../data/countries';
 import { getInstructorForCountry } from '../data/curriculum';
 import { getTranslations } from '../data/i18n';
@@ -40,6 +41,7 @@ interface RegistrationFlowProps {
   lang: Language;
   category: LicenseCategory;
   onChangeCategory: (cat: LicenseCategory) => void;
+  onChangeCountry: (country: CountryConfig) => void;
   user: User | null;
   registration: RegistrationRecord | null;
   referralCode: string;
@@ -85,6 +87,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
   lang,
   category,
   onChangeCategory,
+  onChangeCountry,
   user,
   registration,
   referralCode,
@@ -125,7 +128,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
     onStepChange?.(step);
   }, [step, onStepChange]);
 
-  // Step 2 Legal Dossier State
+  // Step 2 Dossier State
   const [lastName, setLastName] = useState('');
   const [firstName, setFirstName] = useState('');
   const [email, setEmail] = useState(registration?.email || user?.email || '');
@@ -133,9 +136,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
     registration?.phone || `${country.dialCode} `
   );
   const [address, setAddress] = useState(registration?.address || '');
-  const [city, setCity] = useState(
-    registration?.city || (country.code === 'FR' ? 'Paris' : '')
-  );
+  const [city, setCity] = useState(registration?.city || '');
   const [wifiReady, setWifiReady] = useState<boolean>(
     registration?.wifiReady ?? true
   );
@@ -153,7 +154,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
   );
   const [acceptedTerms, setAcceptedTerms] = useState(false);
 
-  // Step 3 Payment State (client enters their own sender coordinates — no recipient number displayed)
+  // Step 3 Payment State (countries & settlement handled strictly at payment time)
   const [selectedMethodId, setSelectedMethodId] = useState<string>(
     country.paymentMethods[0]?.id || 'taptap_send'
   );
@@ -209,6 +210,32 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
     setIdCardFileName(file.name.slice(0, 120));
     const thumb = await compressIdCardImage(file);
     setIdCardThumbnail(thumb);
+  };
+
+  const handleCountrySwitchAtPayment = async (countryCode: string) => {
+    const nextCountry =
+      WORLD_COUNTRIES.find((c) => c.code === countryCode) || country;
+    onChangeCountry(nextCountry);
+    setSelectedMethodId(nextCountry.paymentMethods[0]?.id || 'taptap_send');
+
+    if (registration && registration.paymentStatus === 'pending') {
+      const updatedAmount = convertEurFee(registration.baseFeeEur, nextCountry);
+      try {
+        await updateDoc(doc(db, 'registrations', registration.id), {
+          countryCode: nextCountry.code,
+          countryName: isEn ? nextCountry.nameEn : nextCountry.nameFr,
+          currency: nextCountry.currency,
+          convertedAmount: updatedAmount,
+          updatedAt: serverTimestamp(),
+        });
+      } catch (error) {
+        handleFirestoreError(
+          error,
+          OperationType.UPDATE,
+          `registrations/${registration.id}`
+        );
+      }
+    }
   };
 
   const handleSaveDossier = async (e: React.FormEvent) => {
@@ -267,8 +294,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
     if (idCardNumber.trim().length < 4 || idCardFileName.trim().length < 3) {
       setFormError(
         isEn
-          ? 'Mandatory legal check: enter your ID number AND upload a photo/scan of your National ID or Passport.'
-          : 'Pièce légale obligatoire : saisissez le numéro ET joignez la photo ou le scan de votre Carte d’Identité (ou Passeport).'
+          ? 'Mandatory ID check: enter your ID number AND upload a photo/scan of your National ID or Passport.'
+          : 'Pièce d’identité obligatoire : saisissez le numéro ET joignez la photo ou le scan de votre carte.'
       );
       return;
     }
@@ -276,7 +303,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
       setFormError(
         isEn
           ? 'You must accept the DrivePro Academy enrollment policy.'
-          : 'Vous devez accepter le règlement légal d’inscription DrivePro Academy.'
+          : 'Vous devez confirmer l’exactitude des informations de votre dossier.'
       );
       return;
     }
@@ -284,8 +311,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
     if (!user) {
       setFormError(
         isEn
-          ? 'Please sign in with Google below first to secure your dossier.'
-          : 'Veuillez d’abord vous connecter avec Google ci-dessus pour enregistrer votre dossier.'
+          ? 'Please click Google Sign-In above first to save your dossier.'
+          : 'Veuillez d’abord cliquer sur Connexion Google ci-dessus pour enregistrer votre dossier.'
       );
       return;
     }
@@ -437,36 +464,36 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
 
   return (
     <section id="registration-funnel" className="space-y-6">
-      <div className="bg-slate-900/95 text-white rounded-xl p-5 md:p-6 border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-slate-900/95 text-white rounded-xl p-6 border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-lg">
         <div className="flex items-start gap-3.5">
           {isUnlocked ? (
-            <Unlock className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+            <Unlock className="w-5 h-5 text-emerald-400 shrink-0 mt-1" />
           ) : (
-            <Lock className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+            <Lock className="w-5 h-5 text-amber-400 shrink-0 mt-1" />
           )}
           <div className="space-y-1">
-            <h3 className="text-base font-semibold">
+            <h3 className="text-lg font-bold">
               {isUnlocked
                 ? isEn
                   ? 'Dossier Validated — Sequential Audio Courses Unlocked'
-                  : 'Dossier légal validé — Cours audio séquentiels débloqués'
+                  : 'Dossier validé — Cours audio séquentiels débloqués'
                 : t.lockedNoticeTitle}
             </h3>
-            <p className="text-sm text-slate-300 max-w-3xl leading-relaxed">
+            <p className="text-sm text-slate-200 max-w-3xl leading-relaxed">
               {isUnlocked
                 ? isEn
-                  ? 'Your registration fee is recorded. Complete the 5 sequential modules and pass the exam (≥75%) to unlock your physical exam appointment contact.'
-                  : 'Votre paiement est enregistré. Terminez les 5 modules audio séquentiels et réussissez le QCM (≥75%) pour fixer vos épreuves physiques finales.'
+                  ? 'Your payment is confirmed. Complete the 5 sequential modules and pass the exam (≥75%) to schedule your final physical tests.'
+                  : 'Votre paiement est confirmé. Terminez les 5 modules audio séquentiels et réussissez le QCM (≥ 75 %) pour fixer vos épreuves physiques finales.'
                 : t.lockedNoticeBody}
             </p>
           </div>
         </div>
         <div className="shrink-0 text-left md:text-right">
-          <div className="text-xs text-slate-400">{t.fixedFeeLabel}</div>
-          <div className="text-xl font-mono font-semibold tabular-nums text-white">
-            {formattedLocalFee}
+          <div className="text-xs text-slate-300">{t.fixedFeeLabel}</div>
+          <div className="text-2xl font-mono font-bold tabular-nums text-white">
+            {baseFeeEur} €
           </div>
-          <div className="text-xs font-mono text-slate-400 tabular-nums">
+          <div className="text-xs font-mono text-blue-300 tabular-nums">
             {t.baseReferenceLabel}
           </div>
         </div>
@@ -503,19 +530,19 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
               type="button"
               disabled={!clickable}
               onClick={() => clickable && setStep(item.num)}
-              className={`px-4 py-3 rounded-lg border text-left transition-colors flex items-center justify-between gap-2 ${
+              className={`px-4 py-3.5 rounded-lg border text-left transition-colors flex items-center justify-between gap-2 ${
                 active
-                  ? 'bg-blue-700 text-white border-blue-600'
+                  ? 'bg-blue-700 text-white border-blue-600 shadow-sm'
                   : item.done
                   ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
                   : item.locked
                   ? 'bg-white/90 text-slate-400 border-slate-200 cursor-not-allowed'
-                  : 'bg-white text-slate-800 border-slate-200 hover:border-slate-400 cursor-pointer'
+                  : 'bg-white/95 text-slate-900 border-slate-200 hover:border-slate-400 cursor-pointer'
               }`}
             >
-              <span className="text-xs font-semibold truncate">{item.label}</span>
+              <span className="text-sm font-bold truncate">{item.label}</span>
               {item.locked ? (
-                <Lock className="w-3.5 h-3.5 shrink-0" />
+                <Lock className="w-4 h-4 shrink-0" />
               ) : item.done ? (
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
               ) : null}
@@ -524,28 +551,28 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
         })}
       </div>
 
-      {/* Step 1: Country & License Category Pricing (200 / 250 / 300 / 350 EUR) */}
+      {/* Step 1: License Category Selection (NO Country Clutter) */}
       {step === 1 && !isUnlocked && (
-        <div className="bg-white/95 backdrop-blur border border-slate-200 rounded-xl p-6 md:p-8 space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
-            <div>
-              <h3 className="text-xl font-semibold text-slate-900">
-                {isEn
-                  ? 'Step 1 — Select License Category & Local Fee'
-                  : 'Étape 1 — Choix du permis & tarif officiel'}
-              </h3>
-              <p className="text-sm text-slate-600 mt-1">
-                {isEn
-                  ? `Active country: ${country.nameEn} (${country.currency}) · Fees start at €200 for Category A.`
-                  : `Pays actif : ${country.nameFr} (${country.currency}) · Tarifs progressifs à partir de 200 € (Permis A).`}
-              </p>
-            </div>
-            <div className="text-sm font-mono bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 tabular-nums">
-              <span className="mr-2" aria-hidden="true">
-                {getCountryFlagEmoji(country.code)}
-              </span>
-              {formattedLocalFee}
-            </div>
+        <div className="bg-white/95 backdrop-blur border border-slate-200 rounded-xl p-6 md:p-8 space-y-6 shadow-md">
+          <div className="border-b border-slate-200 pb-5">
+            <h3 className="text-2xl font-bold text-slate-900">
+              {isEn ? (
+                <>
+                  Step 1 — Choose your{' '}
+                  <span className="text-blue-700">Permit Category</span>
+                </>
+              ) : (
+                <>
+                  Étape 1 — Choisissez votre{' '}
+                  <span className="text-blue-700">catégorie de permis</span>
+                </>
+              )}
+            </h3>
+            <p className="text-[15px] text-slate-700 mt-1">
+              {isEn
+                ? 'Select the license category you want to obtain. Registration fees adapt automatically at checkout.'
+                : 'Sélectionnez la catégorie de permis souhaitée. L’adaptation à votre devise s’effectue automatiquement lors du paiement.'}
+            </p>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -553,7 +580,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
               [
                 {
                   id: 'A' as LicenseCategory,
-                  titleFr: 'Permis A / A2 — Moto',
+                  titleFr: 'Permis A — Moto',
                   titleEn: 'Category A — Motorcycle',
                   descFr: 'Formation accélérée, épreuves physiques & permis < 48h',
                   descEn: 'Fast-track theory, physical test & permit < 48h',
@@ -583,41 +610,36 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
             ).map((opt) => {
               const selected = category === opt.id;
               const feeEur = CATEGORY_FEES_EUR[opt.id];
-              const localPrice = formatLocalCurrency(
-                convertEurFee(feeEur, country),
-                country,
-                lang
-              );
               return (
                 <button
                   key={opt.id}
                   type="button"
                   onClick={() => onChangeCategory(opt.id)}
-                  className={`p-4 rounded-xl border text-left transition-colors flex flex-col justify-between gap-3 cursor-pointer ${
+                  className={`p-5 rounded-xl border text-left transition-colors flex flex-col justify-between gap-4 cursor-pointer ${
                     selected
-                      ? 'border-blue-700 bg-blue-50/70 ring-1 ring-blue-700'
-                      : 'border-slate-200 bg-white hover:border-slate-300'
+                      ? 'border-blue-700 bg-blue-50/80 ring-2 ring-blue-700'
+                      : 'border-slate-200 bg-white hover:border-slate-400'
                   }`}
                 >
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-semibold text-slate-900">
+                      <span className="text-base font-bold text-slate-900">
                         {isEn ? opt.titleEn : opt.titleFr}
                       </span>
                       {selected && (
-                        <CheckCircle2 className="w-4 h-4 text-blue-700 shrink-0" />
+                        <CheckCircle2 className="w-5 h-5 text-blue-700 shrink-0" />
                       )}
                     </div>
-                    <p className="text-xs text-slate-600">
+                    <p className="text-sm text-slate-700 leading-relaxed">
                       {isEn ? opt.descEn : opt.descFr}
                     </p>
                   </div>
-                  <div className="pt-2 border-t border-slate-100 flex items-baseline justify-between">
-                    <span className="text-base font-mono font-bold text-slate-900 tabular-nums">
-                      {localPrice}
+                  <div className="pt-3 border-t border-slate-200/80 flex items-baseline justify-between">
+                    <span className="text-xl font-mono font-bold text-blue-700 tabular-nums">
+                      {feeEur} €
                     </span>
-                    <span className="text-xs font-mono text-slate-500 tabular-nums">
-                      ({feeEur} €)
+                    <span className="text-xs font-medium text-slate-600">
+                      {isEn ? 'Base fee' : 'Frais fixes'}
                     </span>
                   </div>
                 </button>
@@ -629,10 +651,12 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
             <button
               type="button"
               onClick={() => setStep(2)}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-lg transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold rounded-lg transition-colors cursor-pointer"
             >
               <span>
-                {isEn ? 'Continue to Legal Dossier' : 'Continuer vers le dossier légal'}
+                {isEn
+                  ? 'Continue to Required Dossier'
+                  : 'Continuer vers le dossier à fournir'}
               </span>
               <ArrowRight className="w-4 h-4" />
             </button>
@@ -640,44 +664,50 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
         </div>
       )}
 
-      {/* Step 2: Legal Dossier Form (Nom, Prénom, Email, Adresse, Wi-Fi, Carte d'Identité obligatoire) */}
+      {/* Step 2: Dossier à fournir (Clean fields, NO country clutter, button = "Valider mon dossier") */}
       {step === 2 && !isUnlocked && (
         <form
           onSubmit={handleSaveDossier}
-          className="bg-white/95 backdrop-blur border border-slate-200 rounded-xl p-6 md:p-8 space-y-6"
+          className="bg-white/95 backdrop-blur border border-slate-200 rounded-xl p-6 md:p-8 space-y-6 shadow-md"
         >
-          <div className="border-b border-slate-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="border-b border-slate-200 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h3 className="text-xl font-semibold text-slate-900">
-                {isEn
-                  ? 'Step 2 — Mandatory Legal Dossier & ID Verification'
-                  : 'Étape 2 — Dossier légal complet & Pièce d’identité obligatoire'}
+              <h3 className="text-2xl font-bold text-slate-900">
+                {isEn ? (
+                  <>
+                    Step 2 — <span className="text-blue-700">Required Dossier</span>
+                  </>
+                ) : (
+                  <>
+                    Étape 2 — <span className="text-blue-700">Dossier à fournir</span>
+                  </>
+                )}
               </h3>
-              <p className="text-sm text-slate-600 mt-1">
+              <p className="text-[15px] text-slate-700 mt-1">
                 {isEn
-                  ? `Permit ${category} · Legal identity check required · Fee: ${formattedLocalFee} (€${baseFeeEur})`
-                  : `Permis ${category} · Vérification légale obligatoire · Frais : ${formattedLocalFee} (${baseFeeEur} €)`}
+                  ? `Permit ${category} · Registration Fee: €${baseFeeEur}`
+                  : `Permis ${category} · Frais d’inscription : ${baseFeeEur} €`}
               </p>
             </div>
             {referralCode && (
-              <div className="text-xs font-mono text-slate-600 bg-slate-100 px-3 py-1.5 rounded-md">
-                {isEn ? 'Source:' : 'Source :'} {referralPlatform || 'Social'} · {referralCode}
+              <div className="text-xs font-mono text-slate-700 bg-slate-100 px-3 py-1.5 rounded-md">
+                {referralPlatform || 'Social'} · {referralCode}
               </div>
             )}
           </div>
 
           {!user && (
-            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="space-y-1">
-                <div className="text-sm font-semibold text-slate-900">
+                <div className="text-base font-bold text-slate-900">
                   {t.authRequiredTitle}
                 </div>
-                <p className="text-xs text-slate-600">{t.authRequiredDesc}</p>
+                <p className="text-sm text-slate-700">{t.authRequiredDesc}</p>
               </div>
               <button
                 type="button"
                 onClick={onSignIn}
-                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg whitespace-nowrap shrink-0 cursor-pointer"
+                className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-lg whitespace-nowrap shrink-0 cursor-pointer"
               >
                 {t.navSignIn}
               </button>
@@ -685,29 +715,29 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
           )}
 
           {formError && (
-            <div className="bg-red-50 border border-red-200 text-red-800 text-sm px-4 py-3 rounded-lg">
+            <div className="bg-red-50 border border-red-200 text-red-800 text-sm font-medium px-4 py-3 rounded-lg">
               {formError}
             </div>
           )}
 
           <div className="grid md:grid-cols-2 gap-5">
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-slate-700">
-                {isEn ? 'Last Name (Family Name) *' : 'Nom de famille (état civil) *'}
+              <label className="block text-sm font-semibold text-slate-800">
+                {isEn ? 'Last Name (Family Name) *' : 'Nom *'}
               </label>
               <input
                 type="text"
                 required
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
-                placeholder={isEn ? 'e.g. DUPONT / MENSAH' : 'Ex : LOKOSSOU / DUPONT'}
-                className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
+                placeholder={isEn ? 'e.g. DUPONT' : 'Ex : LOKOSSOU / DUPONT'}
+                className="w-full px-4 py-2.5 text-[15px] text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-slate-700">
-                {isEn ? 'First Name(s) *' : 'Prénom(s) complet(s) *'}
+              <label className="block text-sm font-semibold text-slate-800">
+                {isEn ? 'First Name(s) *' : 'Prénom(s) *'}
               </label>
               <input
                 type="text"
@@ -715,12 +745,12 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 placeholder={isEn ? 'e.g. Amina / Jean' : 'Ex : Amina / Jean'}
-                className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
+                className="w-full px-4 py-2.5 text-[15px] text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-slate-700">
+              <label className="block text-sm font-semibold text-slate-800">
                 {t.emailLabel} *
               </label>
               <input
@@ -729,12 +759,12 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="candidat@exemple.com"
-                className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
+                className="w-full px-4 py-2.5 text-[15px] text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-slate-700">
+              <label className="block text-sm font-semibold text-slate-800">
                 {t.phoneLabel} *
               </label>
               <input
@@ -742,14 +772,14 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                 required
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder={`${country.dialCode} 6 12 34 56 78`}
-                className="w-full px-3.5 py-2.5 text-sm font-mono border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
+                placeholder="+33 6 12 34 56 78"
+                className="w-full px-4 py-2.5 text-[15px] font-mono text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-slate-700">
-                {isEn ? 'Full Street Address *' : 'Adresse complète (rue, quartier, BP) *'}
+              <label className="block text-sm font-semibold text-slate-800">
+                {isEn ? 'Full Residential Address *' : 'Adresse complète *'}
               </label>
               <input
                 type="text"
@@ -758,15 +788,15 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder={
                   isEn
-                    ? '12 Rue de Rivoli / Akpakpa Lot 42'
-                    : 'Ex : 12 Rue de Rivoli / Quartier Cadjèhoun Lot 42'
+                    ? '12 Rue de Rivoli / Neighborhood Lot 42'
+                    : 'Ex : 12 Rue de Rivoli / Quartier Lot 42'
                 }
-                className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
+                className="w-full px-4 py-2.5 text-[15px] text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-slate-700">
+              <label className="block text-sm font-semibold text-slate-800">
                 {t.cityLabel} *
               </label>
               <input
@@ -774,32 +804,32 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                 required
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                placeholder="Paris, Cotonou, Berlin, Sofia..."
-                className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
+                placeholder="Paris, Cotonou, Lyon, Bruxelles..."
+                className="w-full px-4 py-2.5 text-[15px] text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
               />
             </div>
           </div>
 
-          {/* Official Mandatory ID Card Block */}
+          {/* Mandatory Official ID Card Block */}
           <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-4">
-            <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-              <IdCard className="w-4 h-4 text-blue-700 shrink-0" />
+            <div className="flex items-center gap-2 text-base font-bold text-slate-900">
+              <IdCard className="w-5 h-5 text-blue-700 shrink-0" />
               <span>
                 {isEn
-                  ? 'Mandatory Official Identity Document (Legal Compliance)'
-                  : 'Pièce d’identité officielle obligatoire (Conformité légale)'}
+                  ? 'Official Identity Document (Required)'
+                  : 'Pièce d’identité officielle (Obligatoire)'}
               </span>
             </div>
 
             <div className="grid md:grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-slate-700">
+                <label className="block text-sm font-semibold text-slate-800">
                   {isEn ? 'Document Type *' : 'Type de pièce *'}
                 </label>
                 <select
                   value={idCardType}
                   onChange={(e) => setIdCardType(e.target.value as IdCardType)}
-                  className="w-full px-3 py-2.5 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-700"
+                  className="w-full px-3.5 py-2.5 text-sm text-slate-900 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-700"
                 >
                   <option value="CNI">Carte Nationale d’Identité (CNI)</option>
                   <option value="Passeport">Passeport officiel</option>
@@ -808,29 +838,29 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-slate-700">
-                  {isEn ? 'ID Document Number *' : 'Numéro de la pièce *'}
+                <label className="block text-sm font-semibold text-slate-800">
+                  {isEn ? 'ID Number *' : 'Numéro de la pièce *'}
                 </label>
                 <input
                   type="text"
                   required
                   value={idCardNumber}
                   onChange={(e) => setIdCardNumber(e.target.value)}
-                  placeholder="Ex : 204918273 / CIP-BJ-0092"
-                  className="w-full px-3.5 py-2.5 text-sm font-mono border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-700"
+                  placeholder="Ex : 204918273 / CIP-0092"
+                  className="w-full px-3.5 py-2.5 text-sm font-mono text-slate-900 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-700"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-slate-700">
-                  {isEn ? 'Upload ID Photo / Scan *' : 'Photo ou scan de la carte *'}
+                <label className="block text-sm font-semibold text-slate-800">
+                  {isEn ? 'ID Photo / Scan *' : 'Photo ou scan de la carte *'}
                 </label>
-                <label className="flex items-center justify-between gap-2 px-3.5 py-2.5 text-xs font-semibold bg-white border border-slate-300 hover:border-blue-600 rounded-lg cursor-pointer">
-                  <span className="truncate text-slate-700">
+                <label className="flex items-center justify-between gap-2 px-3.5 py-2.5 text-sm font-semibold bg-white border border-slate-300 hover:border-blue-600 rounded-lg cursor-pointer">
+                  <span className="truncate text-slate-800">
                     {idCardFileName
                       ? idCardFileName
                       : isEn
-                      ? 'Choose ID file (JPG/PNG/PDF)'
+                      ? 'Choose file (JPG/PNG/PDF)'
                       : 'Joindre CNI (JPG/PNG/PDF)'}
                   </span>
                   <Upload className="w-4 h-4 text-blue-700 shrink-0" />
@@ -851,10 +881,10 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                   alt="Aperçu pièce d'identité"
                   className="h-14 w-22 object-cover rounded-md border border-slate-300"
                 />
-                <span className="text-xs text-emerald-700 font-medium">
+                <span className="text-sm text-emerald-700 font-semibold">
                   {isEn
-                    ? 'ID preview attached securely to your legal dossier.'
-                    : 'Aperçu de votre pièce d’identité joint au dossier légal.'}
+                    ? 'ID preview attached securely.'
+                    : 'Aperçu de la pièce d’identité joint au dossier.'}
                 </span>
               </div>
             )}
@@ -862,7 +892,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
 
           {/* Wi-Fi Connectivity Confirmation + Terms */}
           <div className="space-y-3">
-            <label className="flex items-start gap-3 text-sm text-slate-800 bg-blue-50/60 border border-blue-100 rounded-lg p-3.5 cursor-pointer">
+            <label className="flex items-start gap-3 text-sm text-slate-800 bg-blue-50/70 border border-blue-200 rounded-lg p-4 cursor-pointer">
               <input
                 type="checkbox"
                 checked={wifiReady}
@@ -873,13 +903,13 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                 <Wifi className="w-4 h-4 text-blue-700 shrink-0" />
                 <span>
                   {isEn
-                    ? 'I confirm I have reliable Wi-Fi / Internet connectivity to stream the animated audio driving courses and online state quiz.'
-                    : 'Je confirme disposer d’une connexion Wi-Fi / Internet active pour suivre les cours audio, animations et le QCM officiel en ligne.'}
+                    ? 'I confirm I have reliable Wi-Fi / Internet connectivity to stream the animated audio courses and online state quiz.'
+                    : 'Je confirme disposer d’une connexion Wi-Fi / Internet active pour suivre les cours audio, animations et le QCM officiel.'}
                 </span>
               </span>
             </label>
 
-            <label className="flex items-start gap-3 text-sm text-slate-700 cursor-pointer">
+            <label className="flex items-start gap-3 text-sm text-slate-800 cursor-pointer">
               <input
                 type="checkbox"
                 checked={acceptedTerms}
@@ -888,8 +918,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
               />
               <span>
                 {isEn
-                  ? 'I certify that the legal information and ID card submitted to DrivePro Academy are authentic.'
-                  : 'Je certifie sur l’honneur l’exactitude de mon état civil, de mon adresse et de ma pièce d’identité transmise à DrivePro Academy.'}
+                  ? 'I certify that the dossier information and ID card submitted are authentic.'
+                  : 'Je certifie l’exactitude des informations de mon dossier et de ma pièce d’identité.'}
               </span>
             </label>
           </div>
@@ -898,14 +928,14 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
             <button
               type="button"
               onClick={() => setStep(1)}
-              className="px-4 py-2.5 text-sm font-medium text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 cursor-pointer"
+              className="px-4 py-2.5 text-sm font-semibold text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 cursor-pointer"
             >
               {isEn ? 'Back' : 'Retour'}
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white text-sm font-bold rounded-lg transition-colors cursor-pointer"
             >
               <FileCheck2 className="w-4 h-4" />
               <span>{isSubmitting ? '...' : t.saveDossierBtn}</span>
@@ -914,50 +944,82 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
         </form>
       )}
 
-      {/* Step 3: Payment Gate (TapTap Send Direct Link — NO recipient number displayed) */}
+      {/* Step 3: Paiement (Country/Currency adjustment & payment rails live strictly here) */}
       {step === 3 && registration && !isUnlocked && (
         <form
           onSubmit={handleValidatePayment}
-          className="bg-white/95 backdrop-blur border border-slate-200 rounded-xl p-6 md:p-8 space-y-6"
+          className="bg-white/95 backdrop-blur border border-slate-200 rounded-xl p-6 md:p-8 space-y-6 shadow-md"
         >
-          <div className="border-b border-slate-100 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="border-b border-slate-200 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h3 className="text-xl font-semibold text-slate-900">
-                {isEn
-                  ? 'Step 3 — Payment via Direct TapTap Send Link or Local Method'
-                  : 'Étape 3 — Paiement par lien direct TapTap Send ou moyen local'}
+              <h3 className="text-2xl font-bold text-slate-900">
+                {isEn ? (
+                  <>
+                    Step 3 — <span className="text-emerald-700">Payment</span>
+                  </>
+                ) : (
+                  <>
+                    Étape 3 — <span className="text-emerald-700">Paiement</span>
+                  </>
+                )}
               </h3>
-              <p className="text-sm text-slate-600 mt-1">
-                {isEn
-                  ? `Dossier ${registration.id} · ${registration.fullName} · Permit ${registration.licenseCategory}`
-                  : `Dossier ${registration.id} · ${registration.fullName} · Permis ${registration.licenseCategory}`}
+              <p className="text-[15px] text-slate-700 mt-1">
+                {registration.fullName} ·{' '}
+                {isEn ? 'Permit' : 'Permis'} {registration.licenseCategory}
               </p>
             </div>
-            <div className="bg-slate-900 text-white px-4 py-2.5 rounded-lg text-right font-mono tabular-nums">
+            <div className="bg-slate-900 text-white px-5 py-3 rounded-lg text-right font-mono tabular-nums">
               <div className="text-xs text-slate-300">
-                {isEn ? 'Total Due' : 'Total à régler'}
+                {isEn ? 'Amount Due' : 'Montant à régler'}
               </div>
-              <div className="text-lg font-semibold">
+              <div className="text-xl font-bold">
                 {formatLocalCurrency(registration.convertedAmount, country, lang)}
               </div>
-              <div className="text-[11px] text-slate-400">
+              <div className="text-xs text-blue-300">
                 ({registration.baseFeeEur} € ≈ {xofEquivalent.toLocaleString('fr-FR')} FCFA)
               </div>
             </div>
           </div>
 
           {formError && (
-            <div className="bg-red-50 border border-red-200 text-red-800 text-sm px-4 py-3 rounded-lg">
+            <div className="bg-red-50 border border-red-200 text-red-800 text-sm font-medium px-4 py-3 rounded-lg">
               {formError}
             </div>
           )}
 
+          {/* Settlement Zone / Currency Selector — ONLY inside Payment step */}
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="text-sm font-bold text-slate-900">
+                {isEn
+                  ? 'Payment Country & Currency'
+                  : 'Zone & devise de paiement'}
+              </div>
+              <p className="text-xs text-slate-600">
+                {isEn
+                  ? 'Auto-detected from your connection. Adjust if paying from another country.'
+                  : 'Détectée automatiquement. Ajustez uniquement si vous payez depuis un autre pays.'}
+              </p>
+            </div>
+            <select
+              value={country.code}
+              onChange={(e) => handleCountrySwitchAtPayment(e.target.value)}
+              className="px-3.5 py-2.5 text-sm font-semibold text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
+            >
+              {WORLD_COUNTRIES.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {getCountryFlagEmoji(c.code)} {isEn ? c.nameEn : c.nameFr} ({c.currency})
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Method Picker */}
           <div className="space-y-3">
-            <label className="block text-xs font-semibold text-slate-700">
+            <label className="block text-sm font-bold text-slate-800">
               {isEn
-                ? `Payment methods for ${country.nameEn} (TapTap Send Direct Link recommended)`
-                : `Moyens de paiement pour ${country.nameFr} (Lien direct TapTap Send prioritaire)`}
+                ? 'Choose your payment method (TapTap Send Direct Link recommended)'
+                : 'Choisissez votre mode de paiement (Lien direct TapTap Send prioritaire)'}
             </label>
             <div className="grid sm:grid-cols-2 gap-3">
               {country.paymentMethods.map((method) => {
@@ -970,12 +1032,12 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                     onClick={() => setSelectedMethodId(method.id)}
                     className={`p-4 rounded-xl border text-left transition-colors flex items-start justify-between gap-3 cursor-pointer ${
                       selected
-                        ? 'border-blue-700 bg-blue-50 ring-1 ring-blue-700'
-                        : 'border-slate-200 hover:border-slate-300'
+                        ? 'border-blue-700 bg-blue-50 ring-2 ring-blue-700'
+                        : 'border-slate-200 bg-white hover:border-slate-400'
                     }`}
                   >
                     <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                      <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
                         {isTapTap ? (
                           <Send className="w-4 h-4 text-blue-700 shrink-0" />
                         ) : method.category === 'mobile_money' ? (
@@ -985,7 +1047,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                         )}
                         <span>{isEn ? method.labelEn : method.labelFr}</span>
                       </div>
-                      <p className="text-xs text-slate-600">
+                      <p className="text-xs text-slate-700 leading-relaxed">
                         {isEn ? method.hintEn : method.hintFr}
                       </p>
                     </div>
@@ -1003,12 +1065,12 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                 <div>
                   <div className="text-xs font-mono text-blue-300">
                     {isEn
-                      ? 'Encrypted Direct Payment Link · TapTap Send'
-                      : 'Lien direct de paiement sécurisé · TapTap Send'}
+                      ? 'Direct Payment Link · TapTap Send'
+                      : 'Lien direct de paiement · TapTap Send'}
                   </div>
-                  <div className="text-base font-semibold mt-0.5">
+                  <div className="text-lg font-bold mt-0.5">
                     {isEn
-                      ? `Amount to settle: €${registration.baseFeeEur} (${xofEquivalent.toLocaleString('en-US')} XOF)`
+                      ? `Amount: €${registration.baseFeeEur} (${xofEquivalent.toLocaleString('en-US')} XOF)`
                       : `Montant officiel : ${registration.baseFeeEur} € (${xofEquivalent.toLocaleString('fr-FR')} FCFA)`}
                   </div>
                 </div>
@@ -1017,7 +1079,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setLinkOpened(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg whitespace-nowrap shrink-0"
+                  className="inline-flex items-center gap-2 px-5 py-3 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-lg whitespace-nowrap shrink-0"
                 >
                   <ExternalLink className="w-4 h-4" />
                   <span>
@@ -1028,43 +1090,37 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                 </a>
               </div>
 
-              <div className="grid sm:grid-cols-2 gap-4 text-xs">
+              <div className="grid sm:grid-cols-2 gap-4 text-sm">
                 <div>
-                  <div className="text-slate-400">
-                    {isEn ? 'Accredited Account' : 'Compte bénéficiaire'}
+                  <div className="text-xs text-slate-400">
+                    {isEn ? 'Beneficiary' : 'Bénéficiaire'}
                   </div>
                   <div className="font-semibold text-white mt-0.5">
                     {TAPTAP_SEND_CHECKOUT.recipientLabel}
                   </div>
                 </div>
                 <div>
-                  <div className="text-slate-400">
-                    {isEn ? 'Payment Link Status' : 'État du lien de paiement'}
+                  <div className="text-xs text-slate-400">
+                    {isEn ? 'Link Status' : 'État du lien'}
                   </div>
-                  <div className="font-mono text-emerald-300 mt-0.5">
+                  <div className="font-mono text-emerald-300 mt-0.5 text-xs">
                     {linkOpened
                       ? isEn
-                        ? 'Link opened — Enter your sender details below'
-                        : 'Lien ouvert — Saisissez vos coordonnées ci-dessous'
+                        ? 'Opened — Enter your sender details below'
+                        : 'Ouvert — Saisissez vos coordonnées ci-dessous'
                       : isEn
-                      ? 'Ready · Routed directly via secure beneficiary link'
-                      : 'Actif · Routage direct sans saisie manuelle de numéro'}
+                      ? 'Ready via direct payment link'
+                      : 'Prêt · Paiement direct sans numéro affiché'}
                   </div>
                 </div>
               </div>
-
-              <p className="text-xs text-slate-300 leading-relaxed">
-                {isEn
-                  ? 'Click the TapTap Send button above to send your registration fee via the routed link, then enter your own sender details and transaction ID below to unlock your courses.'
-                  : 'Cliquez sur le bouton TapTap Send ci-dessus pour effectuer votre règlement via le lien direct, puis saisissez simplement vos propres coordonnées d’expéditeur et votre référence ci-dessous.'}
-              </p>
             </div>
           )}
 
           {/* Client's own sender coordinates */}
           <div className="grid md:grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-slate-700">
+              <label className="block text-sm font-semibold text-slate-800">
                 {isEn ? 'Your Full Name (Sender) *' : 'Votre nom complet (expéditeur) *'}
               </label>
               <input
@@ -1072,12 +1128,12 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                 required
                 value={senderName}
                 onChange={(e) => setSenderName(e.target.value)}
-                className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
+                className="w-full px-3.5 py-2.5 text-sm text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-slate-700">
+              <label className="block text-sm font-semibold text-slate-800">
                 {isEn ? 'Your Phone / Account Number *' : 'Votre téléphone d’envoi *'}
               </label>
               <input
@@ -1086,12 +1142,12 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                 value={senderPhone}
                 onChange={(e) => setSenderPhone(e.target.value)}
                 placeholder={`${country.dialCode} ...`}
-                className="w-full px-3.5 py-2.5 text-sm font-mono border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
+                className="w-full px-3.5 py-2.5 text-sm font-mono text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-slate-700">
+              <label className="block text-sm font-semibold text-slate-800">
                 {activePaymentMethod?.id === 'taptap_send'
                   ? isEn
                     ? 'TapTap Send Transaction ID *'
@@ -1120,24 +1176,24 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                     ? 'FR76 3000 ...'
                     : 'Ex : 4242 / Ref-8841'
                 }
-                className="w-full px-3.5 py-2.5 text-sm font-mono border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
+                className="w-full px-3.5 py-2.5 text-sm font-mono text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
               />
             </div>
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
-            <div className="flex items-center gap-2 text-xs text-slate-500">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <div className="flex items-center gap-2 text-sm text-slate-600">
+              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
               <span>
                 {isEn
-                  ? 'Verified settlement · Immediate dossier unlock'
-                  : 'Paiement sécurisé · Déblocage immédiat de vos cours'}
+                  ? 'Immediate course unlock upon payment validation'
+                  : 'Déblocage immédiat de vos cours après validation'}
               </span>
             </div>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-bold rounded-lg transition-colors cursor-pointer"
             >
               <Unlock className="w-4 h-4" />
               <span>{isSubmitting ? '...' : t.payAndUnlockBtn}</span>
@@ -1146,33 +1202,33 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
         </form>
       )}
 
-      {/* Step 4: Unlocked (Phone number STILL hidden until QCM passed!) */}
+      {/* Step 4: Unlocked */}
       {step === 4 && isUnlocked && registration && (
-        <div className="bg-white/95 backdrop-blur border border-emerald-200 rounded-xl p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="bg-white/95 backdrop-blur border border-emerald-200 rounded-xl p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-md">
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-emerald-700 text-sm font-semibold">
+            <div className="flex items-center gap-2 text-emerald-700 text-sm font-bold">
               <CheckCircle2 className="w-5 h-5" />
               <span>
                 {isEn
                   ? 'Payment Confirmed & Sequential Audio Courses Unlocked'
-                  : 'Paiement confirmé & Cours audio animés débloqués'}
+                  : 'Paiement validé & Cours audio animés débloqués'}
               </span>
             </div>
-            <h3 className="text-2xl font-semibold text-slate-900">
+            <h3 className="text-2xl font-bold text-slate-900">
               {isEn
                 ? `Welcome ${registration.fullName} — Queue #${registration.queueNumber}`
-                : `Bienvenue ${registration.fullName} — File #${registration.queueNumber}`}
+                : `Bienvenue ${registration.fullName} — Dossier #${registration.queueNumber}`}
             </h3>
-            <p className="text-sm text-slate-600 max-w-2xl">
+            <p className="text-[15px] text-slate-700 max-w-2xl leading-relaxed">
               {isEn
-                ? 'Study Courses 01–04 with voice explanations and interactive diagrams, validate Module 05 (How to Study), and pass the official quiz (≥75%) to receive the direct contact for your final physical tests.'
-                : 'Suivez les cours 01 à 04 avec explications audio et images animées, validez le module Comment étudier puis réussissez le QCM officiel (≥75 %) pour obtenir le contact de rendez-vous des épreuves physiques.'}
+                ? 'Study Courses 01–04 with voice explanations and interactive diagrams, validate Module 05 (How to Study), and pass the official quiz (≥75%) to unlock direct DrivePro Academy scheduling for your physical tests.'
+                : 'Suivez les cours 01 à 04 avec explications audio et images animées, validez le module Comment étudier puis réussissez le QCM officiel (≥ 75 %) pour contacter DrivePro Academy et fixer vos épreuves physiques finales.'}
             </p>
           </div>
           <button
             type="button"
             onClick={onOpenCandidatePortal}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-lg whitespace-nowrap shrink-0 cursor-pointer"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold rounded-lg whitespace-nowrap shrink-0 cursor-pointer"
           >
             <span>{t.heroCtaSecondary}</span>
             <ArrowRight className="w-4 h-4" />

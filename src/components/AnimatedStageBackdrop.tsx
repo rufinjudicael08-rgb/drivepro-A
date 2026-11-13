@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { APP_MEDIA } from '../assets/media';
 
 export type BackdropSceneKey =
   | 'home'
@@ -12,25 +13,43 @@ interface AnimatedStageBackdropProps {
 
 const SCENE_GALLERY: Record<BackdropSceneKey, string[]> = {
   home: [
-    '/src/assets/images/bg_driving_practice_1794576015720.jpg',
-    '/src/assets/images/bg_theory_students_1794576015291.jpg',
-    '/src/assets/images/bg_instructor_briefing_1794576016795.jpg',
+    APP_MEDIA.bgDrivingPractice,
+    APP_MEDIA.bgCityIntersection,
+    APP_MEDIA.bgHighwayLesson,
+    APP_MEDIA.bgTheoryStudents,
+    APP_MEDIA.bgStudentSuccess,
+    APP_MEDIA.bgNightDashboard,
+    APP_MEDIA.bgInstructorBriefing,
   ],
   enroll: [
-    '/src/assets/images/bg_instructor_briefing_1794576016795.jpg',
-    '/src/assets/images/hero_paris_academy_1794569648868.jpg',
-    '/src/assets/images/bg_theory_students_1794576015291.jpg',
+    APP_MEDIA.bgInstructorBriefing,
+    APP_MEDIA.bgStudentSuccess,
+    APP_MEDIA.heroParisAcademy,
+    APP_MEDIA.bgCityIntersection,
+    APP_MEDIA.bgTheoryStudents,
+    APP_MEDIA.bgHighwayLesson,
   ],
   candidate: [
-    '/src/assets/images/bg_theory_students_1794576015291.jpg',
-    '/src/assets/images/course_signs_roundabout_1794576016919.jpg',
-    '/src/assets/images/bg_driving_practice_1794576015720.jpg',
+    APP_MEDIA.bgTheoryStudents,
+    APP_MEDIA.courseSignsRoundabout,
+    APP_MEDIA.bgDrivingPractice,
+    APP_MEDIA.courseHighwaySafety,
+    APP_MEDIA.bgNightDashboard,
+    APP_MEDIA.bgCityIntersection,
   ],
   agent: [
-    '/src/assets/images/theory_classroom_hub_1794569649931.jpg',
-    '/src/assets/images/bg_instructor_briefing_1794576016795.jpg',
+    APP_MEDIA.theoryClassroomHub,
+    APP_MEDIA.bgInstructorBriefing,
+    APP_MEDIA.bgStudentSuccess,
+    APP_MEDIA.heroParisAcademy,
   ],
 };
+
+const MOTION_CLASSES = [
+  'animate-kenburns-a',
+  'animate-kenburns-b',
+  'animate-kenburns-c',
+];
 
 export const AnimatedStageBackdrop: React.FC<AnimatedStageBackdropProps> = ({
   scene,
@@ -42,7 +61,7 @@ export const AnimatedStageBackdrop: React.FC<AnimatedStageBackdropProps> = ({
     setSlideIdx(0);
     const id = setInterval(() => {
       setSlideIdx((prev) => (prev + 1) % images.length);
-    }, 8500);
+    }, 6200);
     return () => clearInterval(id);
   }, [scene, images.length]);
 
@@ -53,23 +72,24 @@ export const AnimatedStageBackdrop: React.FC<AnimatedStageBackdropProps> = ({
     >
       {images.map((src, idx) => {
         const active = idx === slideIdx;
-        const motionClass =
-          idx % 2 === 0 ? 'animate-kenburns-a' : 'animate-kenburns-b';
+        const motionClass = MOTION_CLASSES[idx % MOTION_CLASSES.length];
         return (
           <img
-            key={src}
+            key={`${scene}-${idx}`}
             src={src}
             alt=""
+            loading="eager"
+            decoding="async"
             referrerPolicy="no-referrer"
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[1800ms] ease-out ${motionClass} ${
-              active ? 'opacity-45' : 'opacity-0'
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[1600ms] ease-out ${motionClass} ${
+              active ? 'opacity-65' : 'opacity-0'
             }`}
           />
         );
       })}
-      {/* Measured contrast scrim preserving readability over moving training photography */}
-      <div className="absolute inset-0 bg-gradient-to-b from-slate-950/82 via-slate-950/68 to-slate-950/88" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(37,99,235,0.22),transparent_55%)]" />
+      {/* Balanced contrast scrim preserving vivid moving scenes and crisp UI readability */}
+      <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-slate-950/55 to-slate-950/80" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(37,99,235,0.20),transparent_55%)]" />
     </div>
   );
 };

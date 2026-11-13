@@ -1,3 +1,4 @@
+import { APP_MEDIA } from '../assets/media';
 import { InstructorProfile } from '../types';
 
 export const PARIS_HQ_CONTACT = {
@@ -60,42 +61,42 @@ export interface QuizQuestion {
 export const CERTIFIED_INSTRUCTORS: InstructorProfile[] = [
   {
     id: 'inst_paris_01',
-    name: 'Marc-Antoine Delacroix · Coordinateur Pratique',
-    titleFr: 'Examinateur & Coordinateur des Épreuves Physiques (ECSR)',
-    titleEn: 'State-Certified Practical Examiner & Physical Test Coordinator',
-    city: 'Centre d’examen DrivePro · France & International',
+    name: 'DrivePro Academy — Service Examens',
+    titleFr: 'Coordination Officielle des Épreuves Physiques & Délivrance Permis',
+    titleEn: 'Official Physical Exam & License Issuance Coordination',
+    city: 'Siège International Paris · Réseau Mondial',
     languages: ['Français', 'English'],
     certification: 'Agrément Officiel E-24-075-0891',
     phone: PARIS_HQ_CONTACT.phone,
     whatsapp: PARIS_HQ_CONTACT.whatsappDigits,
     experienceYears: 14,
-    avatarUrl: '/src/assets/images/instructor_portrait_paris_1794569648475.jpg',
+    avatarUrl: APP_MEDIA.instructorPortraitParis,
   },
   {
     id: 'inst_benin_01',
-    name: 'Coordination Épreuves Physiques — Afrique de l’Ouest',
-    titleFr: 'Responsable Rendez-vous Épreuves Physiques & Délivrance Permis',
-    titleEn: 'Physical Exam Appointment & License Issuance Coordinator',
-    city: 'Réseau Agréé International DrivePro',
+    name: 'DrivePro Academy — Afrique & International',
+    titleFr: 'Coordination Épreuves Physiques & Délivrance Permis',
+    titleEn: 'Physical Exam Appointment & License Issuance Desk',
+    city: 'Réseau Agréé International DrivePro Academy',
     languages: ['Français', 'English'],
     certification: 'Agrément DrivePro · Coordination Examens',
     phone: PARIS_HQ_CONTACT.phone,
     whatsapp: PARIS_HQ_CONTACT.whatsappDigits,
     experienceYears: 11,
-    avatarUrl: '/src/assets/images/instructor_portrait_paris_1794569648475.jpg',
+    avatarUrl: APP_MEDIA.instructorPortraitParis,
   },
   {
     id: 'inst_eu_01',
-    name: 'Elena Georgieva · Pôle Mobilité Europe',
-    titleFr: 'Coordinatrice Épreuves Physiques UE — Multilingue',
-    titleEn: 'Certified EU Physical Exam Coordinator — Multilingual Track',
-    city: 'Réseau DrivePro Europe',
+    name: 'DrivePro Academy — Pôle Europe',
+    titleFr: 'Coordination Épreuves Physiques UE — Multilingue',
+    titleEn: 'Certified EU Physical Exam Desk — Multilingual Track',
+    city: 'Réseau DrivePro Academy Europe',
     languages: ['English', 'Français', 'Deutsch', 'Български', 'Español'],
-    certification: 'EU Directive 2006/126/EC Senior Examiner Prep',
+    certification: 'EU Directive 2006/126/EC Exam Desk',
     phone: PARIS_HQ_CONTACT.phone,
     whatsapp: PARIS_HQ_CONTACT.whatsappDigits,
     experienceYears: 9,
-    avatarUrl: '/src/assets/images/instructor_portrait_paris_1794569648475.jpg',
+    avatarUrl: APP_MEDIA.instructorPortraitParis,
   },
 ];
 
@@ -114,15 +115,15 @@ export const CODE_MODULES: CodeLessonModule[] = [
     id: 'mod_signals',
     number: '01',
     animationType: 'signals',
-    visualUrl: '/src/assets/images/course_signs_roundabout_1794576016919.jpg',
+    visualUrl: APP_MEDIA.courseSignsRoundabout,
     visualCaptionFr:
       'Observation réelle depuis le poste de conduite : panneau Cédez-le-passage, sens giratoire, passages piétons et marquage directionnel au sol.',
     visualCaptionEn:
       'Real driver-view study: Yield sign, roundabout indicator, pedestrian crosswalks, and directional lane markings.',
-    speakerName: 'Marc-Antoine Delacroix',
+    speakerName: 'DrivePro Academy',
     speakerRoleFr: 'Moniteur Principal · Explication audio du cours & de l’image',
     speakerRoleEn: 'Lead Instructor · Full Audio Course & Visual Explanation',
-    speakerAvatarUrl: '/src/assets/images/instructor_portrait_paris_1794569648475.jpg',
+    speakerAvatarUrl: APP_MEDIA.instructorPortraitParis,
     audioScriptFr:
       'Bonjour et bienvenue dans ce premier cours DrivePro Academy. Regardez attentivement l’image de la route devant vous et l’animation ci-dessous. La règle numéro un du Code de la Route est la hiérarchie stricte des signaux. En haut de l’échelle, les gestes de l’agent de police annulent toujours les feux et les panneaux. Ensuite viennent les feux tricolores, puis les panneaux verticaux, et enfin les marquages blancs peints au sol. Sur l’illustration réelle, notez le panneau triangulaire inversé rouge : il signifie Cédez-le-passage et se lit même recouvert de neige grâce à sa pointe vers le bas. N’oubliez jamais : devant une ligne continue blanche, interdiction absolue de chevaucher, sauf pour dépasser un cycliste en laissant un mètre en ville et un mètre cinquante hors agglomération.',
     audioScriptEn:
@@ -181,15 +182,15 @@ export const CODE_MODULES: CodeLessonModule[] = [
     id: 'mod_priority',
     number: '02',
     animationType: 'roundabout',
-    visualUrl: '/src/assets/images/bg_instructor_briefing_1794576016795.jpg',
+    visualUrl: APP_MEDIA.bgInstructorBriefing,
     visualCaptionFr:
       'Séance explicative en salle : analyse détaillée des trajectoires en intersection et règles de priorité entre véhicules.',
     visualCaptionEn:
       'Classroom briefing photo: analyzing intersection turning priorities and multi-vehicle trajectories.',
-    speakerName: 'Elena Georgieva',
+    speakerName: 'DrivePro Academy',
     speakerRoleFr: 'Monitrice Certifiée · Explication audio des priorités',
     speakerRoleEn: 'Certified Instructor · Right-of-Way Audio Coaching',
-    speakerAvatarUrl: '/src/assets/images/instructor_portrait_paris_1794569648475.jpg',
+    speakerAvatarUrl: APP_MEDIA.instructorPortraitParis,
     audioScriptFr:
       'Passons maintenant au Cours numéro deux consacré aux priorités et aux carrefours giratoires. Comme vous le voyez sur la photo de briefing et le schéma animé, lorsque vous arrivez à une intersection sans aucun panneau ni feu, la priorité à droite s’applique automatiquement : vous devez céder le passage à tout véhicule venant de votre droite. À l’inverse, dans un carrefour à sens giratoire moderne muni du panneau Cédez-le-passage, ce sont les véhicules déjà engagés sur l’anneau central à votre gauche qui sont prioritaires. Pour tourner à droite ou aller tout droit, gardez la voie extérieure. Pour tourner à gauche ou faire demi-tour, placez-vous sur la voie intérieure avec le clignotant gauche, puis vérifiez votre angle mort droit et actionnez le clignotant droit avant de sortir.',
     audioScriptEn:
@@ -248,15 +249,15 @@ export const CODE_MODULES: CodeLessonModule[] = [
     id: 'mod_speed',
     number: '03',
     animationType: 'braking',
-    visualUrl: '/src/assets/images/course_highway_safety_1794576016759.jpg',
+    visualUrl: APP_MEDIA.courseHighwaySafety,
     visualCaptionFr:
       'Perspective autoroutière : chevrons blancs de distance de sécurité (2 secondes) et bande d’arrêt d’urgence protégée.',
     visualCaptionEn:
       'Motorway driver view: white two-second following distance chevrons and protected hard shoulder.',
-    speakerName: 'Marc-Antoine Delacroix',
+    speakerName: 'DrivePro Academy',
     speakerRoleFr: 'Moniteur Principal · Explication audio vitesse & freinage',
     speakerRoleEn: 'Lead Instructor · Braking & Physics Audio Coaching',
-    speakerAvatarUrl: '/src/assets/images/instructor_portrait_paris_1794569648475.jpg',
+    speakerAvatarUrl: APP_MEDIA.instructorPortraitParis,
     audioScriptFr:
       'Bienvenue dans le Cours numéro trois sur la vitesse et les distances d’arrêt. Regardez les chevrons blancs sur l’autoroute : ils matérialisent l’intervalle vital de deux secondes à conserver derrière le véhicule qui vous précède. Pendant votre temps de réaction d’une seconde, votre voiture avance avant même que vous ne touchiez le frein : multipliez les dizaines de la vitesse par trois. À cinquante kilomètres-heure, quinze mètres. À quatre-vingt-dix, vingt-sept mètres. Pour connaître la distance d’arrêt totale sur sol sec, multipliez les dizaines par elles-mêmes : neuf fois neuf égale quatre-vingt-un mètres à quatre-vingt-dix kilomètres-heure ! Et faites très attention : sur route mouillée, la distance de freinage est multipliée par deux. Testez différentes vitesses sur le simulateur juste en dessous pour mémoriser ces chiffres d’examen.',
     audioScriptEn:
@@ -315,15 +316,15 @@ export const CODE_MODULES: CodeLessonModule[] = [
     id: 'mod_safety',
     number: '04',
     animationType: 'safety',
-    visualUrl: '/src/assets/images/bg_driving_practice_1794576015720.jpg',
+    visualUrl: APP_MEDIA.bgDrivingPractice,
     visualCaptionFr:
       'Mise en situation en voiture double-commande : posture des mains, prise d’information permanente et accompagnement du moniteur.',
     visualCaptionEn:
       'Dual-control vehicle training session: hand position, constant scanning, and live instructor guidance.',
-    speakerName: 'Marc-Antoine Delacroix',
+    speakerName: 'DrivePro Academy',
     speakerRoleFr: 'Moniteur Principal · Coaching audio sécurité & éco-conduite',
     speakerRoleEn: 'Lead Instructor · Safety & Eco-Driving Audio Coaching',
-    speakerAvatarUrl: '/src/assets/images/instructor_portrait_paris_1794569648475.jpg',
+    speakerAvatarUrl: APP_MEDIA.instructorPortraitParis,
     audioScriptFr:
       'Dans ce quatrième cours, observons la position réelle à bord du véhicule d’apprentissage. Pour votre sécurité et la réussite des épreuves pratiques comme théoriques, trois points sont éliminatoires. Premièrement, l’alcool et les stupéfiants : en période probatoire, la limite est à zéro virgule deux grammes par litre, soit aucun verre d’alcool. Deuxièmement, le téléphone tenu en main ou toute oreillette Bluetooth sont strictement interdits au volant. Troisièmement, en cas de panne sur autoroute, mettez votre gilet haute visibilité à l’intérieur de l’habitacle, faites sortir tous les passagers côté droit et placez tout le monde derrière la glissière de sécurité. Enfin, pour pratiquer l’éco-conduite, passez vos vitesses tôt autour de deux mille tours par minute afin d’économiser jusqu’à vingt pour cent de carburant.',
     audioScriptEn:
@@ -383,15 +384,15 @@ export const CODE_MODULES: CodeLessonModule[] = [
     number: '05',
     isStudyGuide: true,
     animationType: 'study',
-    visualUrl: '/src/assets/images/bg_theory_students_1794576015291.jpg',
+    visualUrl: APP_MEDIA.bgTheoryStudents,
     visualCaptionFr:
       'Préparation collective à l’examen : révision structurée des séries visuelles sur tablette avant le passage du QCM officiel.',
     visualCaptionEn:
       'Collaborative exam readiness: structured tablet review of official signage and scenario series.',
-    speakerName: 'Elena Georgieva',
-    speakerRoleFr: 'Coordinatrice Examen · Méthode audio Comment étudier',
-    speakerRoleEn: 'Exam Coordinator · How to Study Audio Briefing',
-    speakerAvatarUrl: '/src/assets/images/instructor_portrait_paris_1794569648475.jpg',
+    speakerName: 'DrivePro Academy',
+    speakerRoleFr: 'Service Examens · Méthode audio Comment étudier',
+    speakerRoleEn: 'Exam Desk · How to Study Audio Briefing',
+    speakerAvatarUrl: APP_MEDIA.instructorPortraitParis,
     audioScriptFr:
       'Félicitations d’être arrivé à ce dernier module avant l’examen blanc ! Voici exactement comment étudier efficacement pour réussir du premier coup. À chaque question du QCM, vous avez vingt secondes d’analyse. Ne lisez pas les réponses immédiatement : balayez l’image dans l’ordre exact : un, les rétroviseurs ; deux, les panneaux et le marquage au sol ; trois, les piétons ou cyclistes cachés. Validez ce module, puis obtenez au moins soixante-quinze pour cent au QCM officiel juste en dessous. Dès votre QCM réussi, notre système vous indiquera le contact direct du responsable afin de fixer votre rendez-vous pour passer vos quelques épreuves physiques finales et récupérer votre permis !',
     audioScriptEn:
