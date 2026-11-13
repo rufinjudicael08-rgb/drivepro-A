@@ -1,0 +1,6 @@
+{
+  "name": "DrivePro Academy",
+  "description": "International accredited driving school headquartered in Paris, France, featuring global country & currency adaptation, a strictly payment-locked enrollment funnel, online Code de la Route courses with practice exams, certified instructor WhatsApp handoff, and real-time social agent tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

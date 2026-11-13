@@ -1,0 +1,279 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isBootstrappedAdmin() {
+      return isVerified() && request.auth.token.email == 'lokossoujudicael00@gmail.com';
+    }
+
+    function isAdmin() {
+      return isBootstrappedAdmin() || (isVerified() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+    }
+
+    function isValidCompletedModules(modules) {
+      return modules is list
+        && modules.size() <= 5
+        && (modules.size() == 0 || (modules[0] is string && modules[0].size() <= 40));
+    }
+
+    function isValidRegistration(data) {
+      return data.keys().hasAll([
+        'id', 'userId', 'fullName', 'email', 'phone', 'countryCode', 'countryName',
+        'city', 'licenseCategory', 'preferredLanguage', 'currency', 'baseFeeEur',
+        'convertedAmount', 'paymentMethod', 'paymentStatus', 'dossierStatus',
+        'latestPaymentId', 'queueNumber', 'completedModuleIds', 'codeProgress',
+        'quizBestScore', 'referralCode', 'referralPlatform', 'assignedInstructorId',
+        'createdAt', 'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'id', 'userId', 'fullName', 'email', 'phone', 'countryCode', 'countryName',
+        'city', 'licenseCategory', 'preferredLanguage', 'currency', 'baseFeeEur',
+        'convertedAmount', 'paymentMethod', 'paymentStatus', 'dossierStatus',
+        'latestPaymentId', 'queueNumber', 'completedModuleIds', 'codeProgress',
+        'quizBestScore', 'referralCode', 'referralPlatform', 'assignedInstructorId',
+        'createdAt', 'updatedAt'
+      ])
+      && isValidId(data.id)
+      && data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128
+      && data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 100
+      && data.email is string && data.email.size() >= 5 && data.email.size() <= 150
+      && data.phone is string && data.phone.size() >= 5 && data.phone.size() <= 30
+      && data.countryCode is string && data.countryCode.size() >= 2 && data.countryCode.size() <= 3
+      && data.countryName is string && data.countryName.size() >= 2 && data.countryName.size() <= 100
+      && data.city is string && data.city.size() >= 2 && data.city.size() <= 100
+      && data.licenseCategory in ['A', 'B', 'C', 'D']
+      && data.preferredLanguage is string && data.preferredLanguage.size() >= 2 && data.preferredLanguage.size() <= 10
+      && data.currency is string && data.currency.size() >= 3 && data.currency.size() <= 10
+      && data.baseFeeEur is number && data.baseFeeEur in [100, 150, 200, 250]
+      && data.convertedAmount is number && data.convertedAmount > 0 && data.convertedAmount <= 100000000
+      && data.paymentMethod is string && data.paymentMethod.size() >= 2 && data.paymentMethod.size() <= 80
+      && data.paymentStatus in ['pending', 'paid', 'verified']
+      && data.dossierStatus in ['locked', 'queue', 'code_unlocked', 'practical_ready']
+      && data.latestPaymentId is string && data.latestPaymentId.size() <= 128
+      && data.queueNumber is number && data.queueNumber >= 1 && data.queueNumber <= 1000000
+      && isValidCompletedModules(data.completedModuleIds)
+      && data.codeProgress is number && data.codeProgress >= 0 && data.codeProgress <= 100
+      && data.quizBestScore is number && data.quizBestScore >= 0 && data.quizBestScore <= 100
+      && data.referralCode is string && data.referralCode.size() <= 80
+      && data.referralPlatform is string && data.referralPlatform.size() <= 40
+      && data.assignedInstructorId is string && data.assignedInstructorId.size() <= 64
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp;
+    }
+
+    function isValidPayment(data) {
+      return data.keys().hasAll([
+        'id', 'registrationId', 'userId', 'candidateName', 'countryCode',
+        'currency', 'baseAmountEur', 'amountPaid', 'method', 'transactionRef',
+        'status', 'createdAt'
+      ])
+      && data.keys().hasOnly([
+        'id', 'registrationId', 'userId', 'candidateName', 'countryCode',
+        'currency', 'baseAmountEur', 'amountPaid', 'method', 'transactionRef',
+        'status', 'createdAt'
+      ])
+      && isValidId(data.id)
+      && isValidId(data.registrationId)
+      && data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128
+      && data.candidateName is string && data.candidateName.size() >= 2 && data.candidateName.size() <= 100
+      && data.countryCode is string && data.countryCode.size() >= 2 && data.countryCode.size() <= 3
+      && data.currency is string && data.currency.size() >= 3 && data.currency.size() <= 10
+      && data.baseAmountEur is number && data.baseAmountEur in [100, 150, 200, 250]
+      && data.amountPaid is number && data.amountPaid > 0 && data.amountPaid <= 100000000
+      && data.method is string && data.method.size() >= 2 && data.method.size() <= 80
+      && data.transactionRef is string && data.transactionRef.size() >= 4 && data.transactionRef.size() <= 80
+      && data.status in ['completed', 'refunded']
+      && data.createdAt is timestamp;
+    }
+
+    function isValidSocialLink(data) {
+      return data.keys().hasAll([
+        'id', 'agentId', 'agentName', 'platform', 'campaignName',
+        'trackingCode', 'targetCountry', 'clicks', 'active', 'createdAt', 'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'id', 'agentId', 'agentName', 'platform', 'campaignName',
+        'trackingCode', 'targetCountry', 'clicks', 'active', 'createdAt', 'updatedAt'
+      ])
+      && isValidId(data.id)
+      && data.agentId is string && data.agentId.size() >= 1 && data.agentId.size() <= 128
+      && data.agentName is string && data.agentName.size() >= 2 && data.agentName.size() <= 80
+      && data.platform in ['TikTok', 'Facebook', 'Instagram']
+      && data.campaignName is string && data.campaignName.size() >= 2 && data.campaignName.size() <= 100
+      && isValidId(data.trackingCode) && data.trackingCode.size() >= 3 && data.trackingCode.size() <= 60
+      && data.targetCountry is string && data.targetCountry.size() >= 2 && data.targetCountry.size() <= 10
+      && data.clicks is number && data.clicks >= 0 && data.clicks <= 100000000
+      && data.active is bool
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp;
+    }
+
+    function isValidQuizAttempt(data) {
+      return data.keys().hasAll([
+        'id', 'userId', 'registrationId', 'moduleId', 'score', 'totalQuestions', 'passed', 'createdAt'
+      ])
+      && data.keys().hasOnly([
+        'id', 'userId', 'registrationId', 'moduleId', 'score', 'totalQuestions', 'passed', 'createdAt'
+      ])
+      && isValidId(data.id)
+      && data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128
+      && isValidId(data.registrationId)
+      && data.moduleId is string && data.moduleId.size() >= 1 && data.moduleId.size() <= 64
+      && data.score is number && data.score >= 0 && data.score <= 100
+      && data.totalQuestions is number && data.totalQuestions >= 1 && data.totalQuestions <= 100
+      && data.passed is bool
+      && data.createdAt is timestamp;
+    }
+
+    match /admins/{adminId} {
+      allow get: if isVerified() && (request.auth.uid == adminId || isBootstrappedAdmin());
+      allow list: if isBootstrappedAdmin();
+      allow create, update, delete: if isBootstrappedAdmin() && isValidId(adminId);
+    }
+
+    match /registrations/{registrationId} {
+      allow get: if isVerified() && isValidId(registrationId) && (existing().userId == request.auth.uid || isAdmin());
+      allow list: if isVerified() && (resource.data.userId == request.auth.uid || isBootstrappedAdmin());
+
+      allow create: if isVerified()
+        && isValidId(registrationId)
+        && isValidRegistration(incoming())
+        && incoming().id == registrationId
+        && incoming().userId == request.auth.uid
+        && incoming().paymentStatus == 'pending'
+        && incoming().dossierStatus == 'locked'
+        && incoming().latestPaymentId == ''
+        && incoming().completedModuleIds.size() == 0
+        && incoming().codeProgress == 0
+        && incoming().quizBestScore == 0
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isVerified()
+        && isValidId(registrationId)
+        && isValidRegistration(incoming())
+        && incoming().id == existing().id
+        && incoming().userId == existing().userId
+        && incoming().baseFeeEur == existing().baseFeeEur
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          isAdmin() || (
+            existing().userId == request.auth.uid
+            && existing().dossierStatus != 'practical_ready'
+            && (
+              (
+                existing().paymentStatus == 'pending'
+                && incoming().paymentStatus == 'paid'
+                && incoming().dossierStatus == 'code_unlocked'
+                && isValidId(incoming().latestPaymentId)
+                && existsAfter(/databases/$(database)/documents/payments/$(incoming().latestPaymentId))
+                && incoming().diff(existing()).affectedKeys().hasOnly([
+                  'paymentStatus', 'dossierStatus', 'paymentMethod', 'latestPaymentId', 'updatedAt'
+                ])
+              )
+              || (
+                existing().paymentStatus in ['paid', 'verified']
+                && incoming().paymentStatus == existing().paymentStatus
+                && incoming().dossierStatus == existing().dossierStatus
+                && incoming().diff(existing()).affectedKeys().hasOnly([
+                  'completedModuleIds', 'codeProgress', 'quizBestScore', 'updatedAt'
+                ])
+              )
+            )
+          )
+        );
+
+      allow delete: if isAdmin() && isValidId(registrationId);
+    }
+
+    match /payments/{paymentId} {
+      allow get: if isVerified() && isValidId(paymentId) && (existing().userId == request.auth.uid || isAdmin());
+      allow list: if isVerified() && (resource.data.userId == request.auth.uid || isBootstrappedAdmin());
+
+      allow create: if isVerified()
+        && isValidId(paymentId)
+        && isValidPayment(incoming())
+        && incoming().id == paymentId
+        && incoming().userId == request.auth.uid
+        && incoming().status == 'completed'
+        && incoming().createdAt == request.time
+        && exists(/databases/$(database)/documents/registrations/$(incoming().registrationId))
+        && get(/databases/$(database)/documents/registrations/$(incoming().registrationId)).data.userId == request.auth.uid
+        && incoming().amountPaid == get(/databases/$(database)/documents/registrations/$(incoming().registrationId)).data.convertedAmount;
+
+      allow update: if isAdmin() && isValidId(paymentId) && isValidPayment(incoming()) && incoming().createdAt == existing().createdAt;
+      allow delete: if isAdmin() && isValidId(paymentId);
+    }
+
+    match /social_links/{linkId} {
+      allow get: if isVerified() && isValidId(linkId) && (existing().agentId == request.auth.uid || isAdmin());
+      allow list: if isVerified() && (resource.data.agentId == request.auth.uid || isBootstrappedAdmin());
+
+      allow create: if isVerified()
+        && isValidId(linkId)
+        && isValidSocialLink(incoming())
+        && incoming().id == linkId
+        && incoming().agentId == request.auth.uid
+        && incoming().clicks == 0
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isVerified()
+        && isValidId(linkId)
+        && isValidSocialLink(incoming())
+        && incoming().id == existing().id
+        && incoming().agentId == existing().agentId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          isAdmin() || (
+            existing().agentId == request.auth.uid
+            && incoming().diff(existing()).affectedKeys().hasOnly(['clicks', 'active', 'campaignName', 'updatedAt'])
+          )
+        );
+
+      allow delete: if isVerified() && isValidId(linkId) && (existing().agentId == request.auth.uid || isAdmin());
+    }
+
+    match /quiz_attempts/{attemptId} {
+      allow get: if isVerified() && isValidId(attemptId) && (existing().userId == request.auth.uid || isAdmin());
+      allow list: if isVerified() && (resource.data.userId == request.auth.uid || isBootstrappedAdmin());
+
+      allow create: if isVerified()
+        && isValidId(attemptId)
+        && isValidQuizAttempt(incoming())
+        && incoming().id == attemptId
+        && incoming().userId == request.auth.uid
+        && incoming().createdAt == request.time
+        && exists(/databases/$(database)/documents/registrations/$(incoming().registrationId))
+        && get(/databases/$(database)/documents/registrations/$(incoming().registrationId)).data.userId == request.auth.uid
+        && get(/databases/$(database)/documents/registrations/$(incoming().registrationId)).data.paymentStatus in ['paid', 'verified'];
+
+      allow update, delete: if isAdmin() && isValidId(attemptId);
+    }
+  }
+}

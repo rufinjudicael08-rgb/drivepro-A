@@ -1,0 +1,374 @@
+{
+  "entities": {
+    "Registration": {
+      "title": "Candidate Registration",
+      "description": "Candidate driving school dossier, country/currency selection, category-based EUR fee, locked funnel state, sequential course progress, and practical readiness.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "fullName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 150
+        },
+        "phone": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 30
+        },
+        "countryCode": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 3
+        },
+        "countryName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "city": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "licenseCategory": {
+          "type": "string",
+          "enum": ["A", "B", "C", "D"]
+        },
+        "preferredLanguage": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 10
+        },
+        "currency": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 10
+        },
+        "baseFeeEur": {
+          "type": "number"
+        },
+        "convertedAmount": {
+          "type": "number"
+        },
+        "paymentMethod": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "paymentStatus": {
+          "type": "string",
+          "enum": ["pending", "paid", "verified"]
+        },
+        "dossierStatus": {
+          "type": "string",
+          "enum": ["locked", "queue", "code_unlocked", "practical_ready"]
+        },
+        "latestPaymentId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "queueNumber": {
+          "type": "number"
+        },
+        "completedModuleIds": {
+          "type": "array"
+        },
+        "codeProgress": {
+          "type": "number"
+        },
+        "quizBestScore": {
+          "type": "number"
+        },
+        "referralCode": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "referralPlatform": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "assignedInstructorId": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "fullName",
+        "email",
+        "phone",
+        "countryCode",
+        "countryName",
+        "city",
+        "licenseCategory",
+        "preferredLanguage",
+        "currency",
+        "baseFeeEur",
+        "convertedAmount",
+        "paymentMethod",
+        "paymentStatus",
+        "dossierStatus",
+        "latestPaymentId",
+        "queueNumber",
+        "completedModuleIds",
+        "codeProgress",
+        "quizBestScore",
+        "referralCode",
+        "referralPlatform",
+        "assignedInstructorId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "PaymentLog": {
+      "title": "Payment Log",
+      "description": "Immutable payment audit log for category registration fee settlement (TapTap Send, Card, SEPA, Mobile Money).",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "registrationId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "candidateName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "countryCode": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 3
+        },
+        "currency": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 10
+        },
+        "baseAmountEur": {
+          "type": "number"
+        },
+        "amountPaid": {
+          "type": "number"
+        },
+        "method": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "transactionRef": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 80
+        },
+        "status": {
+          "type": "string",
+          "enum": ["completed", "refunded"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "registrationId",
+        "userId",
+        "candidateName",
+        "countryCode",
+        "currency",
+        "baseAmountEur",
+        "amountPaid",
+        "method",
+        "transactionRef",
+        "status",
+        "createdAt"
+      ]
+    },
+    "SocialLink": {
+      "title": "Social Tracking Link",
+      "description": "Agent campaign link for TikTok, Facebook, and Instagram lead capture tracking.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "agentId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "agentName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "platform": {
+          "type": "string",
+          "enum": ["TikTok", "Facebook", "Instagram"]
+        },
+        "campaignName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "trackingCode": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 60,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "targetCountry": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 10
+        },
+        "clicks": {
+          "type": "number"
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "agentId",
+        "agentName",
+        "platform",
+        "campaignName",
+        "trackingCode",
+        "targetCountry",
+        "clicks",
+        "active",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "QuizAttempt": {
+      "title": "Theory Quiz Attempt",
+      "description": "Candidate multiple-choice practice exam attempt for official state theory preparation.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "registrationId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "moduleId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "score": {
+          "type": "number"
+        },
+        "totalQuestions": {
+          "type": "number"
+        },
+        "passed": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "registrationId",
+        "moduleId",
+        "score",
+        "totalQuestions",
+        "passed",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/registrations/{registrationId}": {
+      "schema": {
+        "$ref": "#/entities/Registration"
+      },
+      "description": "Candidate registration documents gated by payment verification."
+    },
+    "/payments/{paymentId}": {
+      "schema": {
+        "$ref": "#/entities/PaymentLog"
+      },
+      "description": "Payment transaction logs linked to candidate registrations."
+    },
+    "/social_links/{linkId}": {
+      "schema": {
+        "$ref": "#/entities/SocialLink"
+      },
+      "description": "Tracked social media campaign links managed by agents and admins."
+    },
+    "/quiz_attempts/{attemptId}": {
+      "schema": {
+        "$ref": "#/entities/QuizAttempt"
+      },
+      "description": "Online code theory practice quiz attempts by verified candidates."
+    }
+  }
+}
