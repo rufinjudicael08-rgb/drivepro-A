@@ -32,6 +32,16 @@ export interface PaymentMethodOption {
   hintEn: string;
 }
 
+export interface UserAccountRecord {
+  id: string;
+  userId: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  createdAt?: unknown;
+  updatedAt?: unknown;
+}
+
 export interface RegistrationRecord {
   id: string;
   userId: string;

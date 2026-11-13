@@ -34,6 +34,7 @@ import {
   Language,
   LicenseCategory,
   RegistrationRecord,
+  UserAccountRecord,
 } from '../types';
 
 interface RegistrationFlowProps {
@@ -43,6 +44,7 @@ interface RegistrationFlowProps {
   onChangeCategory: (cat: LicenseCategory) => void;
   onChangeCountry: (country: CountryConfig) => void;
   user: User | null;
+  userProfile?: UserAccountRecord | null;
   registration: RegistrationRecord | null;
   referralCode: string;
   referralPlatform: string;
@@ -89,6 +91,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
   onChangeCategory,
   onChangeCountry,
   user,
+  userProfile,
   registration,
   referralCode,
   referralPlatform,
@@ -168,17 +171,22 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (user?.displayName && !firstName && !lastName) {
-      const parts = user.displayName.trim().split(/\s+/);
+    const sourceName = userProfile?.fullName || user?.displayName || '';
+    if (sourceName && !firstName && !lastName) {
+      const parts = sourceName.trim().split(/\s+/);
       if (parts.length > 1) {
         setFirstName(parts.slice(0, -1).join(' '));
         setLastName(parts[parts.length - 1]);
       } else {
-        setFirstName(user.displayName);
+        setFirstName(sourceName);
       }
     }
-    if (user?.email && !email) setEmail(user.email);
-  }, [user, firstName, lastName, email]);
+    const sourceEmail = userProfile?.email || user?.email || '';
+    if (sourceEmail && !email) setEmail(sourceEmail);
+    if (userProfile?.phone && (!phone || phone.trim() === country.dialCode)) {
+      setPhone(userProfile.phone);
+    }
+  }, [user, userProfile, firstName, lastName, email, phone, country.dialCode]);
 
   useEffect(() => {
     if (registration) {
@@ -311,8 +319,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
     if (!user) {
       setFormError(
         isEn
-          ? 'Please click Google Sign-In above first to save your dossier.'
-          : 'Veuillez d’abord cliquer sur Connexion Google ci-dessus pour enregistrer votre dossier.'
+          ? 'Please create your account (or sign in) first above to save your dossier.'
+          : 'Veuillez d’abord créer votre compte (ou vous connecter) ci-dessus pour enregistrer votre dossier.'
       );
       return;
     }

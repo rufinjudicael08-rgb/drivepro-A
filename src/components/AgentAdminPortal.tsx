@@ -35,7 +35,7 @@ import { getTranslations } from '../data/i18n';
 import {
   ADMIN_EMAIL,
   db,
-  FIREBASE_AUTH_SETTINGS_URL,
+  FIREBASE_AUTH_PROVIDERS_URL,
   FIREBASE_DATABASE_ID,
   FIREBASE_PROJECT_ID,
   FIRESTORE_CONSOLE_URL,
@@ -258,15 +258,16 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
 
   return (
     <div className="space-y-8">
-      {/* Section 0: Firebase Database & Vercel Google Auth Diagnostics (Creator Only) */}
+      {/* Section 0: Firebase Database & Email/Password Auth Diagnostics (Creator Only) */}
       <section className="bg-slate-900 text-white rounded-xl p-6 md:p-7 border border-slate-800 shadow-lg space-y-5">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-800 pb-4">
           <div className="space-y-1">
             <div className="text-xs font-mono text-blue-400 font-semibold">
-              Diagnostic Technique Firebase & Vercel · Réservé au créateur
+              Diagnostic Firebase & Vercel · Réservé au créateur
             </div>
             <h2 className="font-display text-xl sm:text-2xl font-bold text-white">
-              Accès direct à vos données Firebase & <span className="text-emerald-400">Connexion Google</span>
+              Accès direct à vos données Firebase &{' '}
+              <span className="text-emerald-400">Comptes E-mail / Mot de passe</span>
             </h2>
           </div>
           <div className="flex flex-wrap items-center gap-2.5">
@@ -281,13 +282,13 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
             <a
-              href={FIREBASE_AUTH_SETTINGS_URL}
+              href={FIREBASE_AUTH_PROVIDERS_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg whitespace-nowrap"
             >
               <Globe className="w-4 h-4" />
-              <span>Authorized Domains (Google Auth)</span>
+              <span>Fournisseur E-mail / Mot de passe</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
           </div>
@@ -299,7 +300,7 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
               1. Où voir toutes les données du site sur Firebase ?
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
-              Vos inscriptions, paiements, liens TikTok/Instagram et QCM sont enregistrés dans la base nommée{' '}
+              Vos comptes (<span className="font-mono text-white">users</span>), inscriptions, paiements, liens TikTok/Instagram et QCM sont enregistrés dans la base nommée{' '}
               <span className="font-mono text-white font-semibold">{FIREBASE_DATABASE_ID}</span> (Projet{' '}
               <span className="font-mono text-white">{FIREBASE_PROJECT_ID}</span>), et non dans « (default) ».
             </p>
@@ -307,10 +308,12 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
 
           <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-4 space-y-2">
             <div className="text-xs font-semibold text-emerald-300">
-              2. Domaine actuel à autoriser dans Google Auth :
+              2. Comptes sans blocage de domaine ({currentHostname}) :
             </div>
             <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2">
-              <span className="font-mono text-xs text-white truncate">{currentHostname}</span>
+              <span className="font-mono text-xs text-white truncate">
+                Mode actif : Nom + E-mail + Téléphone + Mot de passe
+              </span>
               <button
                 type="button"
                 onClick={handleCopyHostname}
@@ -319,18 +322,18 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
                 {copiedDomain ? (
                   <>
                     <Check className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Copié</span>
+                    <span>Domaine copié</span>
                   </>
                 ) : (
                   <>
                     <Copy className="w-3.5 h-3.5" />
-                    <span>Copier le domaine</span>
+                    <span>Copier {currentHostname}</span>
                   </>
                 )}
               </button>
             </div>
             <p className="text-[11px] text-slate-400">
-              Collez ce domaine dans Firebase Console → Authentication → Settings → Authorized domains → Add domain.
+              La connexion Google a été supprimée : l’inscription par E-mail / Mot de passe fonctionne sur Vercel, mobile, TikTok et Instagram.
             </p>
           </div>
         </div>

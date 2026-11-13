@@ -1,14 +1,13 @@
 import React, { Component, ErrorInfo, ReactNode, useEffect, useState } from 'react';
 import {
-  getRedirectResult,
   onAuthStateChanged,
-  signInWithPopup,
-  signInWithRedirect,
+  sendEmailVerification,
   signOut,
   User,
 } from 'firebase/auth';
 import {
   collection,
+  doc,
   onSnapshot,
   orderBy,
   query,
@@ -18,17 +17,20 @@ import {
   ArrowRight,
   Building2,
   CarFront,
+  CheckCircle2,
   GraduationCap,
   Lock,
+  MailCheck,
   MapPin,
   MessageCircle,
   Phone,
   ShieldCheck,
-  X,
+  UserPlus,
 } from 'lucide-react';
 import { APP_MEDIA, HERO_SHOWCASE_GALLERY } from './assets/media';
 import { AgentAdminPortal } from './components/AgentAdminPortal';
 import { AnimatedStageBackdrop } from './components/AnimatedStageBackdrop';
+import { AuthModal } from './components/AuthModal';
 import { CandidatePortal } from './components/CandidatePortal';
 import { CountrySelector } from './components/CountrySelector';
 import { RegistrationFlow } from './components/RegistrationFlow';
@@ -44,7 +46,6 @@ import {
   ADMIN_EMAIL,
   auth,
   db,
-  googleProvider,
   handleFirestoreError,
   OperationType,
   testFirestoreConnection,
@@ -59,6 +60,7 @@ import {
   RegistrationRecord,
   SocialLinkRecord,
   SocialPlatform,
+  UserAccountRecord,
 } from './types';
 
 type ViewTab = 'home' | 'enroll' | 'candidate' | 'agent';
@@ -123,11 +125,14 @@ export default function App() {
   const [referralCode, setReferralCode] = useState<string>('');
   const [referralPlatform, setReferralPlatform] = useState<string>('Direct');
 
-  // Auth & Firestore state
+  // Auth & Firestore state (Account via Name, Email, Phone & Password)
   const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserAccountRecord | null>(null);
   const [authReady, setAuthReady] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
-  const [authSigningIn, setAuthSigningIn] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'register' | 'login'>('register');
+  const [adminVerifyNotice, setAdminVerifyNotice] = useState<string | null>(null);
+  const [adminVerifySending, setAdminVerifySending] = useState(false);
 
   const [myRegistration, setMyRegistration] =
     useState<RegistrationRecord | null>(null);
@@ -166,18 +171,6 @@ export default function App() {
   useEffect(() => {
     testFirestoreConnection();
 
-    // Handle returning from signInWithRedirect (mobile / social in-app browser fallback)
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result?.user) {
-          setUser(result.user);
-        }
-      })
-      .catch((error) => {
-        setAuthError(translateAuthErrorFr(error));
-      });
-
-    // Restore attribution / view state saved prior to a Google redirect login
     let savedCtx: {
       ref?: string;
       src?: string;
@@ -249,7 +242,6 @@ export default function App() {
       setSelectedCountry(matched);
       setLang(matched.defaultLang);
     } else {
-      // Automatic visitor geolocation (IP region with browser locale fallback)
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 2500);
       fetch('https://ipapi.co/json/', { signal: controller.signal })
@@ -282,13 +274,26 @@ export default function App() {
     return () => unsubAuth();
   }, []);
 
-  // Subscribe to Candidate's own registration and quiz attempts
+  // Subscribe to Candidate's own profile, registration, and quiz attempts
   useEffect(() => {
     if (!authReady || !user) {
+      setUserProfile(null);
       setMyRegistration(null);
       setMyQuizAttempts([]);
       return;
     }
+
+    const unsubProfile = onSnapshot(
+      doc(db, 'users', user.uid),
+      (snap) => {
+        if (snap.exists()) {
+          setUserProfile(snap.data() as UserAccountRecord);
+        }
+      },
+      () => {
+        // Ignore profile snapshot errors if user signed up before profile doc existed
+      }
+    );
 
     const regQuery = query(
       collection(db, 'registrations'),
@@ -327,6 +332,7 @@ export default function App() {
     );
 
     return () => {
+      unsubProfile();
       unsubReg();
       unsubQuiz();
     };
@@ -398,50 +404,36 @@ export default function App() {
     setAutoDetected(false);
   };
 
-  const handleSignIn = async () => {
-    setAuthError(null);
-    setAuthSigningIn(true);
-
-    try {
-      sessionStorage.setItem(
-        TRACKING_SESSION_KEY,
-        JSON.stringify({
-          ref: referralCode,
-          src: referralPlatform,
-          country: selectedCountry.code,
-          view: activeView,
-        })
-      );
-    } catch {
-      // Ignore storage quota errors
-    }
-
-    try {
-      await signInWithPopup(auth, googleProvider);
-    } catch (error) {
-      const code = (error as { code?: string } | null)?.code || '';
-      if (
-        code === 'auth/popup-blocked' ||
-        code === 'auth/operation-not-supported-in-this-environment' ||
-        code === 'auth/web-storage-unsupported' ||
-        code === 'auth/cancelled-popup-request'
-      ) {
-        try {
-          await signInWithRedirect(auth, googleProvider);
-          return;
-        } catch (redirectError) {
-          setAuthError(translateAuthErrorFr(redirectError));
-        }
-      } else {
-        setAuthError(translateAuthErrorFr(error));
-      }
-    } finally {
-      setAuthSigningIn(false);
-    }
+  const openAuthModal = async (mode: 'register' | 'login' = 'register') => {
+    setAuthModalMode(mode);
+    setAuthModalOpen(true);
   };
 
   const handleSignOut = async () => {
     await signOut(auth);
+  };
+
+  const handleResendAdminVerification = async () => {
+    if (!user) return;
+    setAdminVerifySending(true);
+    setAdminVerifyNotice(null);
+    try {
+      await sendEmailVerification(user);
+      setAdminVerifyNotice(
+        `Un lien de confirmation vient d’être envoyé à ${user.email}. Vérifiez votre boîte de réception (et les spams), cliquez dessus puis cliquez sur « Actualiser ».`
+      );
+    } catch (err) {
+      setAdminVerifyNotice(translateAuthErrorFr(err));
+    } finally {
+      setAdminVerifySending(false);
+    }
+  };
+
+  const handleRefreshAdminStatus = async () => {
+    if (!user) return;
+    await user.reload();
+    await user.getIdToken(true);
+    setUser({ ...user } as User);
   };
 
   const handleSimulateTrackedVisit = (
@@ -473,6 +465,11 @@ export default function App() {
     { id: 'candidate', label: t.navCandidate },
     ...(isCreatorAdmin ? [{ id: 'agent' as const, label: t.navAgent }] : []),
   ];
+
+  const firstDisplayName =
+    userProfile?.fullName?.split(' ')[0] ||
+    user?.displayName?.split(' ')[0] ||
+    t.navSignOut;
 
   return (
     <ErrorBoundary>
@@ -515,25 +512,33 @@ export default function App() {
                 })}
               </nav>
 
-              <div className="flex items-center shrink-0">
+              <div className="flex items-center gap-2 shrink-0">
                 {user ? (
                   <button
                     type="button"
                     onClick={handleSignOut}
                     className="px-4 py-2 text-xs font-semibold text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
                   >
-                    {user.displayName?.split(' ')[0] || t.navSignOut} ·{' '}
-                    {t.navSignOut}
+                    {firstDisplayName} · {t.navSignOut}
                   </button>
                 ) : (
-                  <button
-                    type="button"
-                    disabled={authSigningIn}
-                    onClick={handleSignIn}
-                    className="px-4 py-2 text-xs font-semibold text-white bg-blue-700 hover:bg-blue-800 disabled:opacity-60 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-                  >
-                    {authSigningIn ? 'Connexion...' : t.navSignIn}
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => openAuthModal('login')}
+                      className="hidden sm:inline-flex px-3.5 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                    >
+                      {isEn ? 'Sign In' : 'Se connecter'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openAuthModal('register')}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                    >
+                      <UserPlus className="w-3.5 h-3.5" />
+                      <span>{t.navSignIn}</span>
+                    </button>
+                  </>
                 )}
               </div>
             </div>
@@ -558,27 +563,41 @@ export default function App() {
           </header>
 
           <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-            {authError && (
-              <div className="bg-red-50 border border-red-200 text-red-900 text-sm px-4 py-3.5 rounded-xl flex items-start justify-between gap-4 shadow-sm">
+            {/* Creator Email Verification Reminder ONLY when signed in as ADMIN_EMAIL before clicking email link */}
+            {user && user.email === ADMIN_EMAIL && !user.emailVerified && (
+              <div className="bg-amber-50 border border-amber-300 text-amber-950 rounded-xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
                 <div className="space-y-1">
-                  <div className="font-semibold">Problème de connexion Google</div>
-                  <p className="text-xs leading-relaxed">{authError}</p>
+                  <div className="flex items-center gap-2 font-bold text-sm">
+                    <MailCheck className="w-4 h-4 text-amber-700 shrink-0" />
+                    <span>
+                      Compte créateur détecté ({ADMIN_EMAIL}) — Vérification requise pour l’Espace Direction
+                    </span>
+                  </div>
+                  <p className="text-xs text-amber-900 leading-relaxed">
+                    Cliquez sur le lien de vérification envoyé dans votre boîte e-mail (vérifiez aussi les Spams), puis cliquez sur « J’ai validé mon e-mail ».
+                  </p>
+                  {adminVerifyNotice && (
+                    <p className="text-xs font-semibold text-blue-800 pt-1">
+                      {adminVerifyNotice}
+                    </p>
+                  )}
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
                   <button
                     type="button"
-                    onClick={handleSignIn}
-                    className="px-3 py-1.5 bg-red-700 hover:bg-red-800 text-white text-xs font-semibold rounded-lg cursor-pointer whitespace-nowrap"
+                    disabled={adminVerifySending}
+                    onClick={handleResendAdminVerification}
+                    className="px-3.5 py-2 bg-white border border-amber-400 hover:bg-amber-100 text-xs font-semibold rounded-lg cursor-pointer whitespace-nowrap"
                   >
-                    Réessayer
+                    {adminVerifySending ? 'Envoi...' : 'Renvoyer le lien par e-mail'}
                   </button>
                   <button
                     type="button"
-                    onClick={() => setAuthError(null)}
-                    className="p-1.5 text-red-700 hover:bg-red-100 rounded-lg cursor-pointer"
-                    aria-label="Fermer"
+                    onClick={handleRefreshAdminStatus}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg cursor-pointer whitespace-nowrap"
                   >
-                    <X className="w-4 h-4" />
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>J’ai validé mon e-mail (Actualiser)</span>
                   </button>
                 </div>
               </div>
@@ -800,9 +819,9 @@ export default function App() {
                             titleFr: 'Dossier à fournir',
                             titleEn: 'Required Dossier & ID',
                             textFr:
-                              'Renseignez Nom, Prénom, E-mail, Téléphone, Adresse, Ville, confirmation Wi-Fi et votre pièce d’identité obligatoire.',
+                              'Créez votre compte (Nom, E-mail, Téléphone), puis complétez votre adresse et pièce d’identité obligatoire.',
                             textEn:
-                              'Enter full legal name, email, phone, street address, Wi-Fi check, and upload your official government ID.',
+                              'Create your account (Name, Email, Phone), then add your residential address and government ID.',
                           },
                           {
                             num: '02.',
@@ -886,10 +905,11 @@ export default function App() {
                 onChangeCategory={setCategory}
                 onChangeCountry={handleSelectCountry}
                 user={user}
+                userProfile={userProfile}
                 registration={myRegistration}
                 referralCode={referralCode}
                 referralPlatform={referralPlatform}
-                onSignIn={handleSignIn}
+                onSignIn={() => openAuthModal('register')}
                 onOpenCandidatePortal={() => setActiveView('candidate')}
               />
             )}
@@ -913,7 +933,7 @@ export default function App() {
                 registrations={allRegistrations}
                 payments={allPayments}
                 socialLinks={socialLinks}
-                onSignIn={handleSignIn}
+                onSignIn={() => openAuthModal('login')}
                 onSimulateTrackedVisit={handleSimulateTrackedVisit}
               />
             )}
@@ -926,7 +946,7 @@ export default function App() {
                 <div className="font-display text-base font-bold text-white">
                   Drive<span className="text-blue-400">Pro</span> Academy ·{' '}
                   <span className="text-emerald-400 font-mono text-xs">
-                    v4.0.0
+                    v4.1.0
                   </span>
                 </div>
                 <div className="flex items-start gap-2 text-slate-300">
@@ -996,6 +1016,20 @@ export default function App() {
             </div>
           </footer>
         </div>
+
+        {/* Name, Email, Phone & Password Account Modal (Replaces Google Login) */}
+        <AuthModal
+          isOpen={authModalOpen}
+          initialMode={authModalMode}
+          lang={lang}
+          defaultDialCode={selectedCountry.dialCode}
+          onClose={() => setAuthModalOpen(false)}
+          onAuthSuccess={(profile) => {
+            if (profile) {
+              setUserProfile(profile);
+            }
+          }}
+        />
       </div>
     </ErrorBoundary>
   );

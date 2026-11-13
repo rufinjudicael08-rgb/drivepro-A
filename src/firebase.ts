@@ -1,37 +1,47 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
 import { doc, getDocFromServer, getFirestore } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
-export const googleProvider = new GoogleAuthProvider();
-googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 export const ADMIN_EMAIL = 'lokossoujudicael00@gmail.com';
 export const FIREBASE_PROJECT_ID = firebaseConfig.projectId;
 export const FIREBASE_DATABASE_ID = firebaseConfig.firestoreDatabaseId;
 export const FIRESTORE_CONSOLE_URL = `https://console.firebase.google.com/project/${firebaseConfig.projectId}/firestore/databases/${firebaseConfig.firestoreDatabaseId}/data`;
-export const FIREBASE_AUTH_SETTINGS_URL = `https://console.firebase.google.com/project/${firebaseConfig.projectId}/authentication/settings`;
+export const FIREBASE_AUTH_PROVIDERS_URL = `https://console.firebase.google.com/project/${firebaseConfig.projectId}/authentication/providers`;
 
 export function translateAuthErrorFr(error: unknown): string {
   const errObj = error as { code?: string; message?: string } | null;
   const code = errObj?.code || '';
   const msg = errObj?.message || String(error);
-  const host = typeof window !== 'undefined' ? window.location.hostname : 'ce domaine';
 
-  if (code === 'auth/unauthorized-domain' || msg.includes('unauthorized-domain')) {
-    return `Domaine non autorisé (${host}). Ajoutez « ${host} » dans Firebase Console → Authentication → Settings → Authorized domains afin d’activer la connexion Google sur ce lien.`;
+  if (code === 'auth/email-already-in-use') {
+    return 'Un compte existe déjà avec cette adresse e-mail. Cliquez sur « Se connecter » pour accéder à votre espace.';
   }
-  if (code === 'auth/popup-blocked') {
-    return 'Votre navigateur a bloqué la fenêtre Google. Redirection automatique en cours ou autorisez les fenêtres pop-up.';
+  if (
+    code === 'auth/invalid-credential' ||
+    code === 'auth/wrong-password' ||
+    code === 'auth/user-not-found'
+  ) {
+    return 'Adresse e-mail ou mot de passe incorrect. Vérifiez vos identifiants ou cliquez sur « Mot de passe oublié ? ».';
   }
-  if (code === 'auth/popup-closed-by-user') {
-    return 'La fenêtre de connexion Google a été fermée avant la validation. Veuillez réessayer.';
+  if (code === 'auth/weak-password') {
+    return 'Le mot de passe doit contenir au moins 6 caractères.';
+  }
+  if (code === 'auth/invalid-email') {
+    return 'Adresse e-mail invalide. Veuillez vérifier le format (ex: nom@domaine.com).';
+  }
+  if (code === 'auth/too-many-requests') {
+    return 'Trop de tentatives consécutives. Patientez quelques instants avant de réessayer.';
+  }
+  if (code === 'auth/operation-not-allowed') {
+    return 'L’authentification E-mail / Mot de passe doit être activée une fois dans Firebase Console → Authentication → Sign-in method → Email/Password.';
   }
   if (code === 'auth/network-request-failed') {
-    return 'Erreur réseau lors de la connexion Google. Vérifiez votre Wi-Fi ou connexion Internet et réessayez.';
+    return 'Erreur réseau lors de la connexion. Vérifiez votre Wi-Fi ou connexion Internet et réessayer.';
   }
   return msg;
 }

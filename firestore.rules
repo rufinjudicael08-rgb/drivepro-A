@@ -39,6 +39,22 @@ service cloud.firestore {
         && (modules.size() == 0 || (modules[0] is string && modules[0].size() <= 40));
     }
 
+    function isValidUserAccount(data) {
+      return data.keys().hasAll([
+        'id', 'userId', 'fullName', 'email', 'phone', 'createdAt', 'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'id', 'userId', 'fullName', 'email', 'phone', 'createdAt', 'updatedAt'
+      ])
+      && isValidId(data.id)
+      && data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128
+      && data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 100
+      && data.email is string && data.email.size() >= 5 && data.email.size() <= 150
+      && data.phone is string && data.phone.size() >= 5 && data.phone.size() <= 30
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp;
+    }
+
     function isValidRegistration(data) {
       return data.keys().hasAll([
         'id', 'userId', 'fullName', 'email', 'phone', 'address', 'city', 'wifiReady',
@@ -164,11 +180,42 @@ service cloud.firestore {
       allow create, update, delete: if isBootstrappedAdmin() && isValidId(adminId);
     }
 
-    match /registrations/{registrationId} {
-      allow get: if isVerified() && isValidId(registrationId) && (existing().userId == request.auth.uid || isAdmin());
-      allow list: if isVerified() && (resource.data.userId == request.auth.uid || isBootstrappedAdmin());
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && (request.auth.uid == userId || isAdmin());
+      allow list: if isBootstrappedAdmin();
 
-      allow create: if isVerified()
+      allow create: if isSignedIn()
+        && isValidId(userId)
+        && isValidUserAccount(incoming())
+        && incoming().id == userId
+        && incoming().userId == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isSignedIn()
+        && isValidId(userId)
+        && isValidUserAccount(incoming())
+        && incoming().id == existing().id
+        && incoming().userId == existing().userId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          isAdmin() || (
+            existing().userId == request.auth.uid
+            && incoming().diff(existing()).affectedKeys().hasOnly([
+              'fullName', 'phone', 'updatedAt'
+            ])
+          )
+        );
+
+      allow delete: if isAdmin() && isValidId(userId);
+    }
+
+    match /registrations/{registrationId} {
+      allow get: if isSignedIn() && isValidId(registrationId) && (existing().userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isBootstrappedAdmin());
+
+      allow create: if isSignedIn()
         && isValidId(registrationId)
         && isValidRegistration(incoming())
         && incoming().id == registrationId
@@ -182,7 +229,7 @@ service cloud.firestore {
         && incoming().createdAt == request.time
         && incoming().updatedAt == request.time;
 
-      allow update: if isVerified()
+      allow update: if isSignedIn()
         && isValidId(registrationId)
         && isValidRegistration(incoming())
         && incoming().id == existing().id
@@ -229,10 +276,10 @@ service cloud.firestore {
     }
 
     match /payments/{paymentId} {
-      allow get: if isVerified() && isValidId(paymentId) && (existing().userId == request.auth.uid || isAdmin());
-      allow list: if isVerified() && (resource.data.userId == request.auth.uid || isBootstrappedAdmin());
+      allow get: if isSignedIn() && isValidId(paymentId) && (existing().userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isBootstrappedAdmin());
 
-      allow create: if isVerified()
+      allow create: if isSignedIn()
         && isValidId(paymentId)
         && isValidPayment(incoming())
         && incoming().id == paymentId
@@ -272,10 +319,10 @@ service cloud.firestore {
     }
 
     match /quiz_attempts/{attemptId} {
-      allow get: if isVerified() && isValidId(attemptId) && (existing().userId == request.auth.uid || isAdmin());
-      allow list: if isVerified() && (resource.data.userId == request.auth.uid || isBootstrappedAdmin());
+      allow get: if isSignedIn() && isValidId(attemptId) && (existing().userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isBootstrappedAdmin());
 
-      allow create: if isVerified()
+      allow create: if isSignedIn()
         && isValidId(attemptId)
         && isValidQuizAttempt(incoming())
         && incoming().id == attemptId
