@@ -27,7 +27,11 @@ import {
   getCountryLocalizedName,
   TAPTAP_SEND_CHECKOUT,
 } from '../data/countries';
-import { getCountryTheme } from '../data/countryThemes';
+import {
+  getCountryTheme,
+  getOnColorText,
+  getReadablePrimaryOnLight,
+} from '../data/countryThemes';
 import { getInstructorForCountry, PARIS_HQ_CONTACT } from '../data/curriculum';
 import { getTranslations } from '../data/i18n';
 import { db, handleFirestoreError, OperationType } from '../firebase';
@@ -171,6 +175,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
 }) => {
   const t = getTranslations(lang);
   const countryTheme = getCountryTheme(country);
+  const safePrimary = getReadablePrimaryOnLight(countryTheme.primaryHex);
+  const onPrimaryText = getOnColorText(countryTheme.primaryHex);
   const localizedCountryName = getCountryLocalizedName(
     country.code,
     lang,
@@ -584,12 +590,13 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                         ? {
                             backgroundColor: countryTheme.primaryHex,
                             borderColor: countryTheme.primaryHex,
+                            color: onPrimaryText,
                           }
                         : undefined
                     }
                     className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-lg border transition-colors cursor-pointer ${
                       isSelected
-                        ? 'text-white'
+                        ? ''
                         : 'bg-slate-50 text-slate-800 border-slate-300 hover:bg-slate-100'
                     }`}
                   >
@@ -692,16 +699,17 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                   ? {
                       backgroundColor: countryTheme.primaryHex,
                       borderColor: countryTheme.primaryHex,
+                      color: onPrimaryText,
                     }
                   : undefined
               }
               className={`px-4 py-3.5 rounded-lg border text-left transition-colors flex items-center justify-between gap-2 ${
                 active
-                  ? 'text-white shadow-sm'
+                  ? 'shadow-sm'
                   : item.done
                   ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
                   : item.locked
-                  ? 'bg-white/90 text-slate-400 border-slate-200 cursor-not-allowed'
+                  ? 'bg-white/90 text-slate-500 border-slate-200 cursor-not-allowed'
                   : 'bg-white/95 text-slate-900 border-slate-200 hover:border-slate-400 cursor-pointer'
               }`}
             >
@@ -720,7 +728,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
       {step === 1 && !isUnlocked && (
         <div className="bg-white/95 backdrop-blur border border-slate-200 rounded-xl p-6 md:p-8 space-y-6 shadow-md">
           <div className="border-b border-slate-200 pb-5 space-y-2">
-            <div className="flex items-center gap-2.5 text-sm font-semibold" style={{ color: countryTheme.primaryHex }}>
+            <div className="flex items-center gap-2.5 text-sm font-semibold" style={{ color: safePrimary }}>
               <InstituteCrestSvg theme={countryTheme} className="w-6 h-6" />
               <span>{countryTheme.authorityName} · {localizedCountryName}</span>
             </div>
@@ -770,9 +778,9 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                   style={
                     selected
                       ? {
-                          borderColor: countryTheme.primaryHex,
+                          borderColor: safePrimary,
                           backgroundColor: countryTheme.surfaceTintHex,
-                          boxShadow: `0 0 0 2px ${countryTheme.primaryHex}`,
+                          boxShadow: `0 0 0 2px ${safePrimary}`,
                         }
                       : undefined
                   }
@@ -790,7 +798,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                       {selected && (
                         <CheckCircle2
                           className="w-5 h-5 shrink-0"
-                          style={{ color: countryTheme.primaryHex }}
+                          style={{ color: safePrimary }}
                         />
                       )}
                     </div>
@@ -808,7 +816,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                   <div className="pt-3 border-t border-slate-200/80 flex items-baseline justify-between">
                     <span
                       className="text-2xl font-mono font-bold tabular-nums"
-                      style={{ color: countryTheme.primaryHex }}
+                      style={{ color: safePrimary }}
                     >
                       {formatTariffForCountry(feeEur, country, lang)}
                     </span>
@@ -825,8 +833,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
             <button
               type="button"
               onClick={() => setStep(2)}
-              style={{ backgroundColor: countryTheme.primaryHex }}
-              className="inline-flex items-center gap-2 px-6 py-3 hover:opacity-95 text-white text-sm font-bold rounded-lg transition-opacity cursor-pointer"
+              style={{ backgroundColor: countryTheme.primaryHex, color: onPrimaryText }}
+              className="inline-flex items-center gap-2 px-6 py-3 hover:opacity-95 text-sm font-bold rounded-lg transition-opacity cursor-pointer"
             >
               <span>{t.continueToStep2}</span>
               <ArrowRight className="w-4 h-4" />
@@ -972,7 +980,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
             <div className="flex items-center gap-2 text-base font-bold text-slate-900">
               <IdCard
                 className="w-5 h-5 shrink-0"
-                style={{ color: countryTheme.primaryHex }}
+                style={{ color: safePrimary }}
               />
               <span>{t.idSectionTitle}</span>
             </div>
@@ -1017,7 +1025,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                   </span>
                   <Upload
                     className="w-4 h-4 shrink-0"
-                    style={{ color: countryTheme.primaryHex }}
+                    style={{ color: safePrimary }}
                   />
                   <input
                     type="file"
@@ -1054,7 +1062,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
               <span className="flex items-center gap-2">
                 <Wifi
                   className="w-4 h-4 shrink-0"
-                  style={{ color: countryTheme.primaryHex }}
+                  style={{ color: safePrimary }}
                 />
                 <span>{t.wifiConfirmLabel}</span>
               </span>
@@ -1082,8 +1090,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              style={{ backgroundColor: countryTheme.primaryHex }}
-              className="inline-flex items-center gap-2 px-6 py-3 hover:opacity-95 disabled:opacity-50 text-white text-sm font-bold rounded-lg transition-opacity cursor-pointer"
+              style={{ backgroundColor: countryTheme.primaryHex, color: onPrimaryText }}
+              className="inline-flex items-center gap-2 px-6 py-3 hover:opacity-95 disabled:opacity-50 text-sm font-bold rounded-lg transition-opacity cursor-pointer"
             >
               <FileCheck2 className="w-4 h-4" />
               <span>{isSubmitting ? '...' : t.saveDossierBtn}</span>
@@ -1099,7 +1107,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
             <div>
               <div
                 className="text-sm font-mono font-bold mb-1"
-                style={{ color: countryTheme.primaryHex }}
+                style={{ color: safePrimary }}
               >
                 {countryTheme.authorityName}
               </div>
@@ -1153,7 +1161,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                     </span>
                     <span
                       className="font-mono font-bold"
-                      style={{ color: countryTheme.primaryHex }}
+                      style={{ color: safePrimary }}
                     >
                       {formatTariffForCountry(registration.baseFeeEur, country, lang)}
                     </span>
@@ -1227,8 +1235,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => setLinkOpened(true)}
-                    style={{ backgroundColor: countryTheme.primaryHex }}
-                    className="inline-flex items-center justify-center gap-2.5 px-7 py-3.5 hover:opacity-95 text-white text-sm font-bold rounded-xl whitespace-nowrap shrink-0 shadow-lg transition-opacity"
+                    style={{ backgroundColor: countryTheme.primaryHex, color: onPrimaryText }}
+                    className="inline-flex items-center justify-center gap-2.5 px-7 py-3.5 hover:opacity-95 text-sm font-bold rounded-xl whitespace-nowrap shrink-0 shadow-lg transition-opacity"
                   >
                     <ExternalLink className="w-4 h-4" />
                     <span>{t.payNowLinkBtn}</span>
@@ -1241,7 +1249,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                 <div className="flex items-center gap-2 text-base font-bold text-slate-900">
                   <Receipt
                     className="w-5 h-5 shrink-0"
-                    style={{ color: countryTheme.primaryHex }}
+                    style={{ color: safePrimary }}
                   />
                   <span>{t.paymentProofCardTitle}</span>
                 </div>
@@ -1302,12 +1310,12 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
 
                   <div className="flex flex-wrap items-center gap-4">
                     <label
-                      style={{ borderColor: countryTheme.primaryHex }}
+                      style={{ borderColor: safePrimary }}
                       className="inline-flex items-center gap-2.5 px-4 py-2.5 bg-slate-50 hover:bg-slate-100 border-2 border-dashed rounded-lg text-sm font-bold text-slate-900 cursor-pointer"
                     >
                       <Upload
                         className="w-4 h-4 shrink-0"
-                        style={{ color: countryTheme.primaryHex }}
+                        style={{ color: safePrimary }}
                       />
                       <span>
                         {receiptFileName ? receiptFileName : t.receiptUploadBtn}
@@ -1359,8 +1367,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  style={{ backgroundColor: countryTheme.primaryHex }}
-                  className="inline-flex items-center gap-2 px-7 py-3 hover:opacity-95 disabled:opacity-50 text-white text-sm font-bold rounded-lg transition-opacity cursor-pointer"
+                  style={{ backgroundColor: countryTheme.primaryHex, color: onPrimaryText }}
+                  className="inline-flex items-center gap-2 px-7 py-3 hover:opacity-95 disabled:opacity-50 text-sm font-bold rounded-lg transition-opacity cursor-pointer"
                 >
                   <Unlock className="w-4 h-4" />
                   <span>{isSubmitting ? '...' : t.payAndUnlockBtn}</span>
@@ -1411,8 +1419,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
             <button
               type="button"
               onClick={onOpenCandidatePortal}
-              style={{ backgroundColor: countryTheme.primaryHex }}
-              className="inline-flex items-center gap-2 px-6 py-3 hover:opacity-95 text-white text-sm font-bold rounded-lg whitespace-nowrap cursor-pointer"
+              style={{ backgroundColor: countryTheme.primaryHex, color: onPrimaryText }}
+              className="inline-flex items-center gap-2 px-6 py-3 hover:opacity-95 text-sm font-bold rounded-lg whitespace-nowrap cursor-pointer"
             >
               <span>{t.heroCtaSecondary}</span>
               <ArrowRight className="w-4 h-4" />

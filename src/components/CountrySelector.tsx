@@ -5,7 +5,7 @@ import {
   getCountryLocalizedName,
   WORLD_COUNTRIES,
 } from '../data/countries';
-import { getCountryTheme } from '../data/countryThemes';
+import { getCountryTheme, getReadablePrimaryOnLight } from '../data/countryThemes';
 import { getTranslations, WORLD_LANGUAGES } from '../data/i18n';
 import { CountryConfig, Language } from '../types';
 import { CountryFlagSvg } from './CountryVisuals';
@@ -29,6 +29,7 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
 
   const t = getTranslations(lang);
   const theme = getCountryTheme(selectedCountry);
+  const safePrimary = getReadablePrimaryOnLight(theme.primaryHex);
 
   const filteredCountries = useMemo(() => {
     const q = countrySearch.trim().toLowerCase();
@@ -85,7 +86,7 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
             }
             className="inline-flex items-center gap-2.5 px-3.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-sm font-semibold text-slate-900 transition-colors cursor-pointer whitespace-nowrap"
           >
-            <Globe className="w-4 h-4 shrink-0" style={{ color: theme.primaryHex }} />
+            <Globe className="w-4 h-4 shrink-0" style={{ color: safePrimary }} />
             <CountryFlagSvg theme={theme} className="w-6 h-4" />
             <span className="max-w-[160px] truncate">{selectedCountryDisplay}</span>
             <ChevronDown className="w-4 h-4 text-slate-500 shrink-0" />
@@ -124,7 +125,7 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
                       }`}
                       style={
                         active
-                          ? { backgroundColor: theme.surfaceTintHex, color: theme.primaryHex }
+                          ? { backgroundColor: theme.surfaceTintHex, color: safePrimary }
                           : undefined
                       }
                     >
@@ -151,7 +152,7 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
             }
             className="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-sm font-semibold text-slate-900 transition-colors cursor-pointer whitespace-nowrap"
           >
-            <Languages className="w-4 h-4 shrink-0" style={{ color: theme.primaryHex }} />
+            <Languages className="w-4 h-4 shrink-0" style={{ color: safePrimary }} />
             <span className="max-w-[130px] truncate">{currentLangObj.nativeName}</span>
             <span className="text-xs font-mono text-slate-500 uppercase">
               {currentLangObj.code}
@@ -191,7 +192,7 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
                       }`}
                       style={
                         active
-                          ? { backgroundColor: theme.surfaceTintHex, color: theme.primaryHex }
+                          ? { backgroundColor: theme.surfaceTintHex, color: safePrimary }
                           : undefined
                       }
                     >

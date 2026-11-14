@@ -46,7 +46,12 @@ import {
   getCountryByCode,
   getCountryLocalizedName,
 } from './data/countries';
-import { getCountryTheme } from './data/countryThemes';
+import {
+  getCountryTheme,
+  getOnColorText,
+  getReadableAccentOnDark,
+  getReadablePrimaryOnLight,
+} from './data/countryThemes';
 import { PARIS_HQ_CONTACT } from './data/curriculum';
 import { getTranslations, isRtlLanguage, normalizeLangCode } from './data/i18n';
 import {
@@ -167,6 +172,10 @@ export default function App() {
   const isCreatorAdmin =
     user !== null && user.emailVerified && user.email === ADMIN_EMAIL;
   const countryTheme = getCountryTheme(selectedCountry);
+  const safePrimary = getReadablePrimaryOnLight(countryTheme.primaryHex);
+  const onPrimaryText = getOnColorText(countryTheme.primaryHex);
+  const onSecondaryText = getOnColorText(countryTheme.secondaryHex);
+  const safeAccentOnDark = getReadableAccentOnDark(countryTheme.accentHex);
   const countryGalleryCount = countryTheme.galleryImages.length;
 
   useEffect(() => {
@@ -664,15 +673,15 @@ export default function App() {
                       style={
                         active
                           ? {
-                              color: countryTheme.primaryHex,
-                              borderColor: countryTheme.primaryHex,
+                              color: safePrimary,
+                              borderColor: safePrimary,
                             }
                           : undefined
                       }
                       className={`py-1 whitespace-nowrap shrink-0 transition-colors border-b-2 cursor-pointer ${
                         active
                           ? 'font-semibold'
-                          : 'text-slate-700 border-transparent hover:text-slate-900'
+                          : 'text-slate-700 border-transparent hover:text-slate-950'
                       }`}
                     >
                       {item.label}
@@ -710,8 +719,11 @@ export default function App() {
                     <button
                       type="button"
                       onClick={() => openAuthModal('register')}
-                      style={{ backgroundColor: countryTheme.primaryHex }}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white hover:opacity-95 rounded-lg transition-opacity whitespace-nowrap shrink-0 cursor-pointer"
+                      style={{
+                        backgroundColor: countryTheme.primaryHex,
+                        color: onPrimaryText,
+                      }}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold hover:opacity-95 rounded-lg transition-opacity whitespace-nowrap shrink-0 cursor-pointer shadow-xs"
                     >
                       <UserPlus className="w-4 h-4" />
                       <span>{t.navSignIn}</span>
@@ -730,11 +742,14 @@ export default function App() {
                   onClick={() => setActiveView(item.id)}
                   style={
                     activeView === item.id
-                      ? { backgroundColor: countryTheme.primaryHex }
+                      ? {
+                          backgroundColor: countryTheme.primaryHex,
+                          color: onPrimaryText,
+                        }
                       : undefined
                   }
                   className={`px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap shrink-0 ${
-                    activeView === item.id ? 'text-white' : 'text-slate-700'
+                    activeView === item.id ? '' : 'text-slate-700'
                   }`}
                 >
                   {item.label}
@@ -803,18 +818,18 @@ export default function App() {
             {activeView === 'home' && (
               <div className="space-y-8">
                 <section className="grid lg:grid-cols-12 gap-7 items-stretch">
-                  <div className="lg:col-span-6 bg-white/95 backdrop-blur border border-slate-200 rounded-2xl p-7 md:p-9 flex flex-col justify-between gap-6 shadow-lg">
+                  <div className="lg:col-span-6 bg-white border border-slate-200/90 rounded-2xl p-7 md:p-9 flex flex-col justify-between gap-6 shadow-xl">
                     <div className="space-y-4">
                       <h1
-                        className="font-display text-3xl sm:text-4xl lg:text-[2.75rem] font-extrabold tracking-tight text-slate-900 leading-[1.12]"
+                        className="font-display text-3xl sm:text-4xl lg:text-[2.85rem] font-extrabold tracking-tight text-slate-950 leading-[1.12]"
                         style={{ textWrap: 'balance' }}
                       >
                         {t.heroTitleLead}{' '}
-                        <span style={{ color: countryTheme.primaryHex }}>
+                        <span style={{ color: safePrimary }}>
                           {t.heroTitleAccent}
                         </span>
                       </h1>
-                      <p className="text-[15px] sm:text-base text-slate-700 leading-relaxed max-w-xl">
+                      <p className="text-[15px] sm:text-base text-slate-600 leading-relaxed max-w-xl">
                         {t.heroSubtitle}
                       </p>
                     </div>
@@ -824,8 +839,11 @@ export default function App() {
                         <button
                           type="button"
                           onClick={() => setActiveView('enroll')}
-                          style={{ backgroundColor: countryTheme.primaryHex }}
-                          className="inline-flex items-center gap-2 px-6 py-3.5 hover:opacity-95 text-white text-sm font-bold rounded-xl shadow-md transition-opacity cursor-pointer whitespace-nowrap"
+                          style={{
+                            backgroundColor: countryTheme.primaryHex,
+                            color: onPrimaryText,
+                          }}
+                          className="inline-flex items-center gap-2 px-6 py-3.5 hover:opacity-95 text-sm font-bold rounded-xl shadow-md transition-opacity cursor-pointer whitespace-nowrap"
                         >
                           <span>{t.heroCtaPrimary}</span>
                           <ArrowRight className="w-4 h-4" />
@@ -836,30 +854,30 @@ export default function App() {
                           className="inline-flex items-center gap-2 px-5 py-3.5 bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 text-sm font-semibold rounded-xl transition-colors cursor-pointer whitespace-nowrap"
                         >
                           {!isCandidateUnlocked && (
-                            <Lock className="w-4 h-4 text-slate-500" />
+                            <Lock className="w-4 h-4 text-slate-600" />
                           )}
                           <span>{t.heroCtaSecondary}</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => setContactModalOpen(true)}
-                          className="inline-flex items-center gap-2 px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-sm font-semibold rounded-xl transition-colors cursor-pointer whitespace-nowrap"
+                          className="inline-flex items-center gap-2 px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-900 text-sm font-semibold rounded-xl transition-colors cursor-pointer whitespace-nowrap"
                         >
                           <Mail
                             className="w-4 h-4"
-                            style={{ color: countryTheme.primaryHex }}
+                            style={{ color: safePrimary }}
                           />
                           <span>{t.askQuestionBtn}</span>
                         </button>
                       </div>
-                      <div className="flex flex-wrap items-center justify-between gap-2 text-sm font-mono tabular-nums text-slate-700 pt-2 border-t border-slate-100">
-                        <span className="font-semibold">
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-sm font-mono tabular-nums text-slate-700 pt-3 border-t border-slate-100">
+                        <span className="font-semibold text-slate-800">
                           {t.permitLabel} {category} :{' '}
                           {formatTariffForCountry(baseEur, selectedCountry, lang)}
                         </span>
                         <span
                           className="font-bold"
-                          style={{ color: countryTheme.primaryHex }}
+                          style={{ color: safePrimary }}
                         >
                           {countryTheme.authorityCode} · {localizedCountryName}
                         </span>
@@ -869,8 +887,7 @@ export default function App() {
 
                   {/* Country-Adapted Full-Color Animated Photo Showcase Carousel */}
                   <div
-                    className="lg:col-span-6 relative rounded-2xl overflow-hidden border-2 bg-slate-950 min-h-[360px] shadow-lg flex flex-col justify-between"
-                    style={{ borderColor: `${countryTheme.primaryHex}66` }}
+                    className="lg:col-span-6 relative rounded-2xl overflow-hidden border border-white/15 bg-slate-950 min-h-[370px] shadow-xl flex flex-col justify-between"
                   >
                     {!heroImgFailed ? (
                       <>
@@ -895,7 +912,7 @@ export default function App() {
                         <div
                           className="absolute inset-0 pointer-events-none"
                           style={{
-                            background: `linear-gradient(180deg, ${countryTheme.primaryHex}33 0%, rgba(2,6,23,0.18) 42%, rgba(2,6,23,0.92) 100%)`,
+                            background: `linear-gradient(180deg, rgba(2,6,23,0.35) 0%, rgba(2,6,23,0.18) 42%, rgba(2,6,23,0.92) 100%)`,
                           }}
                         />
 
@@ -906,8 +923,7 @@ export default function App() {
                             initial={{ opacity: 0, y: -8 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.45 }}
-                            className="inline-flex items-center gap-2.5 px-3.5 py-1.5 bg-slate-950/85 backdrop-blur-md border rounded-lg text-sm font-bold text-white shadow-md"
-                            style={{ borderColor: `${countryTheme.accentHex}66` }}
+                            className="inline-flex items-center gap-2.5 px-3.5 py-1.5 bg-slate-950/85 backdrop-blur-md border border-white/15 rounded-lg text-sm font-bold text-white shadow-md"
                           >
                             <CountryFlagSvg
                               theme={countryTheme}
@@ -920,8 +936,11 @@ export default function App() {
                             initial={{ opacity: 0, scale: 0.94 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ duration: 0.45 }}
-                            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-mono font-bold text-white shadow-md backdrop-blur-md border border-white/20"
-                            style={{ backgroundColor: `${countryTheme.primaryHex}CC` }}
+                            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-mono font-bold shadow-md backdrop-blur-md border border-white/20"
+                            style={{
+                              backgroundColor: countryTheme.primaryHex,
+                              color: onPrimaryText,
+                            }}
                           >
                             <InstituteCrestSvg
                               theme={countryTheme}
@@ -939,27 +958,29 @@ export default function App() {
                               animate={{ opacity: 1, y: 0 }}
                               exit={{ opacity: 0, y: -8 }}
                               transition={{ duration: 0.45, ease: 'easeOut' }}
-                              className="bg-slate-950/85 backdrop-blur-md border rounded-xl p-4 flex items-center justify-between gap-4 text-white shadow-lg"
-                              style={{ borderColor: `${countryTheme.primaryHex}55` }}
+                              className="bg-slate-950/90 backdrop-blur-md border border-white/15 rounded-xl p-4 flex items-center justify-between gap-4 text-white shadow-lg"
                             >
                               <div className="flex items-center gap-3.5 min-w-0">
                                 <div
-                                  style={{ backgroundColor: countryTheme.secondaryHex }}
-                                  className="w-12 h-12 rounded-xl border-2 border-white flex items-center justify-center font-display font-extrabold text-sm shrink-0 shadow"
+                                  style={{
+                                    backgroundColor: countryTheme.secondaryHex,
+                                    color: onSecondaryText,
+                                  }}
+                                  className="w-12 h-12 rounded-xl border-2 border-white/90 flex items-center justify-center font-display font-extrabold text-sm shrink-0 shadow"
                                 >
                                   {currentHeroCourse.badge}
                                 </div>
                                 <div className="min-w-0">
                                   <div
                                     className="text-xs font-mono font-semibold flex items-center gap-1.5"
-                                    style={{ color: countryTheme.accentHex }}
+                                    style={{ color: safeAccentOnDark }}
                                   >
                                     <Volume2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                                     <span className="truncate">
                                       {currentHeroCourse.code} · {t.activeAudioLabel} · {countryTheme.authorityCode}
                                     </span>
                                   </div>
-                                  <div className="text-sm sm:text-base font-display font-bold truncate mt-0.5">
+                                  <div className="text-sm sm:text-base font-display font-bold text-white truncate mt-0.5">
                                     {currentHeroCourse.title}
                                   </div>
                                   <div className="text-xs text-slate-300 truncate">
@@ -970,8 +991,11 @@ export default function App() {
                               <button
                                 type="button"
                                 onClick={() => setActiveView('enroll')}
-                                style={{ backgroundColor: countryTheme.primaryHex }}
-                                className="px-4 py-2 hover:opacity-95 text-white text-xs font-bold rounded-lg whitespace-nowrap shrink-0 cursor-pointer shadow"
+                                style={{
+                                  backgroundColor: countryTheme.primaryHex,
+                                  color: onPrimaryText,
+                                }}
+                                className="px-4 py-2 hover:opacity-95 text-xs font-bold rounded-lg whitespace-nowrap shrink-0 cursor-pointer shadow"
                               >
                                 {t.openBtn}
                               </button>
@@ -991,19 +1015,19 @@ export default function App() {
                                     aria-label={`Slide ${idx + 1}`}
                                     style={
                                       isDotActive
-                                        ? { backgroundColor: countryTheme.accentHex }
+                                        ? { backgroundColor: safeAccentOnDark }
                                         : undefined
                                     }
                                     className={`h-1.5 rounded-full transition-all cursor-pointer ${
                                       isDotActive
                                         ? 'w-7'
-                                        : 'w-2 bg-white/40 hover:bg-white/70'
+                                        : 'w-2 bg-white/45 hover:bg-white/75'
                                     }`}
                                   />
                                 );
                               })}
                             </div>
-                            <span className="text-xs font-mono text-white/85 tabular-nums">
+                            <span className="text-xs font-mono text-white/90 tabular-nums">
                               0{(heroSlideIdx % heroGalleryImages.length) + 1} / 0{heroGalleryImages.length}
                             </span>
                           </div>
@@ -1020,60 +1044,9 @@ export default function App() {
                   </div>
                 </section>
 
-                {/* Full-Width 4-Column Tariff Strip (Dynamic Local Currency Conversion) */}
-                <section className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {[
-                    {
-                      metric: formatTariffForCountry(300, selectedCountry, lang),
-                      color: countryTheme.primaryHex,
-                      title: t.tariffATitle,
-                      desc: t.tariffADesc,
-                    },
-                    {
-                      metric: formatTariffForCountry(450, selectedCountry, lang),
-                      color: '#0F172A',
-                      title: t.tariffBTitle,
-                      desc: t.tariffBDesc,
-                    },
-                    {
-                      metric: formatTariffForCountry(650, selectedCountry, lang),
-                      color: '#047857',
-                      title: t.tariffCTitle,
-                      desc: t.tariffCDesc,
-                    },
-                    {
-                      metric: countryTheme.authorityCode,
-                      color: countryTheme.primaryHex,
-                      title: t.physicalProofLabel,
-                      desc: t.physicalProofDesc,
-                    },
-                  ].map((item) => (
-                    <div
-                      key={item.title}
-                      className="bg-white/95 backdrop-blur border border-slate-200 rounded-2xl p-5 space-y-2 shadow-sm hover:border-slate-300 transition-colors"
-                    >
-                      <div
-                        className="text-2xl font-mono font-bold tabular-nums"
-                        style={{ color: item.color }}
-                      >
-                        {item.metric}
-                      </div>
-                      <div className="text-[15px] font-bold text-slate-900">
-                        {item.title}
-                      </div>
-                      <p className="text-sm text-slate-700 leading-relaxed">
-                        {item.desc}
-                      </p>
-                    </div>
-                  ))}
-                </section>
-
                 {/* Lower Animated Country-Specific Community Classroom + Complete Pathway */}
                 <section className="grid lg:grid-cols-12 gap-6 items-stretch">
-                  <div
-                    className="lg:col-span-5 relative rounded-2xl overflow-hidden border-2 bg-slate-900 min-h-[290px] shadow-md flex flex-col justify-between"
-                    style={{ borderColor: `${countryTheme.primaryHex}55` }}
-                  >
+                  <div className="lg:col-span-5 relative rounded-2xl overflow-hidden border border-white/15 bg-slate-900 min-h-[290px] shadow-xl flex flex-col justify-between">
                     {!classImgFailed ? (
                       <>
                         {communityGalleryImages.map((imgSrc, idx) => {
@@ -1098,15 +1071,12 @@ export default function App() {
                         <div
                           className="absolute inset-0 pointer-events-none"
                           style={{
-                            background: `linear-gradient(180deg, ${countryTheme.secondaryHex}2B 0%, rgba(2,6,23,0.18) 38%, rgba(2,6,23,0.92) 100%)`,
+                            background: `linear-gradient(180deg, rgba(2,6,23,0.32) 0%, rgba(2,6,23,0.18) 38%, rgba(2,6,23,0.92) 100%)`,
                           }}
                         />
 
                         <div className="relative z-10 p-4 flex items-center justify-between">
-                          <span
-                            className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-slate-950/80 backdrop-blur-md border text-xs font-mono font-bold text-white"
-                            style={{ borderColor: `${countryTheme.accentHex}66` }}
-                          >
+                          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-slate-950/85 backdrop-blur-md border border-white/15 text-xs font-mono font-bold text-white">
                             <CountryFlagSvg
                               theme={countryTheme}
                               className="w-5 h-3.5"
@@ -1114,8 +1084,11 @@ export default function App() {
                             <span>{localizedCountryName}</span>
                           </span>
                           <span
-                            className="px-2.5 py-1 rounded-md text-[11px] font-mono font-bold text-white shadow"
-                            style={{ backgroundColor: `${countryTheme.primaryHex}CC` }}
+                            className="px-2.5 py-1 rounded-md text-[11px] font-mono font-bold shadow border border-white/20"
+                            style={{
+                              backgroundColor: countryTheme.primaryHex,
+                              color: onPrimaryText,
+                            }}
                           >
                             {countryTheme.authorityCode}
                           </span>
@@ -1133,14 +1106,14 @@ export default function App() {
                             >
                               <div
                                 className="text-[11px] font-mono font-bold uppercase tracking-wider"
-                                style={{ color: countryTheme.accentHex }}
+                                style={{ color: safeAccentOnDark }}
                               >
                                 {lang === 'fr'
                                   ? countryTheme.governmentNameFr
                                   : countryTheme.governmentNameNative ||
                                     countryTheme.governmentNameEn}
                               </div>
-                              <div className="text-sm sm:text-base font-display font-bold leading-snug">
+                              <div className="text-sm sm:text-base font-display font-bold text-white leading-snug">
                                 {
                                   communityCaptions[
                                     communitySlideIdx % communityCaptions.length
@@ -1162,13 +1135,13 @@ export default function App() {
                                   aria-label={`Scène ${idx + 1}`}
                                   style={
                                     isDotActive
-                                      ? { backgroundColor: countryTheme.accentHex }
+                                      ? { backgroundColor: safeAccentOnDark }
                                       : undefined
                                   }
                                   className={`h-1.5 rounded-full transition-all cursor-pointer ${
                                     isDotActive
                                       ? 'w-7'
-                                      : 'w-2 bg-white/40 hover:bg-white/70'
+                                      : 'w-2 bg-white/45 hover:bg-white/75'
                                   }`}
                                 />
                               );
@@ -1186,15 +1159,15 @@ export default function App() {
                     )}
                   </div>
 
-                  <div className="lg:col-span-7 bg-white/95 backdrop-blur border border-slate-200 rounded-2xl p-6 md:p-8 flex flex-col justify-between gap-6 shadow-md">
+                  <div className="lg:col-span-7 bg-white border border-slate-200/90 rounded-2xl p-6 md:p-8 flex flex-col justify-between gap-6 shadow-xl">
                     <div className="space-y-4">
-                      <h2 className="font-display text-2xl sm:text-3xl font-bold text-slate-900">
+                      <h2 className="font-display text-2xl sm:text-3xl font-bold text-slate-950">
                         {t.pathwayTitleLead}{' '}
-                        <span style={{ color: countryTheme.primaryHex }}>
+                        <span style={{ color: safePrimary }}>
                           {t.pathwayTitleAccent}
                         </span>
                       </h2>
-                      <div className="grid sm:grid-cols-2 gap-5 pt-2">
+                      <div className="grid sm:grid-cols-2 gap-4 pt-2">
                         {[
                           {
                             num: '01.',
@@ -1217,17 +1190,20 @@ export default function App() {
                             text: t.path04Desc,
                           },
                         ].map((step) => (
-                          <div key={step.num} className="space-y-1">
+                          <div
+                            key={step.num}
+                            className="p-4 rounded-xl border border-slate-200/80 bg-slate-50/75 space-y-1.5"
+                          >
                             <div
                               className="text-xs font-mono font-bold"
-                              style={{ color: countryTheme.primaryHex }}
+                              style={{ color: safePrimary }}
                             >
                               {step.num}
                             </div>
-                            <div className="text-[15px] font-bold text-slate-900">
+                            <div className="text-[15px] font-bold text-slate-950">
                               {step.title}
                             </div>
-                            <p className="text-sm text-slate-700 leading-relaxed">
+                            <p className="text-sm text-slate-600 leading-relaxed">
                               {step.text}
                             </p>
                           </div>
@@ -1235,12 +1211,15 @@ export default function App() {
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-4 pt-2 border-t border-slate-100">
+                    <div className="flex flex-wrap items-center gap-4 pt-3 border-t border-slate-100">
                       <button
                         type="button"
                         onClick={() => setActiveView('enroll')}
-                        style={{ backgroundColor: countryTheme.primaryHex }}
-                        className="inline-flex items-center gap-2 px-5 py-2.5 hover:opacity-95 text-white text-sm font-semibold rounded-lg cursor-pointer whitespace-nowrap"
+                        style={{
+                          backgroundColor: countryTheme.primaryHex,
+                          color: onPrimaryText,
+                        }}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 hover:opacity-95 text-sm font-semibold rounded-lg cursor-pointer whitespace-nowrap shadow-xs"
                       >
                         <ShieldCheck className="w-4 h-4" />
                         <span>{t.openFunnelBtn}</span>
@@ -1249,7 +1228,7 @@ export default function App() {
                         <button
                           type="button"
                           onClick={() => setActiveView('agent')}
-                          style={{ color: countryTheme.primaryHex }}
+                          style={{ color: safePrimary }}
                           className="text-sm font-semibold hover:underline cursor-pointer"
                         >
                           {t.openCreatorConsoleBtn}
@@ -1315,7 +1294,7 @@ export default function App() {
           </main>
 
           {/* Clean Corporate Footer (Direct Links Only — Zero Street Address / Zero Phone Number) */}
-          <footer className="bg-slate-900 text-slate-200 border-t border-slate-800 mt-12">
+          <footer className="bg-slate-950 text-slate-200 border-t border-slate-800 mt-12">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-7 text-sm">
               <div className="grid md:grid-cols-12 gap-8 items-start">
                 <div className="md:col-span-7 space-y-3.5">
@@ -1336,8 +1315,7 @@ export default function App() {
                     {countryTheme.authorityName} ·{' '}
                     <span className="text-white font-semibold">
                       {localizedCountryName}
-                    </span>{' '}
-                    — {t.footerDirectDesc}
+                    </span>
                   </div>
                   <div className="flex flex-wrap items-center gap-2.5 pt-1">
                     <a
@@ -1352,8 +1330,11 @@ export default function App() {
                     <button
                       type="button"
                       onClick={() => setContactModalOpen(true)}
-                      style={{ backgroundColor: countryTheme.primaryHex }}
-                      className="inline-flex items-center gap-2 px-4 py-2 hover:opacity-95 text-white rounded-lg font-semibold whitespace-nowrap transition-opacity cursor-pointer"
+                      style={{
+                        backgroundColor: countryTheme.primaryHex,
+                        color: onPrimaryText,
+                      }}
+                      className="inline-flex items-center gap-2 px-4 py-2 hover:opacity-95 rounded-lg font-semibold whitespace-nowrap transition-opacity cursor-pointer"
                     >
                       <Mail className="w-4 h-4" />
                       <span>{t.askQuestionBtn}</span>

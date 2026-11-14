@@ -38,8 +38,8 @@ export const AnimatedStageBackdrop: React.FC<AnimatedStageBackdropProps> = ({
       aria-hidden="true"
       className="fixed inset-0 z-0 overflow-hidden pointer-events-none select-none bg-slate-950"
     >
-      {/* Layer 1: Vivid Animated Waving National Flag Layer */}
-      <div className="absolute inset-0 opacity-65 animate-flag-wave">
+      {/* Layer 1: Subtle Animated Waving National Flag Layer */}
+      <div className="absolute inset-0 opacity-30 animate-flag-wave">
         {theme.flagLayout === 'benin' && (
           <div className="w-full h-full flex">
             <div className="w-[38%] h-full" style={{ backgroundColor: c1 }} />
@@ -92,7 +92,7 @@ export const AnimatedStageBackdrop: React.FC<AnimatedStageBackdropProps> = ({
         )}
       </div>
 
-      {/* Layer 2: Crisp Full-Color Country-Specific Driving Photography */}
+      {/* Layer 2: Crisp Country-Specific Driving Photography */}
       {images.map((src, idx) => {
         const active = idx === slideIdx;
         const motionClass = MOTION_CLASSES[idx % MOTION_CLASSES.length];
@@ -105,20 +105,20 @@ export const AnimatedStageBackdrop: React.FC<AnimatedStageBackdropProps> = ({
             decoding="async"
             referrerPolicy="no-referrer"
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[1600ms] ease-out ${motionClass} ${
-              active ? 'opacity-45' : 'opacity-0'
+              active ? 'opacity-30' : 'opacity-0'
             }`}
           />
         );
       })}
 
-      {/* Layer 3: Country Flag Color Radial Atmosphere + Legibility Scrim */}
+      {/* Layer 3: Country-Tinted Architectural Scrim for Crisp Foreground Contrast */}
       <div
         className="absolute inset-0"
         style={{
-          background: `linear-gradient(135deg, ${theme.primaryHex}CC 0%, rgba(2,6,23,0.58) 52%, ${theme.secondaryHex}B3 100%)`,
+          background: `linear-gradient(155deg, ${theme.primaryHex}B5 0%, rgba(15,23,42,0.82) 52%, rgba(2,6,23,0.92) 100%)`,
         }}
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-slate-950/45 via-slate-950/35 to-slate-950/75" />
+      <div className="absolute inset-0 bg-slate-950/35" />
     </div>
   );
 };

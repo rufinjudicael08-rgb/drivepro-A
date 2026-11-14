@@ -924,3 +924,81 @@ export function formatCountryLocalTime(
     };
   }
 }
+
+function parseHexRgb(hex: string): [number, number, number] {
+  const clean = hex.replace('#', '').trim();
+  const full =
+    clean.length === 3
+      ? clean
+          .split('')
+          .map((c) => c + c)
+          .join('')
+      : clean.padEnd(6, '0').slice(0, 6);
+  const num = parseInt(full, 16);
+  if (Number.isNaN(num)) return [30, 64, 175];
+  return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+}
+
+function toHexRgb(r: number, g: number, b: number): string {
+  const clamp = (v: number) => Math.max(0, Math.min(255, Math.round(v)));
+  return (
+    '#' +
+    [clamp(r), clamp(g), clamp(b)]
+      .map((v) => v.toString(16).padStart(2, '0'))
+      .join('')
+  );
+}
+
+function relativeLuminance(r: number, g: number, b: number): number {
+  const linear = [r, g, b].map((c) => {
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+}
+
+function contrastRatio(lum1: number, lum2: number): number {
+  const lighter = Math.max(lum1, lum2);
+  const darker = Math.min(lum1, lum2);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+/** Ensures a country theme color reaches >= 4.6:1 contrast against white surfaces. */
+export function getReadablePrimaryOnLight(hex: string): string {
+  let [r, g, b] = parseHexRgb(hex);
+  const whiteLum = 1;
+  for (let i = 0; i < 12; i++) {
+    if (contrastRatio(whiteLum, relativeLuminance(r, g, b)) >= 4.6) {
+      return toHexRgb(r, g, b);
+    }
+    r *= 0.85;
+    g *= 0.85;
+    b *= 0.85;
+  }
+  return toHexRgb(r, g, b);
+}
+
+/** Returns crisp white or deep slate text depending on button/badge background luminance. */
+export function getOnColorText(bgHex: string): '#FFFFFF' | '#0F172A' {
+  const [r, g, b] = parseHexRgb(bgHex);
+  const bgLum = relativeLuminance(r, g, b);
+  const whiteContrast = contrastRatio(1, bgLum);
+  const darkContrast = contrastRatio(bgLum, relativeLuminance(15, 23, 42));
+  return whiteContrast >= darkContrast ? '#FFFFFF' : '#0F172A';
+}
+
+/** Ensures a country accent color reaches >= 5.0:1 contrast on dark #020617/#0F172A cards. */
+export function getReadableAccentOnDark(hex: string): string {
+  let [r, g, b] = parseHexRgb(hex);
+  const darkLum = relativeLuminance(15, 23, 42);
+  for (let i = 0; i < 14; i++) {
+    if (contrastRatio(relativeLuminance(r, g, b), darkLum) >= 5.2) {
+      return toHexRgb(r, g, b);
+    }
+    r = r + (255 - r) * 0.22;
+    g = g + (255 - g) * 0.22;
+    b = b + (255 - b) * 0.22;
+  }
+  return '#93C5FD';
+}
+

@@ -33,7 +33,11 @@ import {
   getCountryByCode,
   getCountryLocalizedName,
 } from '../data/countries';
-import { getCountryTheme } from '../data/countryThemes';
+import {
+  getCountryTheme,
+  getOnColorText,
+  getReadablePrimaryOnLight,
+} from '../data/countryThemes';
 import { getTranslations } from '../data/i18n';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import {
@@ -261,6 +265,8 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
 
   const regCountry = getCountryByCode(registration.countryCode);
   const countryTheme = getCountryTheme(regCountry);
+  const safePrimary = getReadablePrimaryOnLight(countryTheme.primaryHex);
+  const onPrimaryText = getOnColorText(countryTheme.primaryHex);
   const localizedCountryName =
     countryName ||
     getCountryLocalizedName(regCountry.code, lang, regCountry.nameFr);
@@ -421,53 +427,54 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
     <section className="space-y-6">
       {/* Multi-Permit Dossier Selector + Invoice & Re-enrollment Bar */}
       <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-sm">
-        <div className="flex flex-wrap items-center gap-2">
-          {allMyRegistrations.map((r) => {
-            const active = r.id === registration.id;
-            return (
-              <button
-                key={r.id}
-                type="button"
-                onClick={() => onSelectRegistration?.(r.id)}
-                style={
-                  active
-                    ? {
-                        backgroundColor: countryTheme.primaryHex,
-                        borderColor: countryTheme.primaryHex,
+              <div className="flex flex-wrap items-center gap-2">
+                {allMyRegistrations.map((r) => {
+                  const active = r.id === registration.id;
+                  return (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onClick={() => onSelectRegistration?.(r.id)}
+                      style={
+                        active
+                          ? {
+                              backgroundColor: countryTheme.primaryHex,
+                              borderColor: countryTheme.primaryHex,
+                              color: onPrimaryText,
+                            }
+                          : undefined
                       }
-                    : undefined
-                }
-                className={`px-3 py-1.5 text-sm font-semibold rounded-lg border transition-colors cursor-pointer ${
-                  active
-                    ? 'text-white'
-                    : 'bg-slate-50 text-slate-800 border-slate-300 hover:bg-slate-100'
-                }`}
-              >
-                {t.permitLabel} {r.licenseCategory} (#{r.queueNumber})
-              </button>
-            );
-          })}
-        </div>
+                      className={`px-3 py-1.5 text-sm font-semibold rounded-lg border transition-colors cursor-pointer ${
+                        active
+                          ? ''
+                          : 'bg-slate-50 text-slate-800 border-slate-300 hover:bg-slate-100'
+                      }`}
+                    >
+                      {t.permitLabel} {r.licenseCategory} (#{r.queueNumber})
+                    </button>
+                  );
+                })}
+              </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
-          <button
-            type="button"
-            onClick={() => setInvoiceModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-lg whitespace-nowrap cursor-pointer"
-          >
-            <FileText className="w-4 h-4 text-emerald-400" />
-            <span>{t.invoiceBtn}</span>
-          </button>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setInvoiceModalOpen(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-lg whitespace-nowrap cursor-pointer"
+                >
+                  <FileText className="w-4 h-4 text-emerald-400" />
+                  <span>{t.invoiceBtn}</span>
+                </button>
 
-          {onReEnrollAnotherPermit && allMyRegistrations.length < 4 && (
-            <button
-              type="button"
-              onClick={onReEnrollAnotherPermit}
-              style={{
-                color: countryTheme.primaryHex,
-                backgroundColor: countryTheme.surfaceTintHex,
-                borderColor: countryTheme.primaryHex,
-              }}
+                {onReEnrollAnotherPermit && allMyRegistrations.length < 4 && (
+                  <button
+                    type="button"
+                    onClick={onReEnrollAnotherPermit}
+                    style={{
+                      color: safePrimary,
+                      backgroundColor: countryTheme.surfaceTintHex,
+                      borderColor: safePrimary,
+                    }}
               className="inline-flex items-center gap-2 px-4 py-2 border text-sm font-bold rounded-lg whitespace-nowrap cursor-pointer hover:opacity-90"
             >
               <PlusCircle className="w-4 h-4" />
@@ -557,7 +564,7 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              style={active ? { color: countryTheme.primaryHex } : undefined}
+              style={active ? { color: getReadablePrimaryOnLight(countryTheme.primaryHex) } : undefined}
               className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                 active
                   ? 'bg-white shadow-sm'
@@ -578,7 +585,7 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
             <div>
               <h3 className="font-display text-xl sm:text-2xl font-bold text-slate-900">
                 {t.queuePositionLabel} —{' '}
-                <span style={{ color: countryTheme.primaryHex }}>
+                <span style={{ color: getReadablePrimaryOnLight(countryTheme.primaryHex) }}>
                   #{registration.queueNumber}
                 </span>
               </h3>
@@ -645,8 +652,11 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
             <button
               type="button"
               onClick={() => setActiveTab('code')}
-              style={{ backgroundColor: countryTheme.primaryHex }}
-              className="px-5 py-2.5 hover:opacity-95 text-white text-sm font-semibold rounded-lg cursor-pointer"
+              style={{
+                backgroundColor: countryTheme.primaryHex,
+                color: getOnColorText(countryTheme.primaryHex),
+              }}
+              className="px-5 py-2.5 hover:opacity-95 text-sm font-semibold rounded-lg cursor-pointer"
             >
               {t.candidateTabCode}
             </button>
@@ -739,7 +749,7 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                       ) : (
                         <ArrowRight
                           className="w-4 h-4 shrink-0 mt-1"
-                          style={{ color: countryTheme.primaryHex }}
+                          style={{ color: getReadablePrimaryOnLight(countryTheme.primaryHex) }}
                         />
                       )}
                     </button>
@@ -752,7 +762,7 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                 <div className="space-y-2 border-b border-slate-200 pb-4">
                   <div
                     className="text-xs font-mono font-semibold"
-                    style={{ color: countryTheme.primaryHex }}
+                    style={{ color: getReadablePrimaryOnLight(countryTheme.primaryHex) }}
                   >
                     Module {activeModule.number} · {activeModule.durationMin} min
                   </div>
@@ -847,7 +857,7 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                           }
                           style={{
                             backgroundColor: countryTheme.surfaceTintHex,
-                            color: countryTheme.primaryHex,
+                            color: getReadablePrimaryOnLight(countryTheme.primaryHex),
                           }}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 hover:opacity-90 text-xs font-semibold rounded-md cursor-pointer"
                         >
@@ -875,7 +885,7 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                       <li key={idx} className="flex items-start gap-2.5">
                         <span
                           className="font-mono text-xs font-bold mt-0.5"
-                          style={{ color: countryTheme.primaryHex }}
+                          style={{ color: getReadablePrimaryOnLight(countryTheme.primaryHex) }}
                         >
                           0{idx + 1}
                         </span>
@@ -926,8 +936,11 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                   <button
                     type="button"
                     onClick={() => setQuizStarted(true)}
-                    style={{ backgroundColor: countryTheme.primaryHex }}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 hover:opacity-95 text-white text-sm font-semibold rounded-lg whitespace-nowrap cursor-pointer"
+                    style={{
+                      backgroundColor: countryTheme.primaryHex,
+                      color: getOnColorText(countryTheme.primaryHex),
+                    }}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 hover:opacity-95 text-sm font-semibold rounded-lg whitespace-nowrap cursor-pointer"
                   >
                     <Award className="w-4 h-4" />
                     <span>{t.quizStartBtn}</span>
@@ -1015,7 +1028,7 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                             style={
                               selected
                                 ? {
-                                    borderColor: countryTheme.primaryHex,
+                                    borderColor: getReadablePrimaryOnLight(countryTheme.primaryHex),
                                     backgroundColor: countryTheme.surfaceTintHex,
                                   }
                                 : undefined
@@ -1032,12 +1045,13 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                                   ? {
                                       backgroundColor: countryTheme.primaryHex,
                                       borderColor: countryTheme.primaryHex,
+                                      color: getOnColorText(countryTheme.primaryHex),
                                     }
                                   : undefined
                               }
                               className={`w-7 h-7 rounded-md font-mono text-xs font-bold flex items-center justify-center border shrink-0 ${
                                 selected
-                                  ? 'text-white'
+                                  ? ''
                                   : 'bg-slate-50 text-slate-700 border-slate-200'
                               }`}
                             >
@@ -1067,8 +1081,11 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                                 Math.min(OFFICIAL_QUIZ_BANK.length - 1, i + 1)
                               )
                             }
-                            style={{ backgroundColor: countryTheme.primaryHex }}
-                            className="px-5 py-2.5 hover:opacity-95 text-white text-sm font-semibold rounded-lg cursor-pointer"
+                            style={{
+                              backgroundColor: countryTheme.primaryHex,
+                              color: getOnColorText(countryTheme.primaryHex),
+                            }}
+                            className="px-5 py-2.5 hover:opacity-95 text-sm font-semibold rounded-lg cursor-pointer"
                           >
                             {t.quizNextBtn}
                           </button>
@@ -1246,8 +1263,11 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveTab('code')}
-                  style={{ backgroundColor: countryTheme.primaryHex }}
-                  className="px-5 py-2.5 hover:opacity-95 text-white text-sm font-semibold rounded-lg cursor-pointer"
+                  style={{
+                    backgroundColor: countryTheme.primaryHex,
+                    color: getOnColorText(countryTheme.primaryHex),
+                  }}
+                  className="px-5 py-2.5 hover:opacity-95 text-sm font-semibold rounded-lg cursor-pointer"
                 >
                   {t.candidateTabCode}
                 </button>

@@ -9,6 +9,7 @@ import {
 } from 'firebase/firestore';
 import {
   Ban,
+  BarChart3,
   Check,
   CheckCircle2,
   Copy,
@@ -30,6 +31,16 @@ import {
   Wifi,
   X,
 } from 'lucide-react';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import { CERTIFIED_INSTRUCTORS } from '../data/curriculum';
 import {
   formatLocalCurrency,
@@ -275,6 +286,79 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
       (r) => r.referralPlatform && r.referralPlatform !== 'Direct'
     ).length;
     return { total, awaitingTrigger, totalTriggeredEur, socialLeads };
+  }, [registrations]);
+
+  const referralBreakdown = useMemo(() => {
+    const canonicalSources = ['TikTok', 'Facebook', 'Instagram', 'LinkedIn', 'Direct'] as const;
+    const sourcePalette: Record<string, string> = {
+      TikTok: '#0F172A',
+      Facebook: '#1D4ED8',
+      Instagram: '#BE185D',
+      LinkedIn: '#0369A1',
+      Direct: '#047857',
+    };
+
+    const normalizeSource = (raw?: string) => {
+      const trimmed = (raw || '').trim();
+      if (!trimmed) return 'Direct';
+      const lower = trimmed.toLowerCase();
+      if (lower === 'tiktok') return 'TikTok';
+      if (lower === 'facebook') return 'Facebook';
+      if (lower === 'instagram') return 'Instagram';
+      if (lower === 'linkedin') return 'LinkedIn';
+      if (lower === 'direct') return 'Direct';
+      return trimmed;
+    };
+
+    const buckets = new Map<
+      string,
+      {
+        source: string;
+        registrations: number;
+        verifiedCount: number;
+        triggeredEur: number;
+        color: string;
+      }
+    >();
+
+    for (const src of canonicalSources) {
+      buckets.set(src, {
+        source: src,
+        registrations: 0,
+        verifiedCount: 0,
+        triggeredEur: 0,
+        color: sourcePalette[src],
+      });
+    }
+
+    for (const reg of registrations) {
+      const src = normalizeSource(reg.referralPlatform);
+      const existing = buckets.get(src) || {
+        source: src,
+        registrations: 0,
+        verifiedCount: 0,
+        triggeredEur: 0,
+        color: '#4F46E5',
+      };
+      existing.registrations += 1;
+      const isPaidOrVerified =
+        reg.paymentStatus === 'verified' || reg.paymentStatus === 'paid';
+      if (isPaidOrVerified) {
+        existing.verifiedCount += 1;
+      }
+      existing.triggeredEur +=
+        reg.triggeredAmountEur || (isPaidOrVerified ? reg.baseFeeEur : 0);
+      buckets.set(src, existing);
+    }
+
+    const totalCount = Math.max(registrations.length, 1);
+    return Array.from(buckets.values()).map((item) => ({
+      ...item,
+      sharePct:
+        registrations.length === 0
+          ? 0
+          : Math.round((item.registrations / totalCount) * 100),
+    }));
   }, [registrations]);
 
   if (!isAdmin) {
@@ -692,7 +776,7 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
                 {
                   id: 'fb_ig',
                   network: 'Facebook & Instagram Ads · DrivePro Academy',
-                  text: `🚗 Votre permis international en moins de 48h avec DrivePro Academy !\n✅ Auto-école internationale agréée (UE · France · USA)\n✅ Télépaiement officiel + Facture PDF\n✅ Cours audio multilingues\n👉 Inscrivez-vous maintenant : ${appOrigin}/?src=facebook&ref=FB_AUTO`,
+                  text: `🚗 Votre permis en moins de 48h avec DrivePro Academy !\n✅ Auto-école agréée (UE · France · USA)\n✅ Télépaiement officiel + Facture PDF\n✅ Cours audio multilingues\n👉 Inscrivez-vous maintenant : ${appOrigin}/?src=facebook&ref=FB_AUTO`,
                 },
                 {
                   id: 'tiktok_li',
@@ -813,14 +897,235 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
           ].map((kpi) => (
             <div
               key={kpi.label}
-              className="p-4 rounded-xl border border-slate-200 bg-slate-50/70"
+              className="p-4 rounded-xl border border-slate-200 bg-slate-50"
             >
-              <div className="text-xs text-slate-500">{kpi.label}</div>
-              <div className="text-2xl font-mono font-semibold text-slate-900 mt-1 tabular-nums">
+              <div className="text-xs font-medium text-slate-600">{kpi.label}</div>
+              <div className="text-2xl font-mono font-semibold text-slate-950 mt-1 tabular-nums">
                 {kpi.value}
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Referral Overview (Recharts Breakdown by Source) */}
+        <div
+          aria-label="Referral Overview"
+          className="border border-slate-200 rounded-xl bg-white p-5 md:p-6 space-y-5"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+            <div className="space-y-1">
+              <h3 className="font-display text-lg font-bold text-slate-950 flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-blue-700 shrink-0" />
+                <span>Referral Overview</span>
+              </h3>
+              <p className="text-xs text-slate-600">
+                {isEn
+                  ? 'Breakdown of registrations per referral source (TikTok, Facebook, Instagram, LinkedIn, Direct).'
+                  : 'Répartition des inscriptions par source de provenance (TikTok, Facebook, Instagram, LinkedIn, Direct).'}
+              </p>
+            </div>
+            <div className="flex items-center gap-3 text-xs font-mono tabular-nums text-slate-700 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 shrink-0">
+              <span>
+                {isEn ? 'Total:' : 'Total :'}{' '}
+                <strong className="text-slate-950">{stats.total}</strong>
+              </span>
+              <span className="text-slate-300">|</span>
+              <span>
+                {isEn ? 'Social:' : 'Réseaux :'}{' '}
+                <strong className="text-blue-700">{stats.socialLeads}</strong>
+              </span>
+            </div>
+          </div>
+
+          {registrations.length === 0 ? (
+            <div className="grid lg:grid-cols-12 gap-6 items-center">
+              <div className="lg:col-span-7 h-60 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={referralBreakdown}
+                    margin={{ top: 10, right: 16, left: -12, bottom: 4 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="#E2E8F0"
+                      vertical={false}
+                    />
+                    <XAxis
+                      dataKey="source"
+                      tick={{ fill: '#334155', fontSize: 12, fontWeight: 600 }}
+                      axisLine={{ stroke: '#CBD5E1' }}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      allowDecimals={false}
+                      tick={{ fill: '#475569', fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Bar
+                      dataKey="registrations"
+                      radius={[6, 6, 0, 0]}
+                      maxBarSize={48}
+                    >
+                      {referralBreakdown.map((entry) => (
+                        <Cell key={entry.source} fill={entry.color} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="lg:col-span-5 p-5 rounded-xl border border-slate-200 bg-slate-50 text-center space-y-2">
+                <div className="text-sm font-semibold text-slate-900">
+                  {isEn
+                    ? 'No registrations recorded yet'
+                    : 'Aucune inscription enregistrée pour le moment'}
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  {isEn
+                    ? 'As candidates register from your TikTok, Facebook, Instagram, LinkedIn, or direct URLs, their counts and triggered amounts appear here automatically.'
+                    : 'Dès qu’un candidat s’inscrit via TikTok, Facebook, Instagram, LinkedIn ou un accès direct, la répartition et les montants s’affichent ici en temps réel.'}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid lg:grid-cols-12 gap-6 items-center">
+              <div className="lg:col-span-7 h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={referralBreakdown}
+                    margin={{ top: 12, right: 16, left: -12, bottom: 4 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="#E2E8F0"
+                      vertical={false}
+                    />
+                    <XAxis
+                      dataKey="source"
+                      tick={{ fill: '#0F172A', fontSize: 12, fontWeight: 600 }}
+                      axisLine={{ stroke: '#CBD5E1' }}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      allowDecimals={false}
+                      tick={{ fill: '#334155', fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip
+                      cursor={{ fill: '#F1F5F9' }}
+                      content={({ active, payload }) => {
+                        if (!active || !payload || payload.length === 0) {
+                          return null;
+                        }
+                        const item = payload[0].payload as {
+                          source: string;
+                          registrations: number;
+                          verifiedCount: number;
+                          triggeredEur: number;
+                          sharePct: number;
+                          color: string;
+                        };
+                        return (
+                          <div className="bg-slate-950 text-white px-3.5 py-2.5 rounded-lg border border-slate-800 shadow-xl text-xs space-y-1">
+                            <div className="font-bold flex items-center gap-2">
+                              <span
+                                className="w-2.5 h-2.5 rounded-xs inline-block"
+                                style={{ backgroundColor: item.color }}
+                              />
+                              <span>{item.source}</span>
+                            </div>
+                            <div className="font-mono tabular-nums text-slate-200">
+                              {isEn ? 'Registrations:' : 'Inscriptions :'}{' '}
+                              <strong className="text-white">
+                                {item.registrations} ({item.sharePct}%)
+                              </strong>
+                            </div>
+                            <div className="font-mono tabular-nums text-emerald-300">
+                              {isEn ? 'Triggered:' : 'Déclenchés :'}{' '}
+                              {item.verifiedCount} · {item.triggeredEur} €
+                            </div>
+                          </div>
+                        );
+                      }}
+                    />
+                    <Bar
+                      dataKey="registrations"
+                      name={isEn ? 'Registrations' : 'Inscriptions'}
+                      radius={[6, 6, 0, 0]}
+                      maxBarSize={52}
+                    >
+                      {referralBreakdown.map((entry) => (
+                        <Cell key={entry.source} fill={entry.color} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="lg:col-span-5 border border-slate-200 rounded-xl overflow-hidden bg-slate-50/70">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-100 border-b border-slate-200 text-slate-700">
+                    <tr>
+                      <th className="py-2.5 px-3 font-semibold">
+                        {isEn ? 'Source' : 'Source'}
+                      </th>
+                      <th className="py-2.5 px-3 font-semibold text-right">
+                        {isEn ? 'Count' : 'Dossiers'}
+                      </th>
+                      <th className="py-2.5 px-3 font-semibold text-right">
+                        {isEn ? 'Share' : 'Part'}
+                      </th>
+                      <th className="py-2.5 px-3 font-semibold text-right">
+                        {isEn ? 'EUR' : 'Montant'}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200/80 bg-white">
+                    {referralBreakdown.map((row) => {
+                      const isSelected =
+                        platformFilter.toLowerCase() ===
+                        row.source.toLowerCase();
+                      return (
+                        <tr
+                          key={row.source}
+                          onClick={() =>
+                            setPlatformFilter((prev) =>
+                              prev.toLowerCase() === row.source.toLowerCase()
+                                ? 'ALL'
+                                : row.source
+                            )
+                          }
+                          className={`cursor-pointer transition-colors ${
+                            isSelected ? 'bg-blue-50' : 'hover:bg-slate-50'
+                          }`}
+                        >
+                          <td className="py-2.5 px-3 font-semibold text-slate-900">
+                            <span className="inline-flex items-center gap-2">
+                              <span
+                                className="w-2.5 h-2.5 rounded-xs shrink-0"
+                                style={{ backgroundColor: row.color }}
+                              />
+                              <span>{row.source}</span>
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-mono tabular-nums font-semibold text-slate-900">
+                            {row.registrations}
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-700">
+                            {row.sharePct}%
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-mono tabular-nums font-semibold text-emerald-700">
+                            {row.triggeredEur} €
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Search & Filters */}
@@ -880,7 +1185,7 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
         {/* Applications Table */}
         <div className="border border-slate-200 rounded-xl overflow-x-auto bg-white">
           <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200 text-xs text-slate-500">
+            <thead className="bg-slate-50 border-b border-slate-200 text-xs text-slate-700">
               <tr>
                 <th className="py-3 px-4 font-semibold">
                   {isEn ? 'Queue #' : 'File #'}
@@ -964,7 +1269,7 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
                               <span>{isEn ? 'View ID' : 'Voir CNI'}</span>
                             </button>
                           ) : (
-                            <span className="text-[11px] text-slate-400 truncate max-w-[120px]">
+                            <span className="text-[11px] text-slate-600 truncate max-w-[120px]">
                               {reg.idCardFileName || '—'}
                             </span>
                           )}
@@ -1000,13 +1305,13 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
                           {formatLocalCurrency(reg.convertedAmount, c, lang)}
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-xs text-slate-600">
-                        <span className="inline-flex items-center gap-1">
-                          <Share2 className="w-3 h-3 text-slate-400" />
+                      <td className="py-3 px-4 text-xs text-slate-700">
+                        <span className="inline-flex items-center gap-1 font-medium">
+                          <Share2 className="w-3 h-3 text-slate-500" />
                           {reg.referralPlatform || 'Direct'}
                         </span>
                         {reg.referralCode && (
-                          <div className="font-mono text-[11px] text-slate-400">
+                          <div className="font-mono text-[11px] text-slate-600">
                             {reg.referralCode}
                           </div>
                         )}
@@ -1110,7 +1415,7 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
           </h3>
           <div className="border border-slate-200 rounded-xl overflow-x-auto bg-white">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-500">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-700">
                 <tr>
                   <th className="py-2.5 px-4 font-semibold">Ref. Transaction</th>
                   <th className="py-2.5 px-4 font-semibold">Code Déclencheur</th>
@@ -1213,7 +1518,7 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
 
         <div className="border border-slate-200 rounded-xl overflow-x-auto bg-white">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500">
+            <thead className="bg-slate-50 border-b border-slate-200 text-slate-700">
               <tr>
                 <th className="py-2.5 px-4 font-semibold">
                   {isEn ? 'Sender' : 'Expéditeur'}
