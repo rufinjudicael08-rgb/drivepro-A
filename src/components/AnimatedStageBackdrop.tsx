@@ -38,8 +38,8 @@ export const AnimatedStageBackdrop: React.FC<AnimatedStageBackdropProps> = ({
       aria-hidden="true"
       className="fixed inset-0 z-0 overflow-hidden pointer-events-none select-none bg-slate-950"
     >
-      {/* Layer 1: Animated Waving National Flag Behind Country Photography */}
-      <div className="absolute inset-0 opacity-45 animate-flag-wave">
+      {/* Layer 1: Vivid Animated Waving National Flag Layer */}
+      <div className="absolute inset-0 opacity-65 animate-flag-wave">
         {theme.flagLayout === 'horizontal' && (
           <div className="w-full h-full flex flex-col">
             <div className="flex-1" style={{ backgroundColor: c1 }} />
@@ -83,7 +83,7 @@ export const AnimatedStageBackdrop: React.FC<AnimatedStageBackdropProps> = ({
         )}
       </div>
 
-      {/* Layer 2: Country-Specific Photorealistic Driving & Law Enforcement Photography */}
+      {/* Layer 2: Crisp Full-Color Country-Specific Driving Photography */}
       {images.map((src, idx) => {
         const active = idx === slideIdx;
         const motionClass = MOTION_CLASSES[idx % MOTION_CLASSES.length];
@@ -95,21 +95,21 @@ export const AnimatedStageBackdrop: React.FC<AnimatedStageBackdropProps> = ({
             loading="eager"
             decoding="async"
             referrerPolicy="no-referrer"
-            className={`absolute inset-0 w-full h-full object-cover mix-blend-luminosity transition-opacity duration-[1600ms] ease-out ${motionClass} ${
-              active ? 'opacity-70' : 'opacity-0'
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[1600ms] ease-out ${motionClass} ${
+              active ? 'opacity-45' : 'opacity-0'
             }`}
           />
         );
       })}
 
-      {/* Layer 3: Balanced contrast scrim preserving waving national flag + vivid scene & UI contrast */}
-      <div className="absolute inset-0 bg-gradient-to-b from-slate-950/75 via-slate-950/55 to-slate-950/85" />
+      {/* Layer 3: Country Flag Color Radial Atmosphere + Legibility Scrim */}
       <div
         className="absolute inset-0"
         style={{
-          background: `radial-gradient(circle at top right, ${theme.accentHex}33, transparent 58%)`,
+          background: `linear-gradient(135deg, ${theme.primaryHex}CC 0%, rgba(2,6,23,0.58) 52%, ${theme.secondaryHex}B3 100%)`,
         }}
       />
+      <div className="absolute inset-0 bg-gradient-to-b from-slate-950/45 via-slate-950/35 to-slate-950/75" />
     </div>
   );
 };

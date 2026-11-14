@@ -1,5 +1,6 @@
 import { APP_MEDIA } from '../assets/media';
 import { CountryConfig } from '../types';
+import { getCountryLocalizedName } from './countries';
 
 export type FlagLayout = 'vertical' | 'horizontal' | 'cross' | 'canton';
 
@@ -7,35 +8,70 @@ export interface CountryTheme {
   code: string;
   flagColors: [string, string, string];
   flagLayout: FlagLayout;
+  primaryHex: string;
+  primaryHoverHex: string;
+  secondaryHex: string;
   accentHex: string;
-  badgeBgClass: string;
-  badgeTextClass: string;
+  surfaceTintHex: string;
   timeZone: string;
   cityLabel: string;
+  authorityCode: string;
   authorityName: string;
+  governmentNameFr: string;
+  governmentNameEn: string;
+  governmentNameNative?: string;
   localPermitFr: string;
   localPermitEn: string;
-  simLabelFr: string;
-  simLabelEn: string;
   galleryImages: string[];
   heroCaptionFr: string;
   heroCaptionEn: string;
 }
 
 const COUNTRY_THEME_OVERRIDES: Record<string, Omit<CountryTheme, 'code'>> = {
+  RO: {
+    flagColors: ['#002B7F', '#FCD116', '#CE1126'],
+    flagLayout: 'vertical',
+    primaryHex: '#002B7F',
+    primaryHoverHex: '#001F5C',
+    secondaryHex: '#CE1126',
+    accentHex: '#FCD116',
+    surfaceTintHex: '#EFF6FF',
+    timeZone: 'Europe/Bucharest',
+    cityLabel: 'București',
+    authorityCode: 'DRPCIV',
+    authorityName: 'DRPCIV · Direcția Regim Permise de Conducere',
+    governmentNameFr: 'Gouvernement de la Roumanie',
+    governmentNameEn: 'Government of Romania',
+    governmentNameNative: 'Guvernul României',
+    localPermitFr: 'Permis de Conducere · Norme DRPCIV România',
+    localPermitEn: 'Driver’s License · DRPCIV Romania Standards',
+    galleryImages: [
+      APP_MEDIA.countryRomaniaDriving,
+      APP_MEDIA.courseSignsRoundabout,
+      APP_MEDIA.bgDrivingPractice,
+      APP_MEDIA.bgTheoryStudents,
+      APP_MEDIA.bgStudentSuccess,
+    ],
+    heroCaptionFr: 'Formation adaptée Roumanie · Codul Rutier & DRPCIV',
+    heroCaptionEn: 'Romania-adapted training · Codul Rutier & DRPCIV',
+  },
   DE: {
     flagColors: ['#0F172A', '#DD0000', '#FFCE00'],
     flagLayout: 'horizontal',
-    accentHex: '#D97706',
-    badgeBgClass: 'bg-amber-50 border-amber-300',
-    badgeTextClass: 'text-amber-900',
+    primaryHex: '#B91C1C',
+    primaryHoverHex: '#991B1B',
+    secondaryHex: '#0F172A',
+    accentHex: '#F59E0B',
+    surfaceTintHex: '#FEF2F2',
     timeZone: 'Europe/Berlin',
     cityLabel: 'Berlin',
+    authorityCode: 'TÜV / DEKRA',
     authorityName: 'TÜV / DEKRA · Führerscheinstelle',
+    governmentNameFr: 'Gouvernement Fédéral d’Allemagne',
+    governmentNameEn: 'Federal Government of Germany',
+    governmentNameNative: 'Bundesregierung Deutschland',
     localPermitFr: 'Führerschein · Fahrschule Agréée Allemagne',
     localPermitEn: 'Führerschein · Certified German Driving School',
-    simLabelFr: 'Puce mobile +49 · Réseau DE',
-    simLabelEn: 'Mobile SIM +49 · DE Network',
     galleryImages: [
       APP_MEDIA.countryGermanyDriving,
       APP_MEDIA.courseHighwaySafety,
@@ -49,16 +85,20 @@ const COUNTRY_THEME_OVERRIDES: Record<string, Omit<CountryTheme, 'code'>> = {
   FR: {
     flagColors: ['#002395', '#FFFFFF', '#ED2939'],
     flagLayout: 'vertical',
-    accentHex: '#1D4ED8',
-    badgeBgClass: 'bg-blue-50 border-blue-200',
-    badgeTextClass: 'text-blue-900',
+    primaryHex: '#002395',
+    primaryHoverHex: '#00196B',
+    secondaryHex: '#ED2939',
+    accentHex: '#2563EB',
+    surfaceTintHex: '#EFF6FF',
     timeZone: 'Europe/Paris',
     cityLabel: 'Paris',
-    authorityName: 'ANTS · Sécurité Routière',
+    authorityCode: 'ANTS',
+    authorityName: 'ANTS · Sécurité Routière France',
+    governmentNameFr: 'Gouvernement de la République Française',
+    governmentNameEn: 'Government of France',
+    governmentNameNative: 'République Française',
     localPermitFr: 'Permis National & International (ANTS)',
     localPermitEn: 'French National & International Permit (ANTS)',
-    simLabelFr: 'Puce mobile +33 · Réseau FR',
-    simLabelEn: 'Mobile SIM +33 · FR Network',
     galleryImages: [
       APP_MEDIA.countryFranceDriving,
       APP_MEDIA.heroParisAcademy,
@@ -72,16 +112,20 @@ const COUNTRY_THEME_OVERRIDES: Record<string, Omit<CountryTheme, 'code'>> = {
   BJ: {
     flagColors: ['#008751', '#FCD116', '#E8112D'],
     flagLayout: 'vertical',
-    accentHex: '#059669',
-    badgeBgClass: 'bg-emerald-50 border-emerald-200',
-    badgeTextClass: 'text-emerald-900',
+    primaryHex: '#007A48',
+    primaryHoverHex: '#005C36',
+    secondaryHex: '#E8112D',
+    accentHex: '#FCD116',
+    surfaceTintHex: '#ECFDF5',
     timeZone: 'Africa/Porto-Novo',
     cityLabel: 'Cotonou',
-    authorityName: 'ANaTT Bénin · Transports Terrestres',
+    authorityCode: 'ANaTT',
+    authorityName: 'ANaTT · Agence Nationale des Transports Terrestres',
+    governmentNameFr: 'Gouvernement de la République du Bénin',
+    governmentNameEn: 'Government of Benin',
+    governmentNameNative: 'République du Bénin',
     localPermitFr: 'Permis Biométrique & International (ANaTT)',
     localPermitEn: 'Biometric & International Permit (ANaTT Benin)',
-    simLabelFr: 'Puce mobile +229 · MTN / Moov / Celtiis',
-    simLabelEn: 'Mobile SIM +229 · Benin Networks',
     galleryImages: [
       APP_MEDIA.countryWestAfricaDriving,
       APP_MEDIA.bgInstructorBriefing,
@@ -93,18 +137,22 @@ const COUNTRY_THEME_OVERRIDES: Record<string, Omit<CountryTheme, 'code'>> = {
     heroCaptionEn: 'Benin-adapted curriculum · ANaTT & UEMOA road code',
   },
   US: {
-    flagColors: ['#3C3B6E', '#B22234', '#FFFFFF'],
+    flagColors: ['#1E3A8A', '#B22234', '#FFFFFF'],
     flagLayout: 'canton',
-    accentHex: '#1E3A8A',
-    badgeBgClass: 'bg-blue-50 border-blue-300',
-    badgeTextClass: 'text-blue-950',
+    primaryHex: '#1E3A8A',
+    primaryHoverHex: '#172554',
+    secondaryHex: '#B22234',
+    accentHex: '#DC2626',
+    surfaceTintHex: '#EFF6FF',
     timeZone: 'America/New_York',
     cityLabel: 'New York',
-    authorityName: 'DMV · State Department of Motor Vehicles',
+    authorityCode: 'DMV',
+    authorityName: 'DMV · Department of Motor Vehicles',
+    governmentNameFr: 'Gouvernement des États-Unis',
+    governmentNameEn: 'United States Government',
+    governmentNameNative: 'USA · Federal & State DOT',
     localPermitFr: 'Driver’s License & IDP (Normes DMV)',
     localPermitEn: 'Driver’s License & IDP (DMV Standards)',
-    simLabelFr: 'Puce mobile +1 · Réseau USA',
-    simLabelEn: 'Mobile SIM +1 · US Network',
     galleryImages: [
       APP_MEDIA.countryUsaDriving,
       APP_MEDIA.courseHighwaySafety,
@@ -114,23 +162,53 @@ const COUNTRY_THEME_OVERRIDES: Record<string, Omit<CountryTheme, 'code'>> = {
     heroCaptionFr: 'Programme adapté États-Unis · Code DMV & Sécurité',
     heroCaptionEn: 'United States DMV theory & road test readiness',
   },
+  GB: {
+    flagColors: ['#012169', '#FFFFFF', '#C8102E'],
+    flagLayout: 'cross',
+    primaryHex: '#012169',
+    primaryHoverHex: '#001542',
+    secondaryHex: '#C8102E',
+    accentHex: '#C8102E',
+    surfaceTintHex: '#EFF6FF',
+    timeZone: 'Europe/London',
+    cityLabel: 'London',
+    authorityCode: 'DVLA / DVSA',
+    authorityName: 'DVLA / DVSA · Driver & Vehicle Standards Agency',
+    governmentNameFr: 'Gouvernement du Royaume-Uni',
+    governmentNameEn: 'UK Government (HM Gov)',
+    governmentNameNative: 'HM Government · UK',
+    localPermitFr: 'UK Driving Licence · Normes DVLA / DVSA',
+    localPermitEn: 'UK Driving Licence · DVLA / DVSA Standards',
+    galleryImages: [
+      APP_MEDIA.countryUkDriving,
+      APP_MEDIA.courseSignsRoundabout,
+      APP_MEDIA.bgDrivingPractice,
+      APP_MEDIA.bgStudentSuccess,
+    ],
+    heroCaptionFr: 'Formation adaptée Royaume-Uni · Highway Code DVSA',
+    heroCaptionEn: 'UK-adapted training · DVSA Highway Code',
+  },
   ES: {
     flagColors: ['#AA151B', '#F1BF00', '#AA151B'],
     flagLayout: 'horizontal',
-    accentHex: '#B91C1C',
-    badgeBgClass: 'bg-red-50 border-red-200',
-    badgeTextClass: 'text-red-900',
+    primaryHex: '#AA151B',
+    primaryHoverHex: '#881015',
+    secondaryHex: '#0F172A',
+    accentHex: '#F1BF00',
+    surfaceTintHex: '#FEF2F2',
     timeZone: 'Europe/Madrid',
     cityLabel: 'Madrid',
+    authorityCode: 'DGT',
     authorityName: 'DGT · Dirección General de Tráfico',
+    governmentNameFr: 'Gouvernement d’Espagne',
+    governmentNameEn: 'Government of Spain',
+    governmentNameNative: 'Gobierno de España',
     localPermitFr: 'Permiso de Conducir · Autoescuela DGT',
     localPermitEn: 'Spanish Driver’s License · DGT Standards',
-    simLabelFr: 'Puce mobile +34 · Réseau ES',
-    simLabelEn: 'Mobile SIM +34 · ES Network',
     galleryImages: [
+      APP_MEDIA.countryLatamDriving,
       APP_MEDIA.countryEuropeDriving,
       APP_MEDIA.courseSignsRoundabout,
-      APP_MEDIA.bgDrivingPractice,
       APP_MEDIA.bgStudentSuccess,
     ],
     heroCaptionFr: 'Programme adapté Espagne · Señalización DGT',
@@ -139,19 +217,23 @@ const COUNTRY_THEME_OVERRIDES: Record<string, Omit<CountryTheme, 'code'>> = {
   PL: {
     flagColors: ['#FFFFFF', '#DC143C', '#DC143C'],
     flagLayout: 'horizontal',
-    accentHex: '#DC2626',
-    badgeBgClass: 'bg-rose-50 border-rose-200',
-    badgeTextClass: 'text-rose-900',
+    primaryHex: '#B91C1C',
+    primaryHoverHex: '#991B1B',
+    secondaryHex: '#0F172A',
+    accentHex: '#DC143C',
+    surfaceTintHex: '#FFF1F2',
     timeZone: 'Europe/Warsaw',
-    cityLabel: 'Varsovie',
-    authorityName: 'WORD · Ośrodek Ruchu Drogowego',
+    cityLabel: 'Warszawa',
+    authorityCode: 'WORD',
+    authorityName: 'WORD · Wojewódzki Ośrodek Ruchu Drogowego',
+    governmentNameFr: 'Gouvernement de Pologne',
+    governmentNameEn: 'Government of Poland',
+    governmentNameNative: 'Rząd Rzeczypospolitej Polskiej',
     localPermitFr: 'Prawo Jazdy · Szkoła Jazdy Polska',
     localPermitEn: 'Prawo Jazdy · WORD Exam Preparation',
-    simLabelFr: 'Puce mobile +48 · BLIK & Pologne',
-    simLabelEn: 'Mobile SIM +48 · Poland Network',
     galleryImages: [
+      APP_MEDIA.countryRomaniaDriving,
       APP_MEDIA.countryEuropeDriving,
-      APP_MEDIA.courseSignsRoundabout,
       APP_MEDIA.bgDrivingPractice,
       APP_MEDIA.bgStudentSuccess,
     ],
@@ -161,20 +243,24 @@ const COUNTRY_THEME_OVERRIDES: Record<string, Omit<CountryTheme, 'code'>> = {
   BG: {
     flagColors: ['#FFFFFF', '#00966E', '#D62612'],
     flagLayout: 'horizontal',
-    accentHex: '#047857',
-    badgeBgClass: 'bg-emerald-50 border-emerald-200',
-    badgeTextClass: 'text-emerald-900',
+    primaryHex: '#007A59',
+    primaryHoverHex: '#005C43',
+    secondaryHex: '#D62612',
+    accentHex: '#00966E',
+    surfaceTintHex: '#ECFDF5',
     timeZone: 'Europe/Sofia',
     cityLabel: 'Sofia',
-    authorityName: 'КАТ / Изпълнителна агенция АА',
+    authorityCode: 'КАТ / ИААА',
+    authorityName: 'КАТ · Пътна полиция / ИААА',
+    governmentNameFr: 'Gouvernement de Bulgarie',
+    governmentNameEn: 'Government of Bulgaria',
+    governmentNameNative: 'Правителство на България',
     localPermitFr: 'Автошкола · Шофьорска книжка (КАТ)',
     localPermitEn: 'Bulgarian Driving School & KAT Track',
-    simLabelFr: 'Puce mobile +359 · Réseau Bulgarie',
-    simLabelEn: 'Mobile SIM +359 · Bulgaria Network',
     galleryImages: [
+      APP_MEDIA.countryRomaniaDriving,
       APP_MEDIA.countryEuropeDriving,
       APP_MEDIA.bgCityIntersection,
-      APP_MEDIA.bgDrivingPractice,
       APP_MEDIA.bgStudentSuccess,
     ],
     heroCaptionFr: 'Programme adapté Bulgarie · Règles UE & КАТ',
@@ -183,16 +269,20 @@ const COUNTRY_THEME_OVERRIDES: Record<string, Omit<CountryTheme, 'code'>> = {
   DK: {
     flagColors: ['#C60C30', '#FFFFFF', '#C60C30'],
     flagLayout: 'cross',
-    accentHex: '#BE123C',
-    badgeBgClass: 'bg-red-50 border-red-200',
-    badgeTextClass: 'text-red-900',
+    primaryHex: '#B91C1C',
+    primaryHoverHex: '#991B1B',
+    secondaryHex: '#C60C30',
+    accentHex: '#EF4444',
+    surfaceTintHex: '#FEF2F2',
     timeZone: 'Europe/Copenhagen',
-    cityLabel: 'Copenhague',
-    authorityName: 'Færdselsstyrelsen',
+    cityLabel: 'København',
+    authorityCode: 'Færdselsstyrelsen',
+    authorityName: 'Færdselsstyrelsen · Kørekort Danmark',
+    governmentNameFr: 'Gouvernement du Danemark',
+    governmentNameEn: 'Government of Denmark',
+    governmentNameNative: 'Danmarks Regering',
     localPermitFr: 'Kørekort · Køreskole Danemark',
     localPermitEn: 'Kørekort · Danish Road Safety Track',
-    simLabelFr: 'Puce mobile +45 · Réseau DK',
-    simLabelEn: 'Mobile SIM +45 · DK Network',
     galleryImages: [
       APP_MEDIA.countryEuropeDriving,
       APP_MEDIA.countryGermanyDriving,
@@ -204,67 +294,96 @@ const COUNTRY_THEME_OVERRIDES: Record<string, Omit<CountryTheme, 'code'>> = {
   },
 };
 
-const WEST_CENTRAL_AFRICA_COLORS: Record<string, [string, string, string]> = {
-  TG: ['#006A4E', '#FFCE00', '#D21034'],
-  CI: ['#F77F00', '#FFFFFF', '#009E60'],
-  SN: ['#00853F', '#FDEF42', '#E31B23'],
-  BF: ['#EF2B2D', '#009E49', '#FCD116'],
-  ML: ['#14B53A', '#FCD116', '#CE1126'],
-  NE: ['#E05206', '#FFFFFF', '#0DB02B'],
-  CM: ['#007A5E', '#CE1126', '#FCD116'],
-  NG: ['#008751', '#FFFFFF', '#008751'],
-  GH: ['#CE1126', '#FCD116', '#006B3F'],
-  MA: ['#C1272D', '#006233', '#C1272D'],
-  DZ: ['#006233', '#FFFFFF', '#D21034'],
-  TN: ['#E70013', '#FFFFFF', '#E70013'],
+const WEST_CENTRAL_AFRICA_META: Record<string, { colors: [string, string, string]; primary: string; secondary: string; accent: string; authCode: string; authName: string; govNative: string }> = {
+  TG: { colors: ['#006A4E', '#FFCE00', '#D21034'], primary: '#006A4E', secondary: '#D21034', accent: '#FFCE00', authCode: 'DTR', authName: 'DTR · Direction des Transports Routiers Togo', govNative: 'République Togolaise' },
+  CI: { colors: ['#F77F00', '#FFFFFF', '#009E60'], primary: '#00824F', secondary: '#C25E00', accent: '#F77F00', authCode: 'OSER / DGTTC', authName: 'DGTTC · Transports Terrestres Côte d’Ivoire', govNative: 'République de Côte d’Ivoire' },
+  SN: { colors: ['#00853F', '#FDEF42', '#E31B23'], primary: '#007537', secondary: '#E31B23', accent: '#FCD116', authCode: 'DTR / ANASER', authName: 'DTR · Direction des Transports Routiers Sénégal', govNative: 'République du Sénégal' },
+  BF: { colors: ['#EF2B2D', '#009E49', '#FCD116'], primary: '#007A38', secondary: '#C81E20', accent: '#FCD116', authCode: 'DGTTM', authName: 'DGTTM · Transports Terrestres Burkina Faso', govNative: 'Burkina Faso' },
+  ML: { colors: ['#14B53A', '#FCD116', '#CE1126'], primary: '#0E8A2B', secondary: '#CE1126', accent: '#FCD116', authCode: 'ANASER / DNTTMR', authName: 'DNTTMR · Transports Routiers Mali', govNative: 'République du Mali' },
+  NE: { colors: ['#E05206', '#FFFFFF', '#0DB02B'], primary: '#0B8A22', secondary: '#C44504', accent: '#E05206', authCode: 'DGTTM', authName: 'DGTTM · Transports Terrestres Niger', govNative: 'République du Niger' },
+  CM: { colors: ['#007A5E', '#CE1126', '#FCD116'], primary: '#006E54', secondary: '#CE1126', accent: '#FCD116', authCode: 'MINT', authName: 'MINT · Ministère des Transports Cameroun', govNative: 'République du Cameroun' },
+  NG: { colors: ['#008751', '#FFFFFF', '#008751'], primary: '#007847', secondary: '#005A35', accent: '#10B981', authCode: 'FRSC', authName: 'FRSC · Federal Road Safety Corps Nigeria', govNative: 'Federal Republic of Nigeria' },
+  GH: { colors: ['#CE1126', '#FCD116', '#006B3F'], primary: '#006B3F', secondary: '#CE1126', accent: '#FCD116', authCode: 'DVLA Ghana', authName: 'DVLA · Driver & Vehicle Licensing Authority', govNative: 'Republic of Ghana' },
+  MA: { colors: ['#C1272D', '#006233', '#C1272D'], primary: '#B31E24', secondary: '#006233', accent: '#007A40', authCode: 'NARSA', authName: 'NARSA · Agence Nationale de la Sécurité Routière', govNative: 'Royaume du Maroc · المملكة المغربية' },
+  DZ: { colors: ['#006233', '#FFFFFF', '#D21034'], primary: '#006233', secondary: '#D21034', accent: '#10B981', authCode: 'DNSR', authName: 'DNSR · Sécurité Routière Algérie', govNative: 'الجمهورية الجزائرية' },
+  TN: { colors: ['#E70013', '#FFFFFF', '#E70013'], primary: '#C80010', secondary: '#0F172A', accent: '#E70013', authCode: 'ATTT', authName: 'ATTT · Agence Technique des Transports Terrestres', govNative: 'الجمهورية التونسية' },
 };
 
-const EXTRA_EUROPE_COLORS: Record<string, { colors: [string, string, string]; layout: FlagLayout; tz: string; city: string; auth: string }> = {
-  IT: { colors: ['#009246', '#FFFFFF', '#CE2B37'], layout: 'vertical', tz: 'Europe/Rome', city: 'Rome', auth: 'Motorizzazione Civile' },
-  BE: { colors: ['#0F172A', '#FDDA24', '#EF3340'], layout: 'vertical', tz: 'Europe/Brussels', city: 'Bruxelles', auth: 'SPF Mobilité' },
-  CH: { colors: ['#D52B1E', '#FFFFFF', '#D52B1E'], layout: 'cross', tz: 'Europe/Zurich', city: 'Berne', auth: 'OFROU / ASA' },
-  NL: { colors: ['#AE1C28', '#FFFFFF', '#21468B'], layout: 'horizontal', tz: 'Europe/Amsterdam', city: 'Amsterdam', auth: 'CBR Rijbewijs' },
-  PT: { colors: ['#006600', '#FF0000', '#FFCC00'], layout: 'vertical', tz: 'Europe/Lisbon', city: 'Lisbonne', auth: 'IMT Portugal' },
-  GB: { colors: ['#012169', '#FFFFFF', '#C8102E'], layout: 'cross', tz: 'Europe/London', city: 'Londres', auth: 'DVLA / DVSA' },
-  AT: { colors: ['#ED2939', '#FFFFFF', '#ED2939'], layout: 'horizontal', tz: 'Europe/Vienna', city: 'Vienne', auth: 'Fahrschule Österreich' },
-  LU: { colors: ['#EF3340', '#FFFFFF', '#00A3E0'], layout: 'horizontal', tz: 'Europe/Luxembourg', city: 'Luxembourg', auth: 'SNCA Luxembourg' },
-  SE: { colors: ['#006AA7', '#FECC02', '#006AA7'], layout: 'cross', tz: 'Europe/Stockholm', city: 'Stockholm', auth: 'Trafikverket' },
-  NO: { colors: ['#BA0C2F', '#FFFFFF', '#00205B'], layout: 'cross', tz: 'Europe/Oslo', city: 'Oslo', auth: 'Statens vegvesen' },
-  FI: { colors: ['#FFFFFF', '#003580', '#003580'], layout: 'cross', tz: 'Europe/Helsinki', city: 'Helsinki', auth: 'Traficom' },
-  RO: { colors: ['#002B7F', '#FCD116', '#CE1126'], layout: 'vertical', tz: 'Europe/Bucharest', city: 'Bucarest', auth: 'DRPCIV' },
-  GR: { colors: ['#0D5EAF', '#FFFFFF', '#0D5EAF'], layout: 'horizontal', tz: 'Europe/Athens', city: 'Athènes', auth: 'Υπουργείο Μεταφορών' },
+const EXTRA_EUROPE_META: Record<string, { colors: [string, string, string]; primary: string; secondary: string; accent: string; layout: FlagLayout; tz: string; city: string; authCode: string; auth: string; govNative: string }> = {
+  IT: { colors: ['#009246', '#FFFFFF', '#CE2B37'], primary: '#007A3A', secondary: '#CE2B37', accent: '#009246', layout: 'vertical', tz: 'Europe/Rome', city: 'Roma', authCode: 'Motorizzazione', auth: 'Motorizzazione Civile · Ministero Trasporti', govNative: 'Governo Italiano' },
+  BE: { colors: ['#0F172A', '#FDDA24', '#EF3340'], primary: '#1E293B', secondary: '#DC2626', accent: '#EAB308', layout: 'vertical', tz: 'Europe/Brussels', city: 'Bruxelles', authCode: 'SPF Mobilité', auth: 'SPF Mobilité & Transports Belgique', govNative: 'Royaume de Belgique' },
+  CH: { colors: ['#D52B1E', '#FFFFFF', '#D52B1E'], primary: '#C41E12', secondary: '#0F172A', accent: '#EF4444', layout: 'cross', tz: 'Europe/Zurich', city: 'Bern', authCode: 'ASTRA / ASA', auth: 'OFROU / ASTRA · Schweizerische Eidgenossenschaft', govNative: 'Schweizerische Eidgenossenschaft' },
+  NL: { colors: ['#AE1C28', '#FFFFFF', '#21468B'], primary: '#21468B', secondary: '#AE1C28', accent: '#2563EB', layout: 'horizontal', tz: 'Europe/Amsterdam', city: 'Amsterdam', authCode: 'CBR', auth: 'CBR · Centraal Bureau Rijvaardigheidsbewijzen', govNative: 'Rijksoverheid Nederland' },
+  PT: { colors: ['#006600', '#FF0000', '#FFCC00'], primary: '#006600', secondary: '#CC0000', accent: '#F59E0B', layout: 'vertical', tz: 'Europe/Lisbon', city: 'Lisboa', authCode: 'IMT', auth: 'IMT · Instituto da Mobilidade e dos Transportes', govNative: 'República Portuguesa' },
+  AT: { colors: ['#ED2939', '#FFFFFF', '#ED2939'], primary: '#C81E2E', secondary: '#0F172A', accent: '#ED2939', layout: 'horizontal', tz: 'Europe/Vienna', city: 'Wien', authCode: 'BMK', auth: 'BMK · Führerscheinbehörde Österreich', govNative: 'Republik Österreich' },
+  LU: { colors: ['#EF3340', '#FFFFFF', '#00A3E0'], primary: '#0284C7', secondary: '#DC2626', accent: '#00A3E0', layout: 'horizontal', tz: 'Europe/Luxembourg', city: 'Luxembourg', authCode: 'SNCA', auth: 'SNCA · Société Nationale de Circulation Automobile', govNative: 'Grand-Duché de Luxembourg' },
+  SE: { colors: ['#006AA7', '#FECC02', '#006AA7'], primary: '#005A8E', secondary: '#0F172A', accent: '#FECC02', layout: 'cross', tz: 'Europe/Stockholm', city: 'Stockholm', authCode: 'Trafikverket', auth: 'Trafikverket · Transportstyrelsen Sverige', govNative: 'Sveriges Regering' },
+  NO: { colors: ['#BA0C2F', '#FFFFFF', '#00205B'], primary: '#00205B', secondary: '#BA0C2F', accent: '#BA0C2F', layout: 'cross', tz: 'Europe/Oslo', city: 'Oslo', authCode: 'Statens vegvesen', auth: 'Statens vegvesen · Førerkort Norge', govNative: 'Kongeriket Norge' },
+  FI: { colors: ['#FFFFFF', '#003580', '#003580'], primary: '#003580', secondary: '#0F172A', accent: '#0284C7', layout: 'cross', tz: 'Europe/Helsinki', city: 'Helsinki', authCode: 'Traficom', auth: 'Traficom · Ajokortti Suomi', govNative: 'Suomen Valtioneuvosto' },
+  GR: { colors: ['#0D5EAF', '#FFFFFF', '#0D5EAF'], primary: '#0D5EAF', secondary: '#0F172A', accent: '#38BDF8', layout: 'horizontal', tz: 'Europe/Athens', city: 'Αθήνα', authCode: 'Υπουργείο Μεταφορών', auth: 'Υπουργείο Υποδομών & Μεταφορών', govNative: 'Ελληνική Δημοκρατία' },
+  CZ: { colors: ['#FFFFFF', '#D7141A', '#11457E'], primary: '#11457E', secondary: '#D7141A', accent: '#D7141A', layout: 'horizontal', tz: 'Europe/Prague', city: 'Praha', authCode: 'MDČR', auth: 'Ministerstvo dopravy ČR · Řidičský průkaz', govNative: 'Vláda České republiky' },
+  HU: { colors: ['#CD2A3E', '#FFFFFF', '#436F4D'], primary: '#436F4D', secondary: '#CD2A3E', accent: '#CD2A3E', layout: 'horizontal', tz: 'Europe/Budapest', city: 'Budapest', authCode: 'KAV', auth: 'KAV · Közlekedési Alkalmassági és Vizsgaközpont', govNative: 'Magyarország Kormánya' },
+  IE: { colors: ['#169B62', '#FFFFFF', '#FF883E'], primary: '#168754', secondary: '#D97706', accent: '#169B62', layout: 'vertical', tz: 'Europe/Dublin', city: 'Dublin', authCode: 'RSA / NDLS', auth: 'RSA / NDLS · National Driver Licence Service', govNative: 'Government of Ireland' },
+  MD: { colors: ['#0046AE', '#FFD200', '#CC092F'], primary: '#0046AE', secondary: '#CC092F', accent: '#FFD200', layout: 'vertical', tz: 'Europe/Chisinau', city: 'Chișinău', authCode: 'ASP', auth: 'ASP · Agenția Servicii Publice Moldova', govNative: 'Guvernul Republicii Moldova' },
 };
 
-const AMERICAS_ASIA_TZ: Record<string, { colors: [string, string, string]; layout: FlagLayout; tz: string; city: string; auth: string }> = {
-  CA: { colors: ['#D80621', '#FFFFFF', '#D80621'], layout: 'vertical', tz: 'America/Toronto', city: 'Toronto', auth: 'SAAQ / DriveTest' },
-  BR: { colors: ['#009739', '#FEDD00', '#012169'], layout: 'horizontal', tz: 'America/Sao_Paulo', city: 'São Paulo', auth: 'DETRAN (CNH)' },
-  MX: { colors: ['#006847', '#FFFFFF', '#CE1126'], layout: 'vertical', tz: 'America/Mexico_City', city: 'Mexico', auth: 'SEMOVI' },
-  JP: { colors: ['#FFFFFF', '#BC002D', '#FFFFFF'], layout: 'vertical', tz: 'Asia/Tokyo', city: 'Tokyo', auth: 'National Police Agency' },
-  KR: { colors: ['#FFFFFF', '#0047A0', '#CD2E3A'], layout: 'vertical', tz: 'Asia/Seoul', city: 'Séoul', auth: 'KoROAD' },
-  CN: { colors: ['#DE2910', '#FFDE00', '#DE2910'], layout: 'horizontal', tz: 'Asia/Shanghai', city: 'Pékin', auth: 'Traffic Bureau' },
-  AE: { colors: ['#00732F', '#FFFFFF', '#FF0000'], layout: 'horizontal', tz: 'Asia/Dubai', city: 'Dubaï', auth: 'RTA Dubai' },
-  SA: { colors: ['#165D31', '#FFFFFF', '#165D31'], layout: 'horizontal', tz: 'Asia/Riyadh', city: 'Riyad', auth: 'Dallah / Moroor' },
-  IN: { colors: ['#FF9933', '#FFFFFF', '#138808'], layout: 'horizontal', tz: 'Asia/Kolkata', city: 'New Delhi', auth: 'Parivahan / RTO' },
-  AU: { colors: ['#012169', '#FFFFFF', '#E4002B'], layout: 'canton', tz: 'Australia/Sydney', city: 'Sydney', auth: 'Service NSW / VicRoads' },
-  TR: { colors: ['#E30A17', '#FFFFFF', '#E30A17'], layout: 'horizontal', tz: 'Europe/Istanbul', city: 'Istanbul', auth: 'MEB Sürücü Kursu' },
+const AMERICAS_ASIA_META: Record<string, { colors: [string, string, string]; primary: string; secondary: string; accent: string; layout: FlagLayout; tz: string; city: string; authCode: string; auth: string; govNative: string; region: 'americas' | 'asia' | 'mena' }> = {
+  CA: { colors: ['#D80621', '#FFFFFF', '#D80621'], primary: '#C4061E', secondary: '#0F172A', accent: '#D80621', layout: 'vertical', tz: 'America/Toronto', city: 'Toronto', authCode: 'SAAQ / ServiceOntario', auth: 'SAAQ / DriveTest Canada', govNative: 'Government of Canada', region: 'americas' },
+  BR: { colors: ['#009739', '#FEDD00', '#012169'], primary: '#007E30', secondary: '#012169', accent: '#FEDD00', layout: 'horizontal', tz: 'America/Sao_Paulo', city: 'São Paulo', authCode: 'DETRAN / SENATRAN', auth: 'DETRAN / SENATRAN (CNH Brasil)', govNative: 'Governo Federal do Brasil', region: 'americas' },
+  MX: { colors: ['#006847', '#FFFFFF', '#CE1126'], primary: '#006847', secondary: '#CE1126', accent: '#10B981', layout: 'vertical', tz: 'America/Mexico_City', city: 'Ciudad de México', authCode: 'SEMOVI / SICT', auth: 'SEMOVI · Secretaría de Movilidad México', govNative: 'Gobierno de México', region: 'americas' },
+  JP: { colors: ['#FFFFFF', '#BC002D', '#FFFFFF'], primary: '#BC002D', secondary: '#0F172A', accent: '#E11D48', layout: 'vertical', tz: 'Asia/Tokyo', city: 'Tokyo', authCode: 'NPA / JAF', auth: '警察庁 運転免許センター · Japan NPA', govNative: '日本国政府 · Government of Japan', region: 'asia' },
+  KR: { colors: ['#FFFFFF', '#0047A0', '#CD2E3A'], primary: '#0047A0', secondary: '#CD2E3A', accent: '#3B82F6', layout: 'vertical', tz: 'Asia/Seoul', city: 'Seoul', authCode: 'KoROAD', auth: '도로교통공단 · KoROAD Driver’s License', govNative: '대한민국 정부', region: 'asia' },
+  CN: { colors: ['#DE2910', '#FFDE00', '#DE2910'], primary: '#C8220D', secondary: '#0F172A', accent: '#FFDE00', layout: 'horizontal', tz: 'Asia/Shanghai', city: 'Beijing', authCode: '交管局', auth: '公安部交通管理局 · Traffic Management Bureau', govNative: '中华人民共和国政府', region: 'asia' },
+  AE: { colors: ['#00732F', '#FFFFFF', '#FF0000'], primary: '#00732F', secondary: '#DC2626', accent: '#10B981', layout: 'horizontal', tz: 'Asia/Dubai', city: 'Dubai', authCode: 'RTA Dubai', auth: 'RTA · Roads and Transport Authority', govNative: 'حكومة الإمارات · UAE Government', region: 'mena' },
+  SA: { colors: ['#165D31', '#FFFFFF', '#165D31'], primary: '#165D31', secondary: '#0F172A', accent: '#10B981', layout: 'horizontal', tz: 'Asia/Riyadh', city: 'Riyadh', authCode: 'Moroor', auth: 'المرور السعودي · Saudi Traffic Department', govNative: 'حكومة المملكة العربية السعودية', region: 'mena' },
+  IN: { colors: ['#FF9933', '#FFFFFF', '#138808'], primary: '#137508', secondary: '#D97706', accent: '#FF9933', layout: 'horizontal', tz: 'Asia/Kolkata', city: 'New Delhi', authCode: 'Parivahan / RTO', auth: 'Parivahan Sewa · MoRTH / RTO India', govNative: 'भारत सरकार · Government of India', region: 'asia' },
+  AU: { colors: ['#012169', '#FFFFFF', '#E4002B'], primary: '#012169', secondary: '#E4002B', accent: '#2563EB', layout: 'canton', tz: 'Australia/Sydney', city: 'Sydney', authCode: 'Austroads / NSW', auth: 'Service NSW / VicRoads · Australia', govNative: 'Australian Government', region: 'americas' },
+  TR: { colors: ['#E30A17', '#FFFFFF', '#E30A17'], primary: '#C80914', secondary: '#0F172A', accent: '#E30A17', layout: 'horizontal', tz: 'Europe/Istanbul', city: 'İstanbul', authCode: 'MEB / EGM', auth: 'MEB MTSK · Türkiye Sürücü Belgesi', govNative: 'Türkiye Cumhuriyeti', region: 'mena' },
 };
 
 const AFRICAN_CODES = new Set([
   'BJ', 'TG', 'CI', 'SN', 'BF', 'ML', 'NE', 'CM', 'GA', 'CG', 'CD', 'TD', 'CF', 'GN', 'NG', 'GH', 'KE', 'MA', 'DZ', 'TN', 'EG', 'ZA',
 ]);
+const MENA_CODES = new Set(['MA', 'DZ', 'TN', 'EG', 'SA', 'AE', 'QA', 'KW', 'OM', 'BH', 'JO', 'LB', 'IQ', 'SY', 'YE', 'LY', 'TR', 'IR']);
+const ASIA_CODES = new Set(['JP', 'KR', 'CN', 'TW', 'IN', 'VN', 'TH', 'ID', 'MY', 'PH', 'SG', 'PK', 'BD', 'LK', 'KH', 'LA', 'MM', 'NP', 'MN']);
+const EASTERN_EU_CODES = new Set(['RO', 'MD', 'BG', 'PL', 'CZ', 'SK', 'HU', 'UA', 'HR', 'SI', 'RS', 'BA', 'ME', 'AL', 'EE', 'LV', 'LT']);
+const AMERICAS_CODES = new Set(['US', 'CA', 'BR', 'MX', 'AR', 'CO', 'CL', 'PE', 'VE', 'EC', 'BO', 'PY', 'UY', 'CR', 'PA', 'AU', 'NZ']);
 
-const AMERICAS_CODES = new Set(['US', 'CA', 'BR', 'MX', 'AR', 'CO', 'CL', 'PE']);
-
-function hashPalette(code: string): [string, string, string] {
-  const palettes: [string, string, string][] = [
-    ['#1D4ED8', '#FFFFFF', '#059669'],
-    ['#B91C1C', '#F59E0B', '#0F172A'],
-    ['#047857', '#FBBF24', '#DC2626'],
-    ['#1E3A8A', '#FFFFFF', '#DC2626'],
+function hashPalette(code: string): { colors: [string, string, string]; primary: string; secondary: string; accent: string } {
+  const palettes: { colors: [string, string, string]; primary: string; secondary: string; accent: string }[] = [
+    { colors: ['#1D4ED8', '#FFFFFF', '#059669'], primary: '#1D4ED8', secondary: '#059669', accent: '#3B82F6' },
+    { colors: ['#B91C1C', '#F59E0B', '#0F172A'], primary: '#B91C1C', secondary: '#0F172A', accent: '#F59E0B' },
+    { colors: ['#047857', '#FBBF24', '#DC2626'], primary: '#047857', secondary: '#DC2626', accent: '#FBBF24' },
+    { colors: ['#1E3A8A', '#FFFFFF', '#DC2626'], primary: '#1E3A8A', secondary: '#DC2626', accent: '#3B82F6' },
   ];
   const idx =
     ((code.charCodeAt(0) || 65) + (code.charCodeAt(1) || 65)) % palettes.length;
   return palettes[idx];
+}
+
+function getRegionalImages(code: string): string[] {
+  if (EASTERN_EU_CODES.has(code)) {
+    return [APP_MEDIA.countryRomaniaDriving, APP_MEDIA.countryEuropeDriving, APP_MEDIA.courseSignsRoundabout, APP_MEDIA.bgStudentSuccess];
+  }
+  if (MENA_CODES.has(code)) {
+    return [APP_MEDIA.countryMenaDriving, APP_MEDIA.courseSignsRoundabout, APP_MEDIA.bgDrivingPractice, APP_MEDIA.bgStudentSuccess];
+  }
+  if (ASIA_CODES.has(code)) {
+    return [APP_MEDIA.countryAsiaDriving, APP_MEDIA.courseHighwaySafety, APP_MEDIA.bgDrivingPractice, APP_MEDIA.bgStudentSuccess];
+  }
+  if (AFRICAN_CODES.has(code)) {
+    return [APP_MEDIA.countryWestAfricaDriving, APP_MEDIA.bgInstructorBriefing, APP_MEDIA.bgDrivingPractice, APP_MEDIA.bgStudentSuccess];
+  }
+  if (code === 'BR' || code === 'MX' || code === 'AR' || code === 'CO' || code === 'ES' || code === 'PT') {
+    return [APP_MEDIA.countryLatamDriving, APP_MEDIA.courseSignsRoundabout, APP_MEDIA.bgDrivingPractice, APP_MEDIA.bgStudentSuccess];
+  }
+  if (AMERICAS_CODES.has(code)) {
+    return [APP_MEDIA.countryUsaDriving, APP_MEDIA.courseHighwaySafety, APP_MEDIA.bgDrivingPractice, APP_MEDIA.bgStudentSuccess];
+  }
+  if (code === 'GB' || code === 'IE') {
+    return [APP_MEDIA.countryUkDriving, APP_MEDIA.courseSignsRoundabout, APP_MEDIA.bgDrivingPractice, APP_MEDIA.bgStudentSuccess];
+  }
+  return [APP_MEDIA.countryEuropeDriving, APP_MEDIA.countryFranceDriving, APP_MEDIA.courseSignsRoundabout, APP_MEDIA.bgStudentSuccess];
 }
 
 export function getCountryTheme(country: CountryConfig): CountryTheme {
@@ -274,114 +393,108 @@ export function getCountryTheme(country: CountryConfig): CountryTheme {
     return { code, ...explicit };
   }
 
-  const africaColors = WEST_CENTRAL_AFRICA_COLORS[code];
-  if (africaColors || AFRICAN_CODES.has(code)) {
+  const africaMeta = WEST_CENTRAL_AFRICA_META[code];
+  if (africaMeta || AFRICAN_CODES.has(code)) {
+    const pal = africaMeta
+      ? { colors: africaMeta.colors, primary: africaMeta.primary, secondary: africaMeta.secondary, accent: africaMeta.accent }
+      : hashPalette(code);
     return {
       code,
-      flagColors: africaColors || hashPalette(code),
+      flagColors: pal.colors,
       flagLayout: 'vertical',
-      accentHex: '#059669',
-      badgeBgClass: 'bg-emerald-50 border-emerald-200',
-      badgeTextClass: 'text-emerald-900',
+      primaryHex: pal.primary,
+      primaryHoverHex: pal.primary,
+      secondaryHex: pal.secondary,
+      accentHex: pal.accent,
+      surfaceTintHex: '#ECFDF5',
       timeZone: code === 'MA' || code === 'DZ' ? 'Africa/Casablanca' : code === 'KE' ? 'Africa/Nairobi' : 'Africa/Lagos',
       cityLabel: country.nameFr,
-      authorityName: `Direction des Transports · ${country.nameFr}`,
+      authorityCode: africaMeta?.authCode || `DTR ${code}`,
+      authorityName: africaMeta?.authName || `Direction Nationale des Transports · ${country.nameFr}`,
+      governmentNameFr: `Gouvernement · ${country.nameFr}`,
+      governmentNameEn: `Government of ${country.nameEn}`,
+      governmentNameNative: africaMeta?.govNative || getCountryLocalizedName(code, country.defaultLang, country.nameEn),
       localPermitFr: `Permis National & International (${country.nameFr})`,
       localPermitEn: `National & International Permit (${country.nameEn})`,
-      simLabelFr: `Puce mobile ${country.dialCode} · Réseau ${code}`,
-      simLabelEn: `Mobile SIM ${country.dialCode} · ${code} Network`,
-      galleryImages: [
-        APP_MEDIA.countryWestAfricaDriving,
-        APP_MEDIA.bgDrivingPractice,
-        APP_MEDIA.bgInstructorBriefing,
-        APP_MEDIA.bgStudentSuccess,
-      ],
+      galleryImages: getRegionalImages(code),
       heroCaptionFr: `Formation adaptée ${country.nameFr} · Signalisation & Conduite`,
       heroCaptionEn: `${country.nameEn}-adapted curriculum & physical driving test`,
     };
   }
 
-  const euMeta = EXTRA_EUROPE_COLORS[code];
+  const euMeta = EXTRA_EUROPE_META[code];
   if (euMeta) {
     return {
       code,
       flagColors: euMeta.colors,
       flagLayout: euMeta.layout,
-      accentHex: '#1D4ED8',
-      badgeBgClass: 'bg-blue-50 border-blue-200',
-      badgeTextClass: 'text-blue-900',
+      primaryHex: euMeta.primary,
+      primaryHoverHex: euMeta.primary,
+      secondaryHex: euMeta.secondary,
+      accentHex: euMeta.accent,
+      surfaceTintHex: '#EFF6FF',
       timeZone: euMeta.tz,
       cityLabel: euMeta.city,
+      authorityCode: euMeta.authCode,
       authorityName: euMeta.auth,
-      localPermitFr: `Permis ${country.nameFr} · ${euMeta.auth}`,
-      localPermitEn: `${country.nameEn} License · ${euMeta.auth}`,
-      simLabelFr: `Puce mobile ${country.dialCode} · Réseau ${code}`,
-      simLabelEn: `Mobile SIM ${country.dialCode} · ${code} Network`,
-      galleryImages: [
-        APP_MEDIA.countryEuropeDriving,
-        APP_MEDIA.countryGermanyDriving,
-        APP_MEDIA.courseSignsRoundabout,
-        APP_MEDIA.bgStudentSuccess,
-      ],
-      heroCaptionFr: `Programme adapté ${country.nameFr} · Normes ${euMeta.auth}`,
-      heroCaptionEn: `${country.nameEn}-adapted program · ${euMeta.auth}`,
+      governmentNameFr: `Gouvernement · ${country.nameFr}`,
+      governmentNameEn: `Government of ${country.nameEn}`,
+      governmentNameNative: euMeta.govNative,
+      localPermitFr: `Permis ${country.nameFr} · ${euMeta.authCode}`,
+      localPermitEn: `${country.nameEn} License · ${euMeta.authCode}`,
+      galleryImages: getRegionalImages(code),
+      heroCaptionFr: `Programme adapté ${country.nameFr} · ${euMeta.authCode}`,
+      heroCaptionEn: `${country.nameEn}-adapted program · ${euMeta.authCode}`,
     };
   }
 
-  const intlMeta = AMERICAS_ASIA_TZ[code];
+  const intlMeta = AMERICAS_ASIA_META[code];
   if (intlMeta) {
     return {
       code,
       flagColors: intlMeta.colors,
       flagLayout: intlMeta.layout,
-      accentHex: '#1D4ED8',
-      badgeBgClass: 'bg-blue-50 border-blue-200',
-      badgeTextClass: 'text-blue-900',
+      primaryHex: intlMeta.primary,
+      primaryHoverHex: intlMeta.primary,
+      secondaryHex: intlMeta.secondary,
+      accentHex: intlMeta.accent,
+      surfaceTintHex: '#EFF6FF',
       timeZone: intlMeta.tz,
       cityLabel: intlMeta.city,
+      authorityCode: intlMeta.authCode,
       authorityName: intlMeta.auth,
-      localPermitFr: `Permis ${country.nameFr} · ${intlMeta.auth}`,
-      localPermitEn: `${country.nameEn} License · ${intlMeta.auth}`,
-      simLabelFr: `Puce mobile ${country.dialCode} · Réseau ${code}`,
-      simLabelEn: `Mobile SIM ${country.dialCode} · ${code} Network`,
-      galleryImages: AMERICAS_CODES.has(code)
-        ? [
-            APP_MEDIA.countryUsaDriving,
-            APP_MEDIA.courseHighwaySafety,
-            APP_MEDIA.bgDrivingPractice,
-            APP_MEDIA.bgStudentSuccess,
-          ]
-        : [
-            APP_MEDIA.countryEuropeDriving,
-            APP_MEDIA.courseSignsRoundabout,
-            APP_MEDIA.bgDrivingPractice,
-            APP_MEDIA.bgStudentSuccess,
-          ],
-      heroCaptionFr: `Programme adapté ${country.nameFr} · ${intlMeta.auth}`,
-      heroCaptionEn: `${country.nameEn}-adapted program · ${intlMeta.auth}`,
+      governmentNameFr: `Gouvernement · ${country.nameFr}`,
+      governmentNameEn: `Government of ${country.nameEn}`,
+      governmentNameNative: intlMeta.govNative,
+      localPermitFr: `Permis ${country.nameFr} · ${intlMeta.authCode}`,
+      localPermitEn: `${country.nameEn} License · ${intlMeta.authCode}`,
+      galleryImages: getRegionalImages(code),
+      heroCaptionFr: `Programme adapté ${country.nameFr} · ${intlMeta.authCode}`,
+      heroCaptionEn: `${country.nameEn}-adapted program · ${intlMeta.authCode}`,
     };
   }
 
+  const fallbackPal = hashPalette(code);
+  const nativeCountryName = getCountryLocalizedName(code, country.defaultLang, country.nameEn);
   return {
     code,
-    flagColors: hashPalette(code),
+    flagColors: fallbackPal.colors,
     flagLayout: 'horizontal',
-    accentHex: '#1D4ED8',
-    badgeBgClass: 'bg-blue-50 border-blue-200',
-    badgeTextClass: 'text-blue-900',
+    primaryHex: fallbackPal.primary,
+    primaryHoverHex: fallbackPal.primary,
+    secondaryHex: fallbackPal.secondary,
+    accentHex: fallbackPal.accent,
+    surfaceTintHex: '#F8FAFC',
     timeZone: AMERICAS_CODES.has(code) ? 'America/New_York' : 'Europe/Paris',
     cityLabel: country.nameFr,
-    authorityName: `Autorité Routière · ${country.nameFr}`,
+    authorityCode: `DOT ${code}`,
+    authorityName: `National Road Transport Authority · ${nativeCountryName}`,
+    governmentNameFr: `Gouvernement · ${country.nameFr}`,
+    governmentNameEn: `Government of ${country.nameEn}`,
+    governmentNameNative: nativeCountryName,
     localPermitFr: `Permis National & International (${country.nameFr})`,
     localPermitEn: `National & International Permit (${country.nameEn})`,
-    simLabelFr: `Puce mobile ${country.dialCode} · Réseau ${code}`,
-    simLabelEn: `Mobile SIM ${country.dialCode} · ${code} Network`,
-    galleryImages: [
-      AMERICAS_CODES.has(code) ? APP_MEDIA.countryUsaDriving : APP_MEDIA.countryEuropeDriving,
-      APP_MEDIA.bgDrivingPractice,
-      APP_MEDIA.courseSignsRoundabout,
-      APP_MEDIA.bgStudentSuccess,
-    ],
+    galleryImages: getRegionalImages(code),
     heroCaptionFr: `Programme adapté ${country.nameFr} · Formation complète`,
     heroCaptionEn: `${country.nameEn}-adapted training curriculum`,
   };
@@ -391,7 +504,7 @@ export function formatCountryLocalTime(
   timeZone: string,
   lang: string
 ): { timeText: string; tzShort: string } {
-  const locale = lang === 'en' ? 'en-US' : 'fr-FR';
+  const locale = lang === 'en' ? 'en-US' : lang || 'fr-FR';
   const now = new Date();
   try {
     const timeText = new Intl.DateTimeFormat(locale, {

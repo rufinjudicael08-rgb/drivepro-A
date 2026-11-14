@@ -16,6 +16,7 @@ import {
   Download,
   ExternalLink,
   Eye,
+  FileText,
   Globe,
   Link2,
   Lock,
@@ -994,9 +995,9 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
                         </div>
                       </td>
                       <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-900">
-                        {formatLocalCurrency(reg.convertedAmount, c, lang)}
-                        <div className="text-[11px] text-slate-400">
-                          {reg.baseFeeEur} €
+                        <div className="font-bold text-slate-900">{reg.baseFeeEur} €</div>
+                        <div className="text-xs text-slate-600">
+                          {formatLocalCurrency(reg.convertedAmount, c, lang)}
                         </div>
                       </td>
                       <td className="py-3 px-4 text-xs text-slate-600">
@@ -1377,33 +1378,79 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
             </div>
 
             {previewReceiptPayment.receiptThumbnail ? (
-              <img
-                src={previewReceiptPayment.receiptThumbnail}
-                alt={`Justificatif paiement ${previewReceiptPayment.candidateName}`}
-                referrerPolicy="no-referrer"
-                className="w-full max-h-80 object-contain rounded-lg border border-slate-200 bg-slate-50"
-              />
+              previewReceiptPayment.receiptThumbnail.startsWith(
+                'data:application/pdf'
+              ) ? (
+                <div className="space-y-3">
+                  <iframe
+                    src={previewReceiptPayment.receiptThumbnail}
+                    className="w-full h-72 rounded-lg border border-slate-200 bg-slate-50"
+                    title="Reçu PDF"
+                  />
+                  <div className="flex items-center justify-between gap-3 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-700 truncate">
+                      <FileText className="w-4 h-4 text-blue-700 shrink-0" />
+                      <span className="truncate">
+                        {previewReceiptPayment.receiptFileName || 'recu_paiement.pdf'}
+                      </span>
+                    </span>
+                    <a
+                      href={previewReceiptPayment.receiptThumbnail}
+                      download={
+                        previewReceiptPayment.receiptFileName || 'recu_paiement.pdf'
+                      }
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold rounded-md whitespace-nowrap shrink-0"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>{isEn ? 'Download PDF' : 'Télécharger PDF'}</span>
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <img
+                    src={previewReceiptPayment.receiptThumbnail}
+                    alt={`Justificatif paiement ${previewReceiptPayment.candidateName}`}
+                    referrerPolicy="no-referrer"
+                    className="w-full max-h-80 object-contain rounded-lg border border-slate-200 bg-slate-50"
+                  />
+                  <div className="flex items-center justify-between gap-3 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+                    <span className="text-xs font-medium text-slate-700 truncate">
+                      {previewReceiptPayment.receiptFileName || 'recu_paiement.jpg'}
+                    </span>
+                    <a
+                      href={previewReceiptPayment.receiptThumbnail}
+                      download={
+                        previewReceiptPayment.receiptFileName || 'recu_paiement.jpg'
+                      }
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold rounded-md whitespace-nowrap shrink-0"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>{isEn ? 'Download' : 'Télécharger'}</span>
+                    </a>
+                  </div>
+                </div>
+              )
             ) : (
               <div className="p-5 text-center text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg font-medium space-y-1">
                 <Receipt className="w-5 h-5 mx-auto text-emerald-700" />
                 <div>
                   {isEn
-                    ? 'Submitted with real transaction ID — triggered upon receipt of funds.'
-                    : 'Preuve enregistrée avec ID réel — déclenchement actif dès réception des fonds.'}
+                    ? 'Submitted with transaction ID — awaiting receipt attachment.'
+                    : 'Preuve enregistrée avec référence de transaction.'}
                 </div>
               </div>
             )}
 
-            <div className="text-xs text-slate-600 bg-slate-50 rounded-lg p-3 space-y-1">
+            <div className="text-sm text-slate-700 bg-slate-50 rounded-lg p-3 space-y-1">
               <div>
-                <span className="font-semibold text-slate-800">
+                <span className="font-semibold text-slate-900">
                   {isEn ? 'Candidate: ' : 'Candidat : '}
                 </span>
-                {previewReceiptPayment.candidateName} ({previewReceiptPayment.amountPaid}{' '}
-                {previewReceiptPayment.currency})
+                {previewReceiptPayment.candidateName} ({previewReceiptPayment.baseAmountEur} €)
               </div>
               <div>
-                <span className="font-semibold text-slate-800">
+                <span className="font-semibold text-slate-900">
                   {isEn ? 'Sender: ' : 'Expéditeur : '}
                 </span>
                 {previewReceiptPayment.senderName} · {previewReceiptPayment.senderPhone}

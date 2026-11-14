@@ -1,22 +1,65 @@
 import React from 'react';
-import { Language } from '../types';
+import { getCountryLocalizedName } from '../data/countries';
+import { getCountryTheme } from '../data/countryThemes';
+import { getTranslations } from '../data/i18n';
+import { CountryConfig, Language } from '../types';
+import {
+  CountryFlagSvg,
+  GovernmentCrestSvg,
+  InstituteCrestSvg,
+} from './CountryVisuals';
 
 interface PartnerLogosProps {
+  country: CountryConfig;
   lang: Language;
   dark?: boolean;
 }
 
 export const PartnerLogos: React.FC<PartnerLogosProps> = ({
+  country,
   lang,
   dark = true,
 }) => {
-  const isEn = lang === 'en';
+  const t = getTranslations(lang);
+  const theme = getCountryTheme(country);
+  const localizedCountryName = getCountryLocalizedName(
+    country.code,
+    lang,
+    country.nameEn
+  );
+  const governmentTitle =
+    lang === 'fr'
+      ? theme.governmentNameFr
+      : lang === 'en'
+      ? theme.governmentNameEn
+      : theme.governmentNameNative || theme.governmentNameEn;
 
   const partners = [
     {
+      id: 'country_gov',
+      title: governmentTitle,
+      subtitle: t.governmentLabel,
+      emblem: <GovernmentCrestSvg theme={theme} className="w-10 h-10" />,
+      highlight: true,
+    },
+    {
+      id: 'country_flag',
+      title: localizedCountryName,
+      subtitle: t.nationalFlagLabel,
+      emblem: <CountryFlagSvg theme={theme} className="w-11 h-7" />,
+      highlight: true,
+    },
+    {
+      id: 'country_institute',
+      title: theme.authorityName,
+      subtitle: t.nationalInstituteLabel,
+      emblem: <InstituteCrestSvg theme={theme} className="w-10 h-10" />,
+      highlight: true,
+    },
+    {
       id: 'eu',
-      titleFr: 'Union Européenne',
-      titleEn: 'European Union',
+      title: t.euPartner,
+      subtitle: 'UE / EU',
       emblem: (
         <svg viewBox="0 0 48 32" className="w-10 h-7 shrink-0 rounded border border-white/15" aria-hidden="true">
           <rect width="48" height="32" rx="3" fill="#003399" />
@@ -28,42 +71,12 @@ export const PartnerLogos: React.FC<PartnerLogosProps> = ({
           })}
         </svg>
       ),
-    },
-    {
-      id: 'fr',
-      titleFr: 'État Français',
-      titleEn: 'French State',
-      emblem: (
-        <svg viewBox="0 0 48 32" className="w-10 h-7 shrink-0 rounded border border-white/15" aria-hidden="true">
-          <rect width="16" height="32" fill="#000091" />
-          <rect x="16" width="16" height="32" fill="#FFFFFF" />
-          <rect x="32" width="16" height="32" fill="#E1000F" />
-        </svg>
-      ),
-    },
-    {
-      id: 'us',
-      titleFr: 'État Américain (USA)',
-      titleEn: 'United States (USA)',
-      emblem: (
-        <svg viewBox="0 0 48 32" className="w-10 h-7 shrink-0 rounded border border-white/15" aria-hidden="true">
-          <rect width="48" height="32" fill="#FFFFFF" />
-          {[0, 5, 10, 15, 20, 25, 30].map((y, idx) => (
-            <rect key={idx} y={y} width="48" height="2.6" fill="#B22234" />
-          ))}
-          <rect width="21" height="17.5" fill="#3C3B6E" />
-          {[4.5, 9, 13.5].map((cy) =>
-            [4.5, 9, 13.5, 17.5].map((cx) => (
-              <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="0.9" fill="#FFFFFF" />
-            ))
-          )}
-        </svg>
-      ),
+      highlight: false,
     },
     {
       id: 'idp',
-      titleFr: 'Permis International & National',
-      titleEn: 'International & National Permit',
+      title: t.idpPartner,
+      subtitle: 'IDP',
       emblem: (
         <svg viewBox="0 0 48 32" className="w-10 h-7 shrink-0 rounded border border-white/15" aria-hidden="true">
           <rect width="48" height="32" rx="3" fill="#1E3A8A" />
@@ -72,11 +85,12 @@ export const PartnerLogos: React.FC<PartnerLogosProps> = ({
           <line x1="14.5" y1="16" x2="33.5" y2="16" stroke="#FFFFFF" strokeWidth="1.1" />
         </svg>
       ),
+      highlight: false,
     },
     {
       id: 'un',
-      titleFr: 'Convention de Vienne (Mobilité)',
-      titleEn: 'Vienna Road Convention',
+      title: t.viennaPartner,
+      subtitle: '1968',
       emblem: (
         <svg viewBox="0 0 48 32" className="w-10 h-7 shrink-0 rounded border border-white/15" aria-hidden="true">
           <rect width="48" height="32" rx="3" fill="#0EA5E9" />
@@ -84,11 +98,12 @@ export const PartnerLogos: React.FC<PartnerLogosProps> = ({
           <path d="M18 16h12M24 10v12" stroke="#FFFFFF" strokeWidth="1.4" />
         </svg>
       ),
+      highlight: false,
     },
     {
       id: 'irf',
-      titleFr: 'Fédération Internationale de la Route',
-      titleEn: 'International Road Federation',
+      title: t.irfPartner,
+      subtitle: 'IRF',
       emblem: (
         <svg viewBox="0 0 48 32" className="w-10 h-7 shrink-0 rounded border border-white/15" aria-hidden="true">
           <rect width="48" height="32" rx="3" fill="#0F172A" />
@@ -96,11 +111,12 @@ export const PartnerLogos: React.FC<PartnerLogosProps> = ({
           <line x1="24" y1="9" x2="24" y2="24" stroke="#FFFFFF" strokeWidth="1.5" strokeDasharray="3 3" />
         </svg>
       ),
+      highlight: false,
     },
     {
       id: 'rsi',
-      titleFr: 'Sécurité Routière Internationale',
-      titleEn: 'Global Road Safety Council',
+      title: t.rsiPartner,
+      subtitle: 'RSI',
       emblem: (
         <svg viewBox="0 0 48 32" className="w-10 h-7 shrink-0 rounded border border-white/15" aria-hidden="true">
           <rect width="48" height="32" rx="3" fill="#1E293B" />
@@ -108,37 +124,65 @@ export const PartnerLogos: React.FC<PartnerLogosProps> = ({
           <circle cx="24" cy="19" r="2.2" fill="#34D399" />
         </svg>
       ),
+      highlight: false,
     },
   ];
 
-  // Duplicate list once so marquee scrolls continuously with zero seam
+  // Static grid of per-country official institutions + seamless marquee
+  const countryHighlights = partners.slice(0, 3);
   const scrollingItems = [...partners, ...partners];
 
   return (
-    <div className="space-y-3 overflow-hidden">
+    <div className="space-y-4 overflow-hidden">
       <div
-        className={`text-xs font-semibold uppercase tracking-wider ${
-          dark ? 'text-slate-300' : 'text-slate-700'
+        className={`text-sm font-bold uppercase tracking-wider ${
+          dark ? 'text-white' : 'text-slate-900'
         }`}
       >
-        {isEn ? 'Official Partners' : 'Partenaire Officiel'}
+        {t.officialPartnersTitle}
       </div>
 
+      {/* Prominent Country Official Institutions Trio: Government, Flag, National Licensing Institute */}
+      <div className="grid sm:grid-cols-3 gap-3">
+        {countryHighlights.map((item) => (
+          <div
+            key={item.id}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${
+              dark
+                ? 'bg-slate-800/90 border-slate-700 text-white'
+                : 'bg-slate-50 border-slate-200 text-slate-900'
+            }`}
+            style={{ borderLeftWidth: '4px', borderLeftColor: theme.accentHex }}
+          >
+            {item.emblem}
+            <div className="min-w-0">
+              <div
+                className={`text-xs font-mono font-semibold ${
+                  dark ? 'text-slate-300' : 'text-slate-600'
+                }`}
+              >
+                {item.subtitle}
+              </div>
+              <div className="text-sm font-bold truncate">{item.title}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Full Scrolling International & Institutional Strip */}
       <div className="relative overflow-hidden py-1">
         <div className="flex items-center gap-3 w-max animate-marquee">
           {scrollingItems.map((p, idx) => (
             <div
               key={`${p.id}-${idx}`}
-              className={`inline-flex items-center gap-2.5 px-3.5 py-2 rounded-lg border shrink-0 whitespace-nowrap ${
+              className={`inline-flex items-center gap-3 px-4 py-2.5 rounded-lg border shrink-0 whitespace-nowrap ${
                 dark
                   ? 'bg-slate-800/80 border-slate-700 text-slate-100'
                   : 'bg-slate-50 border-slate-200 text-slate-900'
               }`}
             >
               {p.emblem}
-              <span className="text-xs font-semibold">
-                {isEn ? p.titleEn : p.titleFr}
-              </span>
+              <span className="text-sm font-semibold">{p.title}</span>
             </div>
           ))}
         </div>
@@ -194,9 +238,9 @@ export const SocialAccountsStrip: React.FC<{ dark?: boolean }> = ({
       {socials.map((s) => (
         <div
           key={s.name}
-          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium shrink-0 ${
+          className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border text-sm font-medium shrink-0 ${
             dark
-              ? 'bg-slate-800/70 border-slate-700 text-slate-200'
+              ? 'bg-slate-800/75 border-slate-700 text-slate-200'
               : 'bg-white border-slate-200 text-slate-800'
           }`}
         >

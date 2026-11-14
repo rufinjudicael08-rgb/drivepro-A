@@ -44,7 +44,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onClose,
   onAuthSuccess,
 }) => {
-  const isEn = lang === 'en';
+  const isFr = lang === 'fr';
+  const isRo = lang === 'ro';
+  const pick = (fr: string, ro: string, en: string) =>
+    isFr ? fr : isRo ? ro : en;
+
   const [mode, setMode] = useState<'register' | 'login' | 'reset'>(initialMode);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -80,33 +84,41 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     if (fullName.trim().length < 2) {
       setErrorMsg(
-        isEn
-          ? 'Please enter your full name (at least 2 characters).'
-          : 'Veuillez saisir votre nom et prénom complets.'
+        pick(
+          'Veuillez saisir votre nom et prénom complets.',
+          'Introdu numele și prenumele complet.',
+          'Please enter your full name (at least 2 characters).'
+        )
       );
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       setErrorMsg(
-        isEn
-          ? 'Please enter a valid email address.'
-          : 'Veuillez saisir une adresse e-mail valide.'
+        pick(
+          'Veuillez saisir une adresse e-mail valide.',
+          'Introdu o adresă de e-mail validă.',
+          'Please enter a valid email address.'
+        )
       );
       return;
     }
     if (phone.trim().length < 5) {
       setErrorMsg(
-        isEn
-          ? 'Please enter a valid phone number.'
-          : 'Veuillez saisir votre numéro de téléphone.'
+        pick(
+          'Veuillez saisir votre numéro de téléphone.',
+          'Introdu numărul tău de telefon.',
+          'Please enter a valid phone number.'
+        )
       );
       return;
     }
     if (password.length < 6) {
       setErrorMsg(
-        isEn
-          ? 'Password must be at least 6 characters.'
-          : 'Le mot de passe doit contenir au moins 6 caractères.'
+        pick(
+          'Le mot de passe doit contenir au moins 6 caractères.',
+          'Parola trebuie să conțină cel puțin 6 caractere.',
+          'Password must be at least 6 characters.'
+        )
       );
       return;
     }
@@ -157,9 +169,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     if (!email.trim() || !password) {
       setErrorMsg(
-        isEn
-          ? 'Please enter both your email and password.'
-          : 'Veuillez saisir votre adresse e-mail et votre mot de passe.'
+        pick(
+          'Veuillez saisir votre adresse e-mail et votre mot de passe.',
+          'Introdu adresa de e-mail și parola.',
+          'Please enter both your email and password.'
+        )
       );
       return;
     }
@@ -185,21 +199,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       setErrorMsg(
-        isEn
-          ? 'Enter your email address to receive a password reset link.'
-          : 'Saisissez votre adresse e-mail pour recevoir un lien de réinitialisation.'
+        pick(
+          'Saisissez votre adresse e-mail pour recevoir un lien de réinitialisation.',
+          'Introdu adresa de e-mail pentru a primi linkul de resetare.',
+          'Enter your email address to receive a password reset link.'
+        )
       );
       return;
     }
 
     setSubmitting(true);
     try {
-      auth.languageCode = lang === 'en' ? 'en' : 'fr';
+      auth.languageCode = isFr ? 'fr' : isRo ? 'ro' : 'en';
       await sendPasswordResetEmail(auth, email.trim());
       setInfoMsg(
-        isEn
-          ? 'Reset link sent under DrivePro Academy! Check your inbox and Spam folder.'
-          : 'E-mail de réinitialisation envoyé par DrivePro Academy ! Vérifiez votre boîte de réception (et vos Spams).'
+        pick(
+          'E-mail de réinitialisation envoyé par DrivePro Academy ! Vérifiez votre boîte de réception (et vos Spams).',
+          'Link de resetare trimis de DrivePro Academy! Verifică inbox-ul și folderul Spam.',
+          'Reset link sent under DrivePro Academy! Check your inbox and Spam folder.'
+        )
       );
     } catch (err) {
       setErrorMsg(translateAuthErrorFr(err));
@@ -215,24 +233,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       aria-modal="true"
     >
       <div className="bg-white rounded-2xl border border-slate-200 max-w-md w-full overflow-hidden shadow-2xl">
-        {/* Header */}
         <div className="bg-slate-900 text-white px-6 py-5 flex items-start justify-between gap-4">
           <div className="space-y-1">
             <div className="text-xs font-mono text-blue-300 font-semibold">
-              DrivePro Academy · {isEn ? 'Candidate Account' : 'Compte Personnel'}
+              DrivePro Academy · {pick('Compte Personnel', 'Cont Personal', 'Candidate Account')}
             </div>
             <h2 className="font-display text-xl font-bold">
               {mode === 'register'
-                ? isEn
-                  ? 'Create an Account'
-                  : 'Créer un compte'
+                ? pick('Créer un compte', 'Creează un cont', 'Create an Account')
                 : mode === 'login'
-                ? isEn
-                  ? 'Sign In'
-                  : 'Se connecter'
-                : isEn
-                ? 'Reset Password'
-                : 'Mot de passe oublié'}
+                ? pick('Se connecter', 'Autentificare', 'Sign In')
+                : pick('Mot de passe oublié', 'Resetare parolă', 'Reset Password')}
             </h2>
           </div>
           <button
@@ -245,9 +256,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </button>
         </div>
 
-        {/* Mode Switcher */}
         {mode !== 'reset' && (
-          <div className="grid grid-cols-2 border-b border-slate-200 bg-slate-50 text-xs font-semibold">
+          <div className="grid grid-cols-2 border-b border-slate-200 bg-slate-50 text-sm font-semibold">
             <button
               type="button"
               onClick={() => {
@@ -260,7 +270,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              {isEn ? 'Create Account' : 'Créer un compte'}
+              {pick('Créer un compte', 'Creează cont', 'Create Account')}
             </button>
             <button
               type="button"
@@ -274,14 +284,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              {isEn ? 'Sign In' : 'J’ai déjà un compte'}
+              {pick('J’ai déjà un compte', 'Am deja cont', 'Sign In')}
             </button>
           </div>
         )}
 
         <div className="p-6 space-y-4">
           {errorMsg && (
-            <div className="bg-red-50 border border-red-200 text-red-900 text-xs rounded-xl p-3.5 space-y-2">
+            <div className="bg-red-50 border border-red-200 text-red-900 text-sm rounded-xl p-3.5 space-y-2">
               <div className="flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
                 <span className="leading-relaxed">{errorMsg}</span>
@@ -301,7 +311,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           )}
 
           {infoMsg && (
-            <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs rounded-xl p-3.5 flex items-start gap-2">
+            <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 text-sm rounded-xl p-3.5 flex items-start gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
               <span>{infoMsg}</span>
             </div>
@@ -310,8 +320,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           {mode === 'register' && (
             <form onSubmit={handleRegister} className="space-y-3.5">
               <div className="space-y-1">
-                <label className="block text-xs font-semibold text-slate-700">
-                  {isEn ? 'Full Name *' : 'Nom complet *'}
+                <label className="block text-sm font-semibold text-slate-800">
+                  {pick('Nom complet *', 'Nume complet *', 'Full Name *')}
                 </label>
                 <div className="relative">
                   <UserIcon className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -320,15 +330,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     required
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    placeholder={isEn ? 'e.g. Jean Dupont' : 'Ex : Jean Dupont'}
-                    className="w-full pl-9 pr-3 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
+                    placeholder={pick('Ex : Jean Dupont', 'Ex: Andrei Popescu', 'e.g. John Doe')}
+                    className="w-full pl-9 pr-3 py-2.5 text-sm text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="block text-xs font-semibold text-slate-700">
-                  {isEn ? 'Email Address *' : 'Adresse e-mail *'}
+                <label className="block text-sm font-semibold text-slate-800">
+                  {pick('Adresse e-mail *', 'Adresă de e-mail *', 'Email Address *')}
                 </label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -338,14 +348,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="exemple@gmail.com"
-                    className="w-full pl-9 pr-3 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
+                    className="w-full pl-9 pr-3 py-2.5 text-sm text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="block text-xs font-semibold text-slate-700">
-                  {isEn ? 'Phone Number *' : 'Numéro de téléphone *'}
+                <label className="block text-sm font-semibold text-slate-800">
+                  {pick('Numéro de téléphone *', 'Număr de telefon *', 'Phone Number *')}
                 </label>
                 <div className="relative">
                   <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -354,15 +364,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     required
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+229 01 00 00 00"
-                    className="w-full pl-9 pr-3 py-2.5 text-sm font-mono border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
+                    placeholder={`${defaultDialCode} ...`}
+                    className="w-full pl-9 pr-3 py-2.5 text-sm font-mono text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="block text-xs font-semibold text-slate-700">
-                  {isEn ? 'Password (min. 6 chars) *' : 'Mot de passe (6 caractères min.) *'}
+                <label className="block text-sm font-semibold text-slate-800">
+                  {pick('Mot de passe (6 caractères min.) *', 'Parolă (min. 6 caractere) *', 'Password (min. 6 chars) *')}
                 </label>
                 <div className="relative">
                   <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -373,7 +383,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full pl-9 pr-3 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
+                    className="w-full pl-9 pr-3 py-2.5 text-sm text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
                   />
                 </div>
               </div>
@@ -386,12 +396,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <UserPlus className="w-4 h-4" />
                 <span>
                   {submitting
-                    ? isEn
-                      ? 'Creating account...'
-                      : 'Création du compte...'
-                    : isEn
-                    ? 'Create My Account'
-                    : 'Créer mon compte'}
+                    ? pick('Création du compte...', 'Se creează contul...', 'Creating account...')
+                    : pick('Créer mon compte', 'Creează contul meu', 'Create My Account')}
                 </span>
               </button>
             </form>
@@ -400,8 +406,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           {mode === 'login' && (
             <form onSubmit={handleLogin} className="space-y-3.5">
               <div className="space-y-1">
-                <label className="block text-xs font-semibold text-slate-700">
-                  {isEn ? 'Email Address *' : 'Adresse e-mail *'}
+                <label className="block text-sm font-semibold text-slate-800">
+                  {pick('Adresse e-mail *', 'Adresă de e-mail *', 'Email Address *')}
                 </label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -411,15 +417,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="exemple@gmail.com"
-                    className="w-full pl-9 pr-3 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
+                    className="w-full pl-9 pr-3 py-2.5 text-sm text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <label className="block text-xs font-semibold text-slate-700">
-                    {isEn ? 'Password *' : 'Mot de passe *'}
+                  <label className="block text-sm font-semibold text-slate-800">
+                    {pick('Mot de passe *', 'Parolă *', 'Password *')}
                   </label>
                   <button
                     type="button"
@@ -427,9 +433,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       setMode('reset');
                       setErrorMsg(null);
                     }}
-                    className="text-xs text-blue-700 hover:underline cursor-pointer"
+                    className="text-xs text-blue-700 font-semibold hover:underline cursor-pointer"
                   >
-                    {isEn ? 'Forgot password?' : 'Mot de passe oublié ?'}
+                    {pick('Mot de passe oublié ?', 'Ai uitat parola?', 'Forgot password?')}
                   </button>
                 </div>
                 <div className="relative">
@@ -440,7 +446,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full pl-9 pr-3 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
+                    className="w-full pl-9 pr-3 py-2.5 text-sm text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
                   />
                 </div>
               </div>
@@ -451,12 +457,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 className="w-full py-3 bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white text-sm font-bold rounded-lg transition-colors cursor-pointer"
               >
                 {submitting
-                  ? isEn
-                    ? 'Signing in...'
-                    : 'Connexion...'
-                  : isEn
-                  ? 'Sign In'
-                  : 'Se connecter'}
+                  ? pick('Connexion...', 'Autentificare...', 'Signing in...')
+                  : pick('Se connecter', 'Intră în cont', 'Sign In')}
               </button>
             </form>
           )}
@@ -464,8 +466,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           {mode === 'reset' && (
             <form onSubmit={handleResetPassword} className="space-y-4">
               <div className="space-y-1">
-                <label className="block text-xs font-semibold text-slate-700">
-                  {isEn ? 'Your Account Email *' : 'Votre adresse e-mail *'}
+                <label className="block text-sm font-semibold text-slate-800">
+                  {pick('Votre adresse e-mail *', 'Adresa ta de e-mail *', 'Your Account Email *')}
                 </label>
                 <input
                   type="email"
@@ -473,12 +475,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="exemple@gmail.com"
-                  className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
+                  className="w-full px-3.5 py-2.5 text-sm text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
                 />
-                <p className="text-[11px] text-slate-500 pt-1">
-                  {isEn
-                    ? 'The password reset link is sent automatically on behalf of DrivePro Academy.'
-                    : 'Le lien de réinitialisation est envoyé au nom de « DrivePro Academy ».'}
+                <p className="text-xs text-slate-600 pt-1">
+                  {pick(
+                    'Le lien de réinitialisation est envoyé au nom de « DrivePro Academy ».',
+                    'Linkul de resetare este trimis de către DrivePro Academy.',
+                    'The password reset link is sent automatically on behalf of DrivePro Academy.'
+                  )}
                 </p>
               </div>
 
@@ -486,16 +490,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setMode('login')}
-                  className="text-xs font-semibold text-slate-600 hover:text-slate-900 cursor-pointer"
+                  className="text-sm font-semibold text-slate-700 hover:text-slate-900 cursor-pointer"
                 >
-                  ← {isEn ? 'Back to Sign In' : 'Retour connexion'}
+                  ← {pick('Retour connexion', 'Înapoi la autentificare', 'Back to Sign In')}
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2.5 bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white text-xs font-bold rounded-lg cursor-pointer"
+                  className="px-5 py-2.5 bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white text-sm font-bold rounded-lg cursor-pointer"
                 >
-                  {isEn ? 'Send Reset Link' : 'Envoyer le lien'}
+                  {pick('Envoyer le lien', 'Trimite linkul', 'Send Reset Link')}
                 </button>
               </div>
             </form>

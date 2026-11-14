@@ -5,9 +5,14 @@ import bgInstructorBriefing from './images/bg_instructor_briefing_1794576016795.
 import bgNightDashboard from './images/bg_night_dashboard_1794577768584.jpg';
 import bgStudentSuccess from './images/bg_student_success_1794577767390.jpg';
 import bgTheoryStudents from './images/bg_theory_students_1794576015291.jpg';
+import countryAsiaDriving from './images/country_asia_driving_1794669322224.jpg';
 import countryEuropeDriving from './images/country_europe_driving_1794667369397.jpg';
 import countryFranceDriving from './images/country_france_driving_1794667367690.jpg';
 import countryGermanyDriving from './images/country_germany_driving_1794667368175.jpg';
+import countryLatamDriving from './images/country_latam_driving_1794669322733.jpg';
+import countryMenaDriving from './images/country_mena_driving_1794669322413.jpg';
+import countryRomaniaDriving from './images/country_romania_driving_1794669321473.jpg';
+import countryUkDriving from './images/country_uk_driving_1794669321634.jpg';
 import countryUsaDriving from './images/country_usa_driving_1794667368958.jpg';
 import countryWestAfricaDriving from './images/country_westafrica_driving_1794667368576.jpg';
 import courseHighwaySafety from './images/course_highway_safety_1794576016759.jpg';
@@ -24,9 +29,14 @@ export const APP_MEDIA = {
   bgNightDashboard,
   bgStudentSuccess,
   bgTheoryStudents,
+  countryAsiaDriving,
   countryEuropeDriving,
   countryFranceDriving,
   countryGermanyDriving,
+  countryLatamDriving,
+  countryMenaDriving,
+  countryRomaniaDriving,
+  countryUkDriving,
   countryUsaDriving,
   countryWestAfricaDriving,
   courseHighwaySafety,
@@ -38,9 +48,9 @@ export const APP_MEDIA = {
 
 export const HERO_SHOWCASE_GALLERY = [
   countryFranceDriving,
+  countryRomaniaDriving,
   countryGermanyDriving,
   countryWestAfricaDriving,
   countryUsaDriving,
-  countryEuropeDriving,
-  bgDrivingPractice,
+  countryUkDriving,
 ];

@@ -22,8 +22,8 @@ import {
 import {
   CATEGORY_FEES_EUR,
   convertEurFee,
-  formatLocalCurrency,
   getCategoryFeeEur,
+  getCountryLocalizedName,
   TAPTAP_SEND_CHECKOUT,
 } from '../data/countries';
 import { getCountryTheme } from '../data/countryThemes';
@@ -39,6 +39,7 @@ import {
   RegistrationRecord,
   UserAccountRecord,
 } from '../types';
+import { InstituteCrestSvg } from './CountryVisuals';
 import { InvoiceReceiptModal } from './InvoiceReceiptModal';
 
 interface RegistrationFlowProps {
@@ -89,7 +90,7 @@ async function compressUploadImage(file: File): Promise<string> {
     reader.onload = () => {
       const img = new Image();
       img.onload = () => {
-        const maxWidth = 440;
+        const maxWidth = 520;
         const scale = Math.min(1, maxWidth / Math.max(img.width, 1));
         const canvas = document.createElement('canvas');
         canvas.width = Math.round(img.width * scale);
@@ -100,7 +101,7 @@ async function compressUploadImage(file: File): Promise<string> {
           return;
         }
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.62);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.65);
         resolve(dataUrl.length <= 85000 ? dataUrl : '');
       };
       img.onerror = () => resolve('');
@@ -109,6 +110,44 @@ async function compressUploadImage(file: File): Promise<string> {
     reader.onerror = () => resolve('');
     reader.readAsDataURL(file);
   });
+}
+
+async function encodePaymentProofFile(
+  file: File,
+  tooLargeMsg: string,
+  invalidFormatMsg: string
+): Promise<{ dataUrl: string; error?: string }> {
+  const isPdf =
+    file.type === 'application/pdf' ||
+    file.name.toLowerCase().endsWith('.pdf');
+  if (isPdf) {
+    if (file.size > 420 * 1024) {
+      return { dataUrl: '', error: tooLargeMsg };
+    }
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = String(reader.result || '');
+        if (!result.startsWith('data:application/pdf') || result.length > 580000) {
+          resolve({ dataUrl: '', error: tooLargeMsg });
+          return;
+        }
+        resolve({ dataUrl: result });
+      };
+      reader.onerror = () => resolve({ dataUrl: '', error: invalidFormatMsg });
+      reader.readAsDataURL(file);
+    });
+  }
+
+  if (file.type.startsWith('image/')) {
+    const dataUrl = await compressUploadImage(file);
+    if (!dataUrl) {
+      return { dataUrl: '', error: tooLargeMsg };
+    }
+    return { dataUrl };
+  }
+
+  return { dataUrl: '', error: invalidFormatMsg };
 }
 
 export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
@@ -130,13 +169,18 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
   onStepChange,
 }) => {
   const t = getTranslations(lang);
-  const isEn = lang === 'en';
+  const pick = (fr: string, ro: string, en: string) =>
+    lang === 'fr' ? fr : lang === 'ro' ? ro : en;
   const countryTheme = getCountryTheme(country);
+  const localizedCountryName = getCountryLocalizedName(
+    country.code,
+    lang,
+    country.nameFr
+  );
 
   const activeCategory: LicenseCategory =
     registration?.licenseCategory || category;
   const baseFeeEur = getCategoryFeeEur(activeCategory);
-  const xofEquivalent = Math.round(baseFeeEur * 655.957);
 
   const isUnlocked =
     registration !== null &&
@@ -192,12 +236,14 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
   );
   const [acceptedTerms, setAcceptedTerms] = useState(false);
 
-  // Step 3 Real Payment Proof State (awaiting actual funds receipt & amount trigger)
+  // Step 3 Real Payment & PDF/Image Receipt State
   const [senderName, setSenderName] = useState(
     registration?.fullName || user?.displayName || ''
   );
   const [senderPhone, setSenderPhone] = useState(registration?.phone || '');
   const [txIdInput, setTxIdInput] = useState('');
+  const [receiptFileName, setReceiptFileName] = useState('');
+  const [receiptThumbnail, setReceiptThumbnail] = useState('');
   const [linkOpened, setLinkOpened] = useState(false);
   const [transferConfirmed, setTransferConfirmed] = useState(false);
   const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
@@ -207,7 +253,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Pre-fill dossier details from existing user profile or previous registration (for seamless Permis A -> B re-enrollment)
+  // Pre-fill dossier details from existing user profile or previous registration
   useEffect(() => {
     const latestPrev = registration || allMyRegistrations[0];
     const sourceName =
@@ -282,6 +328,35 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
     setIdCardThumbnail(thumb);
   };
 
+  const handleReceiptFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setFormError(null);
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const { dataUrl, error } = await encodePaymentProofFile(
+      file,
+      pick(
+        'Le fichier PDF dépasse 420 Ko. Compressez-le ou joignez une capture d’écran (JPG/PNG).',
+        'Fișierul PDF depășește 420 KB. Comprimați-l sau atașați o captură de ecran (JPG/PNG).',
+        'PDF exceeds 420 KB. Please compress it or upload an image screenshot (JPG/PNG).'
+      ),
+      pick(
+        'Format non pris en charge. Veuillez joindre un fichier PDF, JPG ou PNG.',
+        'Format neacceptat. Vă rugăm să atașați un fișier PDF, JPG sau PNG.',
+        'Unsupported file format. Please upload a PDF, JPG, or PNG file.'
+      )
+    );
+    if (error || !dataUrl) {
+      setReceiptFileName('');
+      setReceiptThumbnail('');
+      setFormError(error || t.receiptRequiredErr);
+      return;
+    }
+    setReceiptFileName(file.name.slice(0, 120));
+    setReceiptThumbnail(dataUrl);
+  };
+
   const handleSaveDossier = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
@@ -289,74 +364,92 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
     const combinedFullName = `${firstName.trim()} ${lastName.trim()}`.trim();
     if (lastName.trim().length < 2 || firstName.trim().length < 2) {
       setFormError(
-        isEn
-          ? 'Please enter both your Last Name and First Name.'
-          : 'Veuillez renseigner obligatoirement votre Nom de famille et votre Prénom.'
+        pick(
+          'Veuillez renseigner obligatoirement votre Nom de famille et votre Prénom.',
+          'Vă rugăm să completați numele de familie și prenumele.',
+          'Please enter both your Last Name and First Name.'
+        )
       );
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       setFormError(
-        isEn
-          ? 'Please provide a valid email address.'
-          : 'Veuillez saisir une adresse e-mail valide.'
+        pick(
+          'Veuillez saisir une adresse e-mail valide.',
+          'Vă rugăm să introduceți o adresă de e-mail validă.',
+          'Please provide a valid email address.'
+        )
       );
       return;
     }
     if (phone.trim().length < 6) {
       setFormError(
-        isEn
-          ? 'Please provide a valid WhatsApp phone number.'
-          : 'Veuillez saisir un numéro de téléphone WhatsApp valide.'
+        pick(
+          'Veuillez saisir un numéro de téléphone WhatsApp valide.',
+          'Vă rugăm să introduceți un număr de telefon WhatsApp valid.',
+          'Please provide a valid WhatsApp phone number.'
+        )
       );
       return;
     }
     if (address.trim().length < 4) {
       setFormError(
-        isEn
-          ? 'Please provide your full residential street address.'
-          : 'Veuillez saisir votre adresse complète de résidence (rue, quartier).'
+        pick(
+          'Veuillez saisir votre adresse complète de résidence.',
+          'Vă rugăm să introduceți adresa completă de domiciliu.',
+          'Please provide your full residential street address.'
+        )
       );
       return;
     }
     if (city.trim().length < 2) {
       setFormError(
-        isEn
-          ? 'Please enter your city of residence.'
-          : 'Veuillez indiquer votre ville de résidence.'
+        pick(
+          'Veuillez indiquer votre ville de résidence.',
+          'Vă rugăm să indicați orașul de reședință.',
+          'Please enter your city of residence.'
+        )
       );
       return;
     }
     if (!wifiReady) {
       setFormError(
-        isEn
-          ? 'Please confirm Wi-Fi / Internet connectivity for online audio courses.'
-          : 'Veuillez confirmer votre accès Wi-Fi / Internet pour suivre les cours audio en ligne.'
+        pick(
+          'Veuillez confirmer votre accès Internet pour suivre les cours audio en ligne.',
+          'Vă rugăm să confirmați accesul la internet pentru cursurile audio online.',
+          'Please confirm Internet connectivity for online audio courses.'
+        )
       );
       return;
     }
     if (idCardNumber.trim().length < 4 || idCardFileName.trim().length < 3) {
       setFormError(
-        isEn
-          ? 'Mandatory ID check: enter your ID number AND upload a photo/scan of your National ID or Passport.'
-          : 'Pièce d’identité obligatoire : saisissez le numéro ET joignez la photo ou le scan de votre carte.'
+        pick(
+          'Pièce d’identité obligatoire : saisissez le numéro ET joignez la photo ou le scan de votre carte.',
+          'Act de identitate obligatoriu: introduceți numărul și atașați fotografia/scanarea.',
+          'Mandatory ID check: enter your ID number AND upload a photo/scan of your National ID or Passport.'
+        )
       );
       return;
     }
     if (!acceptedTerms) {
       setFormError(
-        isEn
-          ? 'You must accept the DrivePro Academy enrollment policy.'
-          : 'Vous devez confirmer l’exactitude des informations de votre dossier.'
+        pick(
+          'Vous devez confirmer l’exactitude des informations de votre dossier.',
+          'Trebuie să confirmați exactitatea datelor din dosar.',
+          'You must accept the DrivePro Academy enrollment policy.'
+        )
       );
       return;
     }
 
     if (!user) {
       setFormError(
-        isEn
-          ? 'Please create your account (or sign in) first above to save your dossier.'
-          : 'Veuillez d’abord créer votre compte (ou vous connecter) ci-dessus pour enregistrer votre dossier.'
+        pick(
+          'Veuillez d’abord créer votre compte (ou vous connecter) ci-dessus pour enregistrer votre dossier.',
+          'Creați-vă mai întâi contul (sau autentificați-vă) mai sus pentru a salva dosarul.',
+          'Please create your account (or sign in) first above to save your dossier.'
+        )
       );
       return;
     }
@@ -384,7 +477,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
       idCardFileName: idCardFileName.trim().slice(0, 120),
       idCardThumbnail: idCardThumbnail.slice(0, 88000),
       countryCode: country.code,
-      countryName: isEn ? country.nameEn : country.nameFr,
+      countryName: localizedCountryName,
       licenseCategory: category,
       preferredLanguage: lang,
       currency: country.currency,
@@ -426,32 +519,37 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
 
     if (!user || !registration) {
       setFormError(
-        isEn
-          ? 'Dossier missing. Please complete Step 2 first.'
-          : 'Dossier introuvable. Veuillez recommencer l’étape 2.'
+        pick(
+          'Dossier introuvable. Veuillez recommencer l’étape 2.',
+          'Dosar negăsit. Reveniți la pasul 2.',
+          'Dossier missing. Please complete Step 2 first.'
+        )
       );
       return;
     }
 
     if (!linkOpened && !transferConfirmed) {
       setFormError(
-        isEn
-          ? 'Please open the official payment link and confirm your real transfer first.'
-          : 'Veuillez d’abord ouvrir le lien officiel de paiement et confirmer l’envoi réel des fonds.'
+        pick(
+          'Veuillez d’abord ouvrir le lien officiel de paiement et confirmer votre règlement.',
+          'Deschideți mai întâi linkul oficial de plată și confirmați transferul.',
+          'Please open the official payment link and confirm your transfer first.'
+        )
       );
       return;
     }
 
     if (senderName.trim().length < 2 || senderPhone.trim().length < 5) {
       setFormError(
-        isEn
-          ? 'Please enter your full sender name and phone number.'
-          : 'Veuillez saisir votre nom complet et votre numéro d’expéditeur.'
+        pick(
+          'Veuillez saisir votre nom complet et votre numéro d’expéditeur.',
+          'Introduceți numele complet și numărul expeditorului.',
+          'Please enter your full sender name and phone number.'
+        )
       );
       return;
     }
 
-    // Strict anti-fake Transaction ID check
     const rawTx = txIdInput.trim().replace(/\s+/g, '').toUpperCase();
     const isRepeatedChars = /^([A-Z0-9])\1+$/.test(rawTx);
     if (
@@ -461,10 +559,17 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
       FAKE_TX_PATTERNS.has(rawTx.toLowerCase())
     ) {
       setFormError(
-        isEn
-          ? 'Invalid Transaction ID. Please enter the real transfer reference from your payment receipt (minimum 6 alphanumeric characters).'
-          : 'ID de transaction invalide ou fictif refusé. Saisissez votre véritable référence reçue après paiement (minimum 6 caractères réels).'
+        pick(
+          'ID de transaction invalide. Saisissez la référence réelle reçue après paiement (minimum 6 caractères).',
+          'ID de tranzacție invalid. Introduceți referința reală primită după plată (minim 6 caractere).',
+          'Invalid Transaction ID. Enter the real transfer reference from your payment receipt (minimum 6 characters).'
+        )
       );
+      return;
+    }
+
+    if (!receiptThumbnail || !receiptFileName) {
+      setFormError(t.receiptRequiredErr);
       return;
     }
 
@@ -487,8 +592,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
       method: 'Télépaiement',
       transactionRef: formattedTxRef.slice(0, 80),
       verificationCode: awaitingCode,
-      receiptFileName: 'PREUVE-TRANSMISE',
-      receiptThumbnail: '',
+      receiptFileName: receiptFileName.slice(0, 120),
+      receiptThumbnail,
       status: 'completed',
     };
 
@@ -502,7 +607,6 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
         createdAt: serverTimestamp(),
       });
 
-      // Candidate transitions dossier to 'queue' awaiting actual funds receipt & amount trigger by Direction
       batch.update(regRef, {
         dossierStatus: 'queue',
         paymentMethod: 'Télépaiement',
@@ -526,9 +630,10 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
     return false;
   };
 
-  const tapTapLiveUrl = isEn
-    ? TAPTAP_SEND_CHECKOUT.paymentLinkUrlEn
-    : TAPTAP_SEND_CHECKOUT.paymentLinkUrlFr;
+  const tapTapLiveUrl =
+    lang === 'fr'
+      ? TAPTAP_SEND_CHECKOUT.paymentLinkUrlFr
+      : TAPTAP_SEND_CHECKOUT.paymentLinkUrlEn;
 
   const enrolledCategories = new Set(
     allMyRegistrations.map((r) => r.licenseCategory)
@@ -538,16 +643,22 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
       (c) => !enrolledCategories.has(c)
     ) || 'B';
 
+  const isPdfReceipt =
+    receiptThumbnail.startsWith('data:application/pdf') ||
+    receiptFileName.toLowerCase().endsWith('.pdf');
+
   return (
     <section id="registration-funnel" className="space-y-6">
-      {/* Multi-Permit & Re-enrollment Bar (Permis A -> Réinscription Permis B/C/D) */}
+      {/* Multi-Permit & Re-enrollment Bar */}
       {allMyRegistrations.length > 0 && (
         <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
           <div className="space-y-1.5">
-            <div className="text-xs font-semibold text-slate-600">
-              {isEn
-                ? 'Your Active Permit Dossiers (Re-enrollment supported)'
-                : 'Vos dossiers de permis (Réinscription multi-permis disponible)'}
+            <div className="text-sm font-semibold text-slate-700">
+              {pick(
+                'Vos dossiers de permis (Réinscription multi-permis disponible)',
+                'Dosarele dvs. de permis (Reînscriere multi-categorie disponibilă)',
+                'Your Active Permit Dossiers (Re-enrollment supported)'
+              )}
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {allMyRegistrations.map((r) => {
@@ -559,17 +670,24 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                     key={r.id}
                     type="button"
                     onClick={() => onSelectRegistration(r.id)}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${
+                    style={
                       isSelected
-                        ? 'bg-blue-700 text-white border-blue-700'
+                        ? {
+                            backgroundColor: countryTheme.primaryHex,
+                            borderColor: countryTheme.primaryHex,
+                          }
+                        : undefined
+                    }
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-lg border transition-colors cursor-pointer ${
+                      isSelected
+                        ? 'text-white'
                         : 'bg-slate-50 text-slate-800 border-slate-300 hover:bg-slate-100'
                     }`}
                   >
                     <span>
-                      {isEn ? 'Permit' : 'Permis'} {r.licenseCategory} · #
-                      {r.queueNumber}
+                      {t.permitLabel} {r.licenseCategory} · #{r.queueNumber}
                     </span>
-                    {paid && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
+                    {paid && <CheckCircle2 className="w-4 h-4 text-emerald-300" />}
                   </button>
                 );
               })}
@@ -583,13 +701,11 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                 onStartNewPermit(nextAvailableCategory);
                 setStep(1);
               }}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-lg whitespace-nowrap shrink-0 cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold rounded-lg whitespace-nowrap shrink-0 cursor-pointer"
             >
               <PlusCircle className="w-4 h-4 text-emerald-400" />
               <span>
-                {isEn
-                  ? `Re-enroll for Permit ${nextAvailableCategory}`
-                  : `Réinscription · Passer un autre permis (ex : Permis ${nextAvailableCategory})`}
+                {t.reEnrollBtn} ({t.permitLabel} {nextAvailableCategory})
               </span>
             </button>
           )}
@@ -607,16 +723,20 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
           <div className="space-y-1">
             <h3 className="text-lg font-bold">
               {isUnlocked
-                ? isEn
-                  ? `Permit ${registration.licenseCategory} Validated — Audio Courses Unlocked`
-                  : `Permis ${registration.licenseCategory} validé — Cours audio séquentiels débloqués`
+                ? pick(
+                    `Permis ${registration.licenseCategory} validé — Cours audio débloqués`,
+                    `Permis ${registration.licenseCategory} validat — Cursuri audio deblocate`,
+                    `Permit ${registration.licenseCategory} Validated — Audio Courses Unlocked`
+                  )
                 : t.lockedNoticeTitle}
             </h3>
             <p className="text-sm text-slate-200 max-w-3xl leading-relaxed">
               {isUnlocked
-                ? isEn
-                  ? 'Your funds trigger and PDF invoice are confirmed. Study all 5 modules, pass the quiz, or open your physical test booking link.'
-                  : 'Votre montant déclenché et votre facture PDF officielle sont confirmés. Suivez les 5 modules, passez le QCM et ouvrez votre lien d’épreuves physiques.'
+                ? pick(
+                    'Votre dossier et votre facture PDF officielle sont confirmés. Suivez les 5 modules, passez le QCM et ouvrez votre lien d’épreuves physiques.',
+                    'Dosarul și factura PDF oficială sunt confirmate. Parcurgeți cele 5 module, susțineți testul și accesați linkul pentru probele fizice.',
+                    'Your payment and PDF invoice are confirmed. Study all 5 modules, pass the quiz, or open your physical test booking link.'
+                  )
                 : t.lockedNoticeBody}
             </p>
           </div>
@@ -668,9 +788,17 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
               type="button"
               disabled={!clickable}
               onClick={() => clickable && setStep(item.num)}
+              style={
+                active
+                  ? {
+                      backgroundColor: countryTheme.primaryHex,
+                      borderColor: countryTheme.primaryHex,
+                    }
+                  : undefined
+              }
               className={`px-4 py-3.5 rounded-lg border text-left transition-colors flex items-center justify-between gap-2 ${
                 active
-                  ? 'bg-blue-700 text-white border-blue-600 shadow-sm'
+                  ? 'text-white shadow-sm'
                   : item.done
                   ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
                   : item.locked
@@ -689,30 +817,19 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
         })}
       </div>
 
-      {/* Step 1: License Category Selection (300 / 450 / 650 / 800 EUR) */}
+      {/* Step 1: License Category Selection (Euro-Only Tariffs: 300 / 450 / 650 / 800 €) */}
       {step === 1 && !isUnlocked && (
         <div className="bg-white/95 backdrop-blur border border-slate-200 rounded-xl p-6 md:p-8 space-y-6 shadow-md">
-          <div className="border-b border-slate-200 pb-5">
-            <div className="text-xs font-mono font-semibold text-blue-700 mb-1">
-              {isEn ? countryTheme.localPermitEn : countryTheme.localPermitFr} · {countryTheme.authorityName}
+          <div className="border-b border-slate-200 pb-5 space-y-2">
+            <div className="flex items-center gap-2.5 text-sm font-semibold" style={{ color: countryTheme.primaryHex }}>
+              <InstituteCrestSvg theme={countryTheme} className="w-6 h-6" />
+              <span>{countryTheme.authorityName} · {localizedCountryName}</span>
             </div>
             <h3 className="text-2xl font-bold text-slate-900">
-              {isEn ? (
-                <>
-                  Step 1 — Choose your{' '}
-                  <span className="text-blue-700">Permit Category</span>
-                </>
-              ) : (
-                <>
-                  Étape 1 — Choisissez votre{' '}
-                  <span className="text-blue-700">catégorie de permis</span>
-                </>
-              )}
+              {t.step1Heading}
             </h3>
             <p className="text-[15px] text-slate-700 mt-1">
-              {isEn
-                ? `Select your permit (A: €300, B: €450, C: €650, D: €800) adapted for ${country.nameEn} (${countryTheme.simLabelEn}).`
-                : `Sélectionnez votre permis (A : 300 €, B : 450 €, C : 650 €, D : 800 €) adapté pour ${country.nameFr} (${countryTheme.simLabelFr}).`}
+              {t.step1Subheading}
             </p>
           </div>
 
@@ -721,31 +838,23 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
               [
                 {
                   id: 'A' as LicenseCategory,
-                  titleFr: 'Permis A — Moto',
-                  titleEn: 'Category A — Motorcycle',
-                  descFr: 'Formation accélérée, épreuves physiques & permis < 48h',
-                  descEn: 'Fast-track theory, physical test & permit < 48h',
+                  title: t.catATitle,
+                  desc: t.catADesc,
                 },
                 {
                   id: 'B' as LicenseCategory,
-                  titleFr: 'Permis B — Voiture',
-                  titleEn: 'Category B — Passenger Car',
-                  descFr: 'Boîte manuelle ou auto · Dossier complet agréé',
-                  descEn: 'Manual or automatic · Complete accredited track',
+                  title: t.catBTitle,
+                  desc: t.catBDesc,
                 },
                 {
                   id: 'C' as LicenseCategory,
-                  titleFr: 'Permis C — Poids Lourd',
-                  titleEn: 'Category C — Heavy Truck',
-                  descFr: 'Transport international de marchandises',
-                  descEn: 'International commercial freight qualification',
+                  title: t.catCTitle,
+                  desc: t.catCDesc,
                 },
                 {
                   id: 'D' as LicenseCategory,
-                  titleFr: 'Permis D — Voyageurs',
-                  titleEn: 'Category D — Passenger Bus',
-                  descFr: 'Autocar & transport collectif agréé',
-                  descEn: 'Coach & passenger transit certification',
+                  title: t.catDTitle,
+                  desc: t.catDDesc,
                 },
               ] as const
             ).map((opt) => {
@@ -759,46 +868,61 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                   key={opt.id}
                   type="button"
                   onClick={() => onChangeCategory(opt.id)}
+                  style={
+                    selected
+                      ? {
+                          borderColor: countryTheme.primaryHex,
+                          backgroundColor: countryTheme.surfaceTintHex,
+                          boxShadow: `0 0 0 2px ${countryTheme.primaryHex}`,
+                        }
+                      : undefined
+                  }
                   className={`p-5 rounded-xl border text-left transition-colors flex flex-col justify-between gap-4 cursor-pointer ${
                     selected
-                      ? 'border-blue-700 bg-blue-50/80 ring-2 ring-blue-700'
+                      ? ''
                       : 'border-slate-200 bg-white hover:border-slate-400'
                   }`}
                 >
                   <div className="space-y-2">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-base font-bold text-slate-900">
-                        {isEn ? opt.titleEn : opt.titleFr}
+                        {opt.title}
                       </span>
                       {selected && (
-                        <CheckCircle2 className="w-5 h-5 text-blue-700 shrink-0" />
+                        <CheckCircle2
+                          className="w-5 h-5 shrink-0"
+                          style={{ color: countryTheme.primaryHex }}
+                        />
                       )}
                     </div>
                     <p className="text-sm text-slate-700 leading-relaxed">
-                      {isEn ? opt.descEn : opt.descFr}
+                      {opt.desc}
                     </p>
                     {alreadyReg && (
-                      <div className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded">
+                      <div className="text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded">
                         {alreadyReg.paymentStatus === 'pending'
-                          ? isEn
-                            ? 'Dossier saved (Pending payment)'
-                            : 'Dossier déjà créé (Paiement en attente)'
-                          : isEn
-                          ? 'Already enrolled'
-                          : 'Déjà inscrit pour cette catégorie'}
+                          ? pick(
+                              'Dossier déjà créé (Paiement en attente)',
+                              'Dosar salvat (Plată în așteptare)',
+                              'Dossier saved (Pending payment)'
+                            )
+                          : pick(
+                              'Déjà inscrit pour cette catégorie',
+                              'Deja înscris pentru această categorie',
+                              'Already enrolled'
+                            )}
                       </div>
                     )}
                   </div>
                   <div className="pt-3 border-t border-slate-200/80 flex items-baseline justify-between">
-                    <span className="text-xl font-mono font-bold text-blue-700 tabular-nums">
+                    <span
+                      className="text-2xl font-mono font-bold tabular-nums"
+                      style={{ color: countryTheme.primaryHex }}
+                    >
                       {feeEur} €
                     </span>
-                    <span className="text-xs font-medium text-slate-600">
-                      {formatLocalCurrency(
-                        convertEurFee(feeEur, country),
-                        country,
-                        lang
-                      )}
+                    <span className="text-xs font-semibold text-slate-600 uppercase">
+                      EUR
                     </span>
                   </div>
                 </button>
@@ -810,13 +934,10 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
             <button
               type="button"
               onClick={() => setStep(2)}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold rounded-lg transition-colors cursor-pointer"
+              style={{ backgroundColor: countryTheme.primaryHex }}
+              className="inline-flex items-center gap-2 px-6 py-3 hover:opacity-95 text-white text-sm font-bold rounded-lg transition-opacity cursor-pointer"
             >
-              <span>
-                {isEn
-                  ? 'Continue to Required Dossier'
-                  : 'Continuer vers le dossier à fournir'}
-              </span>
+              <span>{t.continueToStep2}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -832,25 +953,15 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
           <div className="border-b border-slate-200 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h3 className="text-2xl font-bold text-slate-900">
-                {isEn ? (
-                  <>
-                    Step 2 — <span className="text-blue-700">Required Dossier</span>
-                  </>
-                ) : (
-                  <>
-                    Étape 2 — <span className="text-blue-700">Dossier à fournir</span>
-                  </>
-                )}
+                {t.step2Heading}
               </h3>
-              <p className="text-[15px] text-slate-700 mt-1">
-                {isEn
-                  ? `Permit ${category} · Registration Fee: €${CATEGORY_FEES_EUR[category]}`
-                  : `Permis ${category} · Frais d’inscription : ${CATEGORY_FEES_EUR[category]} €`}
+              <p className="text-[15px] text-slate-700 mt-1 font-medium">
+                {t.permitLabel} {category} · {CATEGORY_FEES_EUR[category]} €
               </p>
             </div>
             {referralCode && (
               <div className="text-xs font-mono text-slate-700 bg-slate-100 px-3 py-1.5 rounded-md">
-                {referralPlatform || 'Social'} · {referralCode}
+                {referralPlatform || 'Direct'} · {referralCode}
               </div>
             )}
           </div>
@@ -882,28 +993,28 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
           <div className="grid md:grid-cols-2 gap-5">
             <div className="space-y-1.5">
               <label className="block text-sm font-semibold text-slate-800">
-                {isEn ? 'Last Name (Family Name) *' : 'Nom *'}
+                {t.lastNameLabel}
               </label>
               <input
                 type="text"
                 required
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
-                placeholder={isEn ? 'e.g. DUPONT' : 'Ex : LOKOSSOU / DUPONT'}
+                placeholder="Ex : POPESCU / DUPONT"
                 className="w-full px-4 py-2.5 text-[15px] text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
               />
             </div>
 
             <div className="space-y-1.5">
               <label className="block text-sm font-semibold text-slate-800">
-                {isEn ? 'First Name(s) *' : 'Prénom(s) *'}
+                {t.firstNameLabel}
               </label>
               <input
                 type="text"
                 required
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
-                placeholder={isEn ? 'e.g. Amina / Jean' : 'Ex : Amina / Jean'}
+                placeholder="Ex : Andrei / Jean"
                 className="w-full px-4 py-2.5 text-[15px] text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
               />
             </div>
@@ -931,25 +1042,21 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                 required
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="+33 6 12 34 56 78"
+                placeholder={`${country.dialCode} ...`}
                 className="w-full px-4 py-2.5 text-[15px] font-mono text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
               />
             </div>
 
             <div className="space-y-1.5">
               <label className="block text-sm font-semibold text-slate-800">
-                {isEn ? 'Full Residential Address *' : 'Adresse complète *'}
+                {t.addressLabel}
               </label>
               <input
                 type="text"
                 required
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                placeholder={
-                  isEn
-                    ? '12 Rue de Rivoli / Neighborhood Lot 42'
-                    : 'Ex : 12 Rue de Rivoli / Quartier Lot 42'
-                }
+                placeholder="Str. / Bd. ..."
                 className="w-full px-4 py-2.5 text-[15px] text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
               />
             </div>
@@ -963,7 +1070,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                 required
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                placeholder="Paris, Cotonou, Lyon, Bruxelles..."
+                placeholder={`${countryTheme.cityLabel}...`}
                 className="w-full px-4 py-2.5 text-[15px] text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
               />
             </div>
@@ -972,57 +1079,69 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
           {/* Mandatory Official ID Card Block */}
           <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-4">
             <div className="flex items-center gap-2 text-base font-bold text-slate-900">
-              <IdCard className="w-5 h-5 text-blue-700 shrink-0" />
-              <span>
-                {isEn
-                  ? 'Official Identity Document (Required)'
-                  : 'Pièce d’identité officielle (Obligatoire)'}
-              </span>
+              <IdCard
+                className="w-5 h-5 shrink-0"
+                style={{ color: countryTheme.primaryHex }}
+              />
+              <span>{t.idSectionTitle}</span>
             </div>
 
             <div className="grid md:grid-cols-3 gap-4">
               <div className="space-y-1.5">
                 <label className="block text-sm font-semibold text-slate-800">
-                  {isEn ? 'Document Type *' : 'Type de pièce *'}
+                  {t.idTypeLabel}
                 </label>
                 <select
                   value={idCardType}
                   onChange={(e) => setIdCardType(e.target.value as IdCardType)}
                   className="w-full px-3.5 py-2.5 text-sm text-slate-900 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-700"
                 >
-                  <option value="CNI">Carte Nationale d’Identité (CNI)</option>
-                  <option value="Passeport">Passeport officiel</option>
-                  <option value="Titre de séjour">Titre de séjour / Carte résident</option>
+                  <option value="CNI">
+                    {pick(
+                      'Carte Nationale d’Identité (CNI)',
+                      'Carte de Identitate (CI)',
+                      'National Identity Card'
+                    )}
+                  </option>
+                  <option value="Passeport">
+                    {pick('Passeport officiel', 'Pașaport oficial', 'Official Passport')}
+                  </option>
+                  <option value="Titre de séjour">
+                    {pick(
+                      'Titre de séjour / Carte résident',
+                      'Permis de ședere / Rezident',
+                      'Residence Permit Card'
+                    )}
+                  </option>
                 </select>
               </div>
 
               <div className="space-y-1.5">
                 <label className="block text-sm font-semibold text-slate-800">
-                  {isEn ? 'ID Number *' : 'Numéro de la pièce *'}
+                  {t.idNumberLabel}
                 </label>
                 <input
                   type="text"
                   required
                   value={idCardNumber}
                   onChange={(e) => setIdCardNumber(e.target.value)}
-                  placeholder="Ex : 204918273 / CIP-0092"
+                  placeholder="Ex : 204918273"
                   className="w-full px-3.5 py-2.5 text-sm font-mono text-slate-900 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-700"
                 />
               </div>
 
               <div className="space-y-1.5">
                 <label className="block text-sm font-semibold text-slate-800">
-                  {isEn ? 'ID Photo / Scan *' : 'Photo ou scan de la carte *'}
+                  {t.idUploadLabel}
                 </label>
                 <label className="flex items-center justify-between gap-2 px-3.5 py-2.5 text-sm font-semibold bg-white border border-slate-300 hover:border-blue-600 rounded-lg cursor-pointer">
                   <span className="truncate text-slate-800">
-                    {idCardFileName
-                      ? idCardFileName
-                      : isEn
-                      ? 'Choose file (JPG/PNG/PDF)'
-                      : 'Joindre CNI (JPG/PNG/PDF)'}
+                    {idCardFileName ? idCardFileName : t.idChooseFile}
                   </span>
-                  <Upload className="w-4 h-4 text-blue-700 shrink-0" />
+                  <Upload
+                    className="w-4 h-4 shrink-0"
+                    style={{ color: countryTheme.primaryHex }}
+                  />
                   <input
                     type="file"
                     accept="image/*,.pdf"
@@ -1037,13 +1156,11 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
               <div className="flex items-center gap-3 pt-1">
                 <img
                   src={idCardThumbnail}
-                  alt="Aperçu pièce d'identité"
+                  alt={t.idSectionTitle}
                   className="h-14 w-22 object-cover rounded-md border border-slate-300"
                 />
                 <span className="text-sm text-emerald-700 font-semibold">
-                  {isEn
-                    ? 'ID preview attached securely.'
-                    : 'Aperçu de la pièce d’identité joint au dossier.'}
+                  {idCardFileName}
                 </span>
               </div>
             )}
@@ -1058,12 +1175,11 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                 className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-700 focus:ring-blue-700"
               />
               <span className="flex items-center gap-2">
-                <Wifi className="w-4 h-4 text-blue-700 shrink-0" />
-                <span>
-                  {isEn
-                    ? 'I confirm I have reliable Wi-Fi / Internet connectivity to stream the animated audio courses and online state quiz.'
-                    : 'Je confirme disposer d’une connexion Wi-Fi / Internet active pour suivre les cours audio, animations et le QCM officiel.'}
-                </span>
+                <Wifi
+                  className="w-4 h-4 shrink-0"
+                  style={{ color: countryTheme.primaryHex }}
+                />
+                <span>{t.wifiConfirmLabel}</span>
               </span>
             </label>
 
@@ -1074,11 +1190,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                 onChange={(e) => setAcceptedTerms(e.target.checked)}
                 className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-700 focus:ring-blue-700"
               />
-              <span>
-                {isEn
-                  ? 'I certify that the dossier information and ID card submitted are authentic.'
-                  : 'Je certifie l’exactitude des informations de mon dossier et de ma pièce d’identité.'}
-              </span>
+              <span>{t.termsConfirmLabel}</span>
             </label>
           </div>
 
@@ -1088,12 +1200,13 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
               onClick={() => setStep(1)}
               className="px-4 py-2.5 text-sm font-semibold text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 cursor-pointer"
             >
-              {isEn ? 'Back' : 'Retour'}
+              {t.backBtn}
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white text-sm font-bold rounded-lg transition-colors cursor-pointer"
+              style={{ backgroundColor: countryTheme.primaryHex }}
+              className="inline-flex items-center gap-2 px-6 py-3 hover:opacity-95 disabled:opacity-50 text-white text-sm font-bold rounded-lg transition-opacity cursor-pointer"
             >
               <FileCheck2 className="w-4 h-4" />
               <span>{isSubmitting ? '...' : t.saveDossierBtn}</span>
@@ -1102,39 +1215,31 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
         </form>
       )}
 
-      {/* Step 3: Paiement & Déclenchement par réception des fonds */}
+      {/* Step 3: Paiement + Preuve PDF / Image */}
       {step === 3 && registration && !isUnlocked && (
         <div className="bg-white/95 backdrop-blur border border-slate-200 rounded-2xl p-6 md:p-8 space-y-6 shadow-lg">
           <div className="border-b border-slate-200 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <div className="text-xs font-mono font-bold text-blue-700 mb-1">
-                {isEn ? countryTheme.localPermitEn : countryTheme.localPermitFr}
+              <div
+                className="text-sm font-mono font-bold mb-1"
+                style={{ color: countryTheme.primaryHex }}
+              >
+                {countryTheme.authorityName}
               </div>
               <h3 className="text-2xl font-display font-bold text-slate-900">
-                {isEn ? (
-                  <>
-                    Step 3 — <span className="text-blue-700">Payment & Funds Proof</span>
-                  </>
-                ) : (
-                  <>
-                    Étape 3 — <span className="text-blue-700">Paiement & Preuve</span>
-                  </>
-                )}
+                {t.paymentStepHeading}
               </h3>
               <p className="text-[15px] text-slate-700 mt-1">
-                {registration.fullName} · {isEn ? 'Permit' : 'Permis'}{' '}
+                {registration.fullName} · {t.permitLabel}{' '}
                 {registration.licenseCategory} (#{registration.queueNumber})
               </p>
             </div>
-            <div className="bg-gradient-to-br from-slate-900 to-blue-950 text-white px-5 py-3.5 rounded-xl text-right font-mono tabular-nums border border-blue-900/40 shadow-sm">
+            <div className="bg-slate-900 text-white px-5 py-3.5 rounded-xl text-right font-mono tabular-nums border border-slate-700 shadow-sm">
               <div className="text-xs text-amber-300 font-semibold">
-                {isEn ? 'Permit Fee' : 'Montant attendu'}
+                {t.fixedFeeLabel}
               </div>
               <div className="text-2xl font-bold">
                 {registration.baseFeeEur} €
-              </div>
-              <div className="text-xs text-blue-200">
-                {formatLocalCurrency(registration.convertedAmount, country, lang)} · {xofEquivalent.toLocaleString('fr-FR')} FCFA
               </div>
             </div>
           </div>
@@ -1146,22 +1251,18 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                   <Clock className="w-6 h-6 text-amber-700 shrink-0 mt-0.5" />
                   <div className="space-y-1.5">
                     <h4 className="font-display text-lg font-bold text-slate-900">
-                      {isEn
-                        ? `Payment Proof Submitted — Waiting for ${registration.baseFeeEur} € Receipt Confirmation`
-                        : `Preuve transmise — En attente de réception des fonds (${registration.baseFeeEur} €)`}
+                      {t.proofSubmittedTitle}
                     </h4>
                     <p className="text-sm text-slate-700 leading-relaxed">
-                      {isEn
-                        ? 'Your transaction proof has been logged in Firebase. As soon as our team receives the money, the triggered amount unlocks your 5 audio courses, official quiz, and PDF invoice automatically.'
-                        : `Votre preuve de règlement a été enregistrée. Dès réception réelle de l’argent (${registration.baseFeeEur} €), le déclenchement du montant débloquera automatiquement vos 5 cours audio, votre QCM officiel et votre facture PDF.`}
+                      {t.proofSubmittedDesc}
                     </p>
                   </div>
                 </div>
 
-                <div className="grid sm:grid-cols-3 gap-3 text-xs bg-white border border-amber-200 rounded-xl p-4">
+                <div className="grid sm:grid-cols-3 gap-3 text-sm bg-white border border-amber-200 rounded-xl p-4">
                   <div>
-                    <span className="text-slate-500 block">
-                      {isEn ? 'Transaction ID' : 'Référence transmise'}
+                    <span className="text-slate-600 block text-xs">
+                      {t.txIdLabel}
                     </span>
                     <span className="font-mono font-bold text-slate-900">
                       {justCompletedPayment?.transactionRef ||
@@ -1170,52 +1271,52 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                     </span>
                   </div>
                   <div>
-                    <span className="text-slate-500 block">
-                      {isEn ? 'Expected Trigger Amount' : 'Montant à déclencher'}
+                    <span className="text-slate-600 block text-xs">
+                      {t.fixedFeeLabel}
                     </span>
-                    <span className="font-mono font-bold text-blue-700">
-                      {registration.baseFeeEur} € (
-                      {formatLocalCurrency(registration.convertedAmount, country, lang)})
+                    <span
+                      className="font-mono font-bold"
+                      style={{ color: countryTheme.primaryHex }}
+                    >
+                      {registration.baseFeeEur} €
                     </span>
                   </div>
                   <div>
-                    <span className="text-slate-500 block">
-                      {isEn ? 'Status' : 'Statut actuel'}
+                    <span className="text-slate-600 block text-xs">
+                      {t.statusLabel}
                     </span>
                     <span className="font-semibold text-amber-700">
-                      {isEn ? 'Awaiting funds confirmation' : 'En attente de confirmation des fonds'}
+                      {t.awaitingConfirmationLabel}
                     </span>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-                  <span className="text-xs text-slate-600">
-                    {isEn
-                      ? 'Notify Direction directly after sending the transfer:'
-                      : 'Signalez votre transfert via le lien direct pour un déclenchement rapide :'}
-                  </span>
+                {(justCompletedPayment?.receiptFileName ||
+                  latestPayment?.receiptFileName) && (
+                  <div className="flex items-center gap-2 text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2.5">
+                    <FileText className="w-4 h-4 shrink-0" />
+                    <span className="font-semibold">
+                      {justCompletedPayment?.receiptFileName ||
+                        latestPayment?.receiptFileName}
+                    </span>
+                  </div>
+                )}
+
+                <div className="flex flex-wrap items-center justify-end gap-3 pt-1">
                   <a
                     href={`${PARIS_HQ_CONTACT.whatsappUrl}?text=${encodeURIComponent(
-                      isEn
-                        ? `Hello DrivePro Academy, I submitted payment proof ${
-                            justCompletedPayment?.transactionRef ||
-                            latestPayment?.transactionRef ||
-                            ''
-                          } for Permit ${registration.licenseCategory} (#${registration.queueNumber}, ${registration.baseFeeEur} EUR). Please confirm funds receipt.`
-                        : `Bonjour DrivePro Academy, je viens de transmettre ma preuve de paiement ${
-                            justCompletedPayment?.transactionRef ||
-                            latestPayment?.transactionRef ||
-                            ''
-                          } pour le Permis ${registration.licenseCategory} (Dossier #${registration.queueNumber}, montant ${registration.baseFeeEur} €). Merci de déclencher mon accès dès réception.`
+                      `DrivePro Academy · ${registration.fullName} · ${t.permitLabel} ${registration.licenseCategory} (#${registration.queueNumber}, ${registration.baseFeeEur} EUR) · Ref: ${
+                        justCompletedPayment?.transactionRef ||
+                        latestPayment?.transactionRef ||
+                        ''
+                      }`
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg whitespace-nowrap"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg whitespace-nowrap"
                   >
                     <MessageCircle className="w-4 h-4" />
-                    <span>
-                      {isEn ? 'Notify via Direct Link' : 'Notifier la Direction (Lien Direct)'}
-                    </span>
+                    <span>{t.notifyDirectBtn}</span>
                   </a>
                 </div>
               </div>
@@ -1228,22 +1329,19 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                 </div>
               )}
 
-              {/* Mode Télépaiement Officiel Card */}
-              <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white rounded-2xl p-6 space-y-5 border border-blue-900/50 shadow-md">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-5">
-                  <div className="space-y-1.5">
+              {/* Payment Link Banner */}
+              <div className="bg-slate-950 text-white rounded-2xl p-6 space-y-4 border border-slate-800 shadow-md">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="space-y-1">
                     <div className="inline-flex items-center gap-2 text-xs font-mono text-emerald-400 font-bold">
                       <Send className="w-4 h-4" />
-                      <span>
-                        {isEn ? 'OFFICIAL E-PAYMENT LINK' : 'LIEN DE TÉLÉPAIEMENT OFFICIEL'}
-                      </span>
+                      <span>{t.paymentTitle.toUpperCase()}</span>
                     </div>
-                    <div className="text-xl font-display font-bold text-white">
-                      {isEn ? 'Payment' : 'Paiement'} · {registration.baseFeeEur} € (
-                      {formatLocalCurrency(registration.convertedAmount, country, lang)})
+                    <div className="text-2xl font-display font-bold text-white">
+                      {t.paymentTitle} · {registration.baseFeeEur} €
                     </div>
-                    <div className="text-xs text-blue-200 font-medium">
-                      DrivePro Academy · {isEn ? country.nameEn : country.nameFr}
+                    <div className="text-sm text-slate-300">
+                      DrivePro Academy · {localizedCountryName}
                     </div>
                   </div>
 
@@ -1252,37 +1350,29 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => setLinkOpened(true)}
-                    className="inline-flex items-center justify-center gap-2.5 px-6 py-3.5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white text-sm font-bold rounded-xl whitespace-nowrap shrink-0 shadow-lg transition-all"
+                    style={{ backgroundColor: countryTheme.primaryHex }}
+                    className="inline-flex items-center justify-center gap-2.5 px-7 py-3.5 hover:opacity-95 text-white text-sm font-bold rounded-xl whitespace-nowrap shrink-0 shadow-lg transition-opacity"
                   >
                     <ExternalLink className="w-4 h-4" />
-                    <span>
-                      {isEn ? 'Pay Now (Official Link)' : 'Payer maintenant · Lien officiel'}
-                    </span>
+                    <span>{t.payNowLinkBtn}</span>
                   </a>
                 </div>
-
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  {isEn
-                    ? `Once your transfer of ${registration.baseFeeEur} € is completed on the official link, submit your real Transaction ID below. Your triggered amount unlocks your training as soon as funds are received.`
-                    : `Après avoir effectué le règlement de ${registration.baseFeeEur} € sur le lien officiel, transmettez votre véritable référence ci-dessous. Dès réception de l’argent, le montant déclenché active immédiatement votre accès.`}
-                </p>
               </div>
 
-              {/* Real Payment Proof Inputs */}
+              {/* Payment Receipt Proof Card (PDF or Image Required) */}
               <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-5">
-                <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
-                  <Receipt className="w-4 h-4 text-blue-700 shrink-0" />
-                  <span>
-                    {isEn
-                      ? 'Submit Your Payment Proof to Trigger Confirmation'
-                      : 'Preuve de paiement réelle pour déclenchement'}
-                  </span>
+                <div className="flex items-center gap-2 text-base font-bold text-slate-900">
+                  <Receipt
+                    className="w-5 h-5 shrink-0"
+                    style={{ color: countryTheme.primaryHex }}
+                  />
+                  <span>{t.paymentProofCardTitle}</span>
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-4">
                   <div className="space-y-1.5">
                     <label className="block text-sm font-semibold text-slate-800">
-                      {isEn ? 'Sender Full Name *' : 'Nom complet de l’expéditeur *'}
+                      {t.senderNameLabel}
                     </label>
                     <input
                       type="text"
@@ -1295,7 +1385,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
 
                   <div className="space-y-1.5">
                     <label className="block text-sm font-semibold text-slate-800">
-                      {isEn ? 'Sender Phone *' : 'Numéro expéditeur *'}
+                      {t.senderPhoneLabel}
                     </label>
                     <input
                       type="text"
@@ -1309,7 +1399,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
 
                   <div className="space-y-1.5">
                     <label className="block text-sm font-semibold text-slate-800">
-                      {isEn ? 'Real Transaction ID *' : 'ID réel de transaction *'}
+                      {t.txIdLabel}
                     </label>
                     <input
                       type="text"
@@ -1322,6 +1412,57 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                   </div>
                 </div>
 
+                {/* PDF / Image Receipt Upload Box */}
+                <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+                  <div className="space-y-1">
+                    <label className="block text-sm font-bold text-slate-900">
+                      {t.receiptUploadLabel}
+                    </label>
+                    <p className="text-sm text-slate-600">
+                      {t.receiptUploadHint}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-4">
+                    <label
+                      style={{ borderColor: countryTheme.primaryHex }}
+                      className="inline-flex items-center gap-2.5 px-4 py-2.5 bg-slate-50 hover:bg-slate-100 border-2 border-dashed rounded-lg text-sm font-bold text-slate-900 cursor-pointer"
+                    >
+                      <Upload
+                        className="w-4 h-4 shrink-0"
+                        style={{ color: countryTheme.primaryHex }}
+                      />
+                      <span>
+                        {receiptFileName ? receiptFileName : t.receiptUploadBtn}
+                      </span>
+                      <input
+                        type="file"
+                        accept="application/pdf,image/*,.pdf"
+                        onChange={handleReceiptFileChange}
+                        className="sr-only"
+                      />
+                    </label>
+
+                    {receiptThumbnail && (
+                      <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-lg px-3.5 py-2">
+                        {isPdfReceipt ? (
+                          <FileText className="w-5 h-5 text-emerald-700 shrink-0" />
+                        ) : (
+                          <img
+                            src={receiptThumbnail}
+                            alt={receiptFileName}
+                            className="h-10 w-14 object-cover rounded border border-emerald-300"
+                          />
+                        )}
+                        <span className="text-sm font-semibold text-emerald-800 truncate max-w-[220px]">
+                          {receiptFileName}
+                        </span>
+                        <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 <label className="flex items-start gap-3 text-sm text-slate-800 cursor-pointer pt-1">
                   <input
                     type="checkbox"
@@ -1329,27 +1470,20 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                     onChange={(e) => setTransferConfirmed(e.target.checked)}
                     className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-700 focus:ring-blue-700"
                   />
-                  <span>
-                    {isEn
-                      ? `I certify that I completed the real transfer of ${registration.baseFeeEur} € and that any false declaration is rejected.`
-                      : `Je certifie avoir réellement envoyé ${registration.baseFeeEur} € (${formatLocalCurrency(registration.convertedAmount, country, lang)}) via le lien officiel.`}
-                  </span>
+                  <span>{t.transferCertifyLabel}</span>
                 </label>
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
-                <div className="flex items-center gap-2 text-sm text-slate-600">
+                <div className="flex items-center gap-2 text-sm text-slate-700">
                   <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>
-                    {isEn
-                      ? 'Unlocks automatically when funds receipt triggers the amount'
-                      : 'Déblocage automatique dès réception de l’argent et déclenchement du montant'}
-                  </span>
+                  <span>{t.proofSubmittedDesc}</span>
                 </div>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-bold rounded-lg transition-colors cursor-pointer"
+                  style={{ backgroundColor: countryTheme.primaryHex }}
+                  className="inline-flex items-center gap-2 px-7 py-3 hover:opacity-95 disabled:opacity-50 text-white text-sm font-bold rounded-lg transition-opacity cursor-pointer"
                 >
                   <Unlock className="w-4 h-4" />
                   <span>{isSubmitting ? '...' : t.payAndUnlockBtn}</span>
@@ -1360,16 +1494,15 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
         </div>
       )}
 
-      {/* Step 4: Unlocked + Triggered Amount + Direct Invoice Access */}
+      {/* Step 4: Unlocked + PDF Invoice + Direct Portal Access */}
       {step === 4 && isUnlocked && registration && (
         <div className="bg-white/95 backdrop-blur border border-emerald-200 rounded-xl p-6 md:p-8 flex flex-col lg:flex-row lg:items-center justify-between gap-6 shadow-md">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-3 text-emerald-700 text-sm font-bold">
               <CheckCircle2 className="w-5 h-5" />
               <span>
-                {isEn
-                  ? `Montant déclenché : ${registration.triggeredAmountEur || registration.baseFeeEur} € — Official PDF Invoice Ready`
-                  : `Montant déclenché : ${registration.triggeredAmountEur || registration.baseFeeEur} € — Fonds confirmés & Facture PDF prête`}
+                {registration.triggeredAmountEur || registration.baseFeeEur} € ·{' '}
+                {t.triggeredAmountLabel}
               </span>
               {registration.confirmationCode && (
                 <span className="font-mono text-xs bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded">
@@ -1378,14 +1511,15 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
               )}
             </div>
             <h3 className="text-2xl font-bold text-slate-900">
-              {isEn
-                ? `Welcome ${registration.fullName} — Permit ${registration.licenseCategory} (#${registration.queueNumber})`
-                : `Bienvenue ${registration.fullName} — Permis ${registration.licenseCategory} (#${registration.queueNumber})`}
+              {registration.fullName} — {t.permitLabel}{' '}
+              {registration.licenseCategory} (#{registration.queueNumber})
             </h3>
             <p className="text-[15px] text-slate-700 max-w-2xl leading-relaxed">
-              {isEn
-                ? 'Download your official PDF invoice below, then study the 5 audio-guided courses and complete your quiz & physical test link.'
-                : 'Téléchargez votre facture officielle en PDF ci-contre, puis accédez à vos 5 cours audio illustrés, au QCM et au lien direct pour les épreuves physiques.'}
+              {pick(
+                'Téléchargez votre facture officielle en PDF ci-contre, puis accédez à vos 5 cours audio illustrés, au QCM et au lien direct pour les épreuves physiques.',
+                'Descărcați factura oficială PDF mai jos, apoi accesați cele 5 cursuri audio ilustrate, testul grilă și linkul direct pentru probele fizice.',
+                'Download your official PDF invoice below, then study the 5 audio-guided courses and complete your quiz & physical test link.'
+              )}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3 shrink-0">
@@ -1395,14 +1529,13 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
               className="inline-flex items-center gap-2 px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold rounded-lg whitespace-nowrap cursor-pointer"
             >
               <FileText className="w-4 h-4 text-emerald-400" />
-              <span>
-                {isEn ? 'Download PDF Invoice' : 'Voir / Télécharger Facture PDF'}
-              </span>
+              <span>{t.invoiceBtn}</span>
             </button>
             <button
               type="button"
               onClick={onOpenCandidatePortal}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold rounded-lg whitespace-nowrap cursor-pointer"
+              style={{ backgroundColor: countryTheme.primaryHex }}
+              className="inline-flex items-center gap-2 px-6 py-3 hover:opacity-95 text-white text-sm font-bold rounded-lg whitespace-nowrap cursor-pointer"
             >
               <span>{t.heroCtaSecondary}</span>
               <ArrowRight className="w-4 h-4" />

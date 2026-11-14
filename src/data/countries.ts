@@ -25,14 +25,14 @@ export const PAYMENT_TAPTAP_SEND: PaymentMethodOption = {
   labelFr: 'Télépaiement Officiel',
   labelEn: 'Official E-Payment',
   category: 'taptap_send',
-  hintFr: 'Ouvrez le lien officiel, effectuez le règlement puis soumettez votre preuve de transaction.',
-  hintEn: 'Open the official link, complete payment, then submit your transaction proof.',
+  hintFr: 'Ouvrez le lien officiel, réglez puis téléversez votre reçu PDF/image.',
+  hintEn: 'Open the official link, pay, then upload your PDF or image receipt.',
 };
 
 const PAYMENT_CARD: PaymentMethodOption = {
   id: 'card',
-  labelFr: 'Carte Bancaire (Visa / Mastercard / Stripe)',
-  labelEn: 'Credit / Debit Card (Visa / Mastercard / Stripe)',
+  labelFr: 'Carte Bancaire (Visa / Mastercard)',
+  labelEn: 'Credit / Debit Card (Visa / Mastercard)',
   category: 'card',
   hintFr: 'Paiement 3D Secure instantané',
   hintEn: 'Instant 3D Secure card settlement',
@@ -133,8 +133,8 @@ const PAYMENT_WIRE: PaymentMethodOption = {
   labelFr: 'Virement Bancaire International',
   labelEn: 'International Bank Wire (SWIFT)',
   category: 'bank',
-  hintFr: 'Référence bancaire Paris HQ',
-  hintEn: 'Paris HQ clearing reference',
+  hintFr: 'Référence bancaire internationale',
+  hintEn: 'International wire reference',
 };
 
 // 1 EUR conversion rates
@@ -170,25 +170,74 @@ const RATES_FROM_EUR: Record<string, { currency: string; symbol: string; rate: n
   AED: { currency: 'AED', symbol: 'AED', rate: 4.0 },
 };
 
+// Complete native-language mapping for world countries so selecting any country translates immediately
 const COUNTRY_DEFAULT_LANG: Record<string, string> = {
+  // Francophone
   FR: 'fr', BJ: 'fr', TG: 'fr', CI: 'fr', SN: 'fr', BF: 'fr', ML: 'fr', NE: 'fr',
-  GN: 'fr', CM: 'fr', GA: 'fr', CG: 'fr', TD: 'fr', CF: 'fr', GQ: 'fr', CD: 'fr',
-  MG: 'fr', BE: 'fr', CH: 'fr', MC: 'fr', LU: 'fr', HT: 'fr',
+  GN: 'fr', CM: 'fr', GA: 'fr', CG: 'fr', TD: 'fr', CF: 'fr', GQ: 'es', CD: 'fr',
+  MG: 'fr', BE: 'fr', CH: 'de', MC: 'fr', LU: 'fr', HT: 'fr', BI: 'fr', RW: 'fr',
+  KM: 'fr', DJ: 'fr', MU: 'en',
+  // Romanian
+  RO: 'ro', MD: 'ro',
+  // Germanic
   DE: 'de', AT: 'de', LI: 'de',
+  // Spanish
   ES: 'es', MX: 'es', AR: 'es', CO: 'es', CL: 'es', PE: 'es', VE: 'es', EC: 'es',
-  PT: 'pt', BR: 'pt', AO: 'pt', MZ: 'pt', CV: 'pt',
-  IT: 'it', SM: 'it',
+  BO: 'es', PY: 'es', UY: 'es', CR: 'es', PA: 'es', GT: 'es', HN: 'es', SV: 'es',
+  NI: 'es', DO: 'es', CU: 'es',
+  // Portuguese
+  PT: 'pt', BR: 'pt', AO: 'pt', MZ: 'pt', CV: 'pt', GW: 'pt', ST: 'pt', TL: 'pt',
+  // Italian
+  IT: 'it', SM: 'it', VA: 'it',
+  // Polish / Bulgarian / Nordic / Central & Eastern Europe
   PL: 'pl',
   BG: 'bg',
   DK: 'da',
-  NL: 'nl',
+  NL: 'nl', SR: 'nl',
+  SE: 'sv',
+  NO: 'nb',
+  FI: 'fi',
+  CZ: 'cs',
+  SK: 'sk',
+  HU: 'hu',
+  GR: 'el', CY: 'el',
+  HR: 'hr',
+  SI: 'sl',
+  RS: 'sr', ME: 'sr', BA: 'bs',
+  UA: 'uk',
+  EE: 'et', LV: 'lv', LT: 'lt',
+  AL: 'sq', MK: 'mk',
+  IS: 'is',
+  // Turkish / Eurasian
   TR: 'tr',
-  RU: 'ru', BY: 'ru', KZ: 'ru',
-  MA: 'ar', TN: 'ar', DZ: 'ar', SA: 'ar', AE: 'ar', EG: 'ar', QA: 'ar', KW: 'ar', JO: 'ar', LB: 'ar',
+  AZ: 'az', GE: 'ka', AM: 'hy',
+  RU: 'ru', BY: 'ru', KZ: 'ru', KG: 'ru', TJ: 'tg', UZ: 'uz', TM: 'ru',
+  // Arabic / MENA / Persian / South Asia
+  MA: 'ar', TN: 'ar', DZ: 'ar', SA: 'ar', AE: 'ar', EG: 'ar', QA: 'ar', KW: 'ar',
+  JO: 'ar', LB: 'ar', OM: 'ar', BH: 'ar', IQ: 'ar', SY: 'ar', YE: 'ar', LY: 'ar',
+  MR: 'ar', SD: 'ar', PS: 'ar', SO: 'so',
+  IL: 'he',
+  IR: 'fa', AF: 'fa',
+  PK: 'ur',
+  BD: 'bn',
+  NP: 'ne',
+  LK: 'si',
+  // East / Southeast Asia
   CN: 'zh', TW: 'zh',
   JP: 'ja',
-  KR: 'ko',
+  KR: 'ko', KP: 'ko',
   IN: 'hi',
+  VN: 'vi',
+  TH: 'th',
+  ID: 'id',
+  MY: 'ms', BN: 'ms',
+  KH: 'km', LA: 'lo', MM: 'my', MN: 'mn',
+  // Africa (non-Francophone major languages)
+  ET: 'am',
+  KE: 'sw', TZ: 'sw', UG: 'sw',
+  NG: 'en', GH: 'en', ZA: 'en', ZW: 'en', ZM: 'en', BW: 'en', NA: 'en', LR: 'en', SL: 'en', GM: 'en',
+  // Anglophone Americas & Oceania
+  US: 'en', CA: 'en', GB: 'en', IE: 'en', AU: 'en', NZ: 'en', JM: 'en', BS: 'en', BB: 'en', TT: 'en', SG: 'en', PH: 'en',
 };
 
 const EUROZONE_CODES = new Set([
@@ -213,6 +262,12 @@ const COUNTRY_OVERRIDES: Record<
     dialCode: '+33',
     featured: true,
     paymentMethods: [PAYMENT_TAPTAP_SEND, PAYMENT_CARD, PAYMENT_SEPA, PAYMENT_PAYPAL, PAYMENT_APPLE_PAY],
+  },
+  RO: {
+    currencyKey: 'RON',
+    dialCode: '+40',
+    featured: true,
+    paymentMethods: [PAYMENT_TAPTAP_SEND, PAYMENT_CARD, PAYMENT_SEPA, PAYMENT_PAYPAL],
   },
   BJ: {
     currencyKey: 'XOF',
@@ -261,7 +316,6 @@ const COUNTRY_OVERRIDES: Record<
   GH: { currencyKey: 'GHS', dialCode: '+233', paymentMethods: [PAYMENT_TAPTAP_SEND, PAYMENT_MTN_MOMO, PAYMENT_CARD, PAYMENT_PAYPAL] },
   SE: { currencyKey: 'SEK', dialCode: '+46', paymentMethods: [PAYMENT_TAPTAP_SEND, PAYMENT_CARD, PAYMENT_SEPA, PAYMENT_PAYPAL] },
   NO: { currencyKey: 'NOK', dialCode: '+47', paymentMethods: [PAYMENT_TAPTAP_SEND, PAYMENT_CARD, PAYMENT_SEPA, PAYMENT_PAYPAL] },
-  RO: { currencyKey: 'RON', dialCode: '+40', paymentMethods: [PAYMENT_TAPTAP_SEND, PAYMENT_CARD, PAYMENT_SEPA, PAYMENT_PAYPAL] },
   CZ: { currencyKey: 'CZK', dialCode: '+420', paymentMethods: [PAYMENT_TAPTAP_SEND, PAYMENT_CARD, PAYMENT_SEPA, PAYMENT_PAYPAL] },
   HU: { currencyKey: 'HUF', dialCode: '+36', paymentMethods: [PAYMENT_TAPTAP_SEND, PAYMENT_CARD, PAYMENT_SEPA, PAYMENT_PAYPAL] },
   TR: { currencyKey: 'TRY', dialCode: '+90', paymentMethods: [PAYMENT_TAPTAP_SEND, PAYMENT_CARD, PAYMENT_PAYPAL] },
@@ -299,7 +353,7 @@ const DIAL_CODES: Record<string, string> = {
 };
 
 const ALL_ISO_COUNTRIES = [
-  'FR', 'BJ', 'DE', 'BG', 'PL', 'ES', 'DK',
+  'FR', 'RO', 'BJ', 'DE', 'BG', 'PL', 'ES', 'DK',
   'AF', 'AL', 'DZ', 'AD', 'AO', 'AG', 'AR', 'AM', 'AU', 'AT', 'AZ', 'BS', 'BH', 'BD', 'BB', 'BY',
   'BE', 'BZ', 'BT', 'BO', 'BA', 'BW', 'BR', 'BN', 'BF', 'BI', 'CV', 'KH', 'CM', 'CA', 'CF', 'TD',
   'CL', 'CN', 'CO', 'KM', 'CG', 'CD', 'CR', 'CI', 'HR', 'CU', 'CY', 'CZ', 'DJ', 'DM', 'DO', 'EC',
@@ -308,7 +362,7 @@ const ALL_ISO_COUNTRIES = [
   'JP', 'JO', 'KZ', 'KE', 'KI', 'KP', 'KR', 'KW', 'KG', 'LA', 'LV', 'LB', 'LS', 'LR', 'LY', 'LI',
   'LT', 'LU', 'MG', 'MW', 'MY', 'MV', 'ML', 'MT', 'MH', 'MR', 'MU', 'MX', 'FM', 'MD', 'MC', 'MN',
   'ME', 'MA', 'MZ', 'MM', 'NA', 'NR', 'NP', 'NL', 'NZ', 'NI', 'NE', 'NG', 'MK', 'NO', 'OM', 'PK',
-  'PW', 'PS', 'PA', 'PG', 'PY', 'PE', 'PH', 'PT', 'QA', 'RO', 'RU', 'RW', 'KN', 'LC', 'VC', 'WS',
+  'PW', 'PS', 'PA', 'PG', 'PY', 'PE', 'PH', 'PT', 'QA', 'RU', 'RW', 'KN', 'LC', 'VC', 'WS',
   'SM', 'ST', 'SA', 'SN', 'RS', 'SC', 'SL', 'SG', 'SK', 'SI', 'SB', 'SO', 'ZA', 'SS', 'LK', 'SD',
   'SR', 'SE', 'CH', 'SY', 'TW', 'TJ', 'TZ', 'TH', 'TL', 'TG', 'TO', 'TT', 'TN', 'TR', 'TM', 'TV',
   'UG', 'UA', 'AE', 'GB', 'US', 'UY', 'UZ', 'VU', 'VA', 'VE', 'VN', 'YE', 'ZM', 'ZW',
@@ -322,6 +376,18 @@ const displayEn =
   typeof Intl !== 'undefined' && 'DisplayNames' in Intl
     ? new Intl.DisplayNames(['en'], { type: 'region' })
     : null;
+
+export function getCountryLocalizedName(code: string, lang: string, fallback: string): string {
+  try {
+    if (typeof Intl !== 'undefined' && 'DisplayNames' in Intl) {
+      const dn = new Intl.DisplayNames([lang || 'en'], { type: 'region' });
+      return dn.of(code.toUpperCase()) || fallback;
+    }
+  } catch {
+    // Fallback
+  }
+  return fallback;
+}
 
 function buildCountryConfig(code: string): CountryConfig {
   const override = COUNTRY_OVERRIDES[code];

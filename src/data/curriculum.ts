@@ -1,5 +1,6 @@
 import { APP_MEDIA } from '../assets/media';
 import { InstructorProfile } from '../types';
+import { RO_MODULES_MAP, RO_QUIZ_MAP } from './curriculumRo';
 
 export const PARIS_HQ_CONTACT = {
   accreditation: 'E-24-075-0891',
@@ -691,3 +692,109 @@ export const OFFICIAL_QUIZ_BANK: QuizQuestion[] = [
       'Drivers must yield and stop for pedestrians either on the crossing or visibly waiting to cross.',
   },
 ];
+
+export interface LocalizedModuleView {
+  id: string;
+  number: string;
+  isStudyGuide?: boolean;
+  animationType: CodeLessonModule['animationType'];
+  visualUrl: string;
+  visualCaption: string;
+  speakerName: string;
+  speakerRole: string;
+  speakerAvatarUrl: string;
+  audioScript: string;
+  title: string;
+  durationMin: number;
+  summary: string;
+  chapters: { heading: string; body: string; tip: string }[];
+  keyRules: string[];
+}
+
+export function getLocalizedModule(
+  mod: CodeLessonModule,
+  lang: string
+): LocalizedModuleView {
+  if (lang === 'ro' && RO_MODULES_MAP[mod.id]) {
+    const ro = RO_MODULES_MAP[mod.id];
+    return {
+      id: mod.id,
+      number: mod.number,
+      isStudyGuide: mod.isStudyGuide,
+      animationType: mod.animationType,
+      visualUrl: mod.visualUrl,
+      visualCaption: ro.visualCaption,
+      speakerName: mod.speakerName,
+      speakerRole: ro.speakerRole,
+      speakerAvatarUrl: mod.speakerAvatarUrl,
+      audioScript: ro.audioScript,
+      title: ro.title,
+      durationMin: mod.durationMin,
+      summary: ro.summary,
+      chapters: ro.chapters,
+      keyRules: ro.keyRules,
+    };
+  }
+
+  const useFr = lang === 'fr';
+  return {
+    id: mod.id,
+    number: mod.number,
+    isStudyGuide: mod.isStudyGuide,
+    animationType: mod.animationType,
+    visualUrl: mod.visualUrl,
+    visualCaption: useFr ? mod.visualCaptionFr : mod.visualCaptionEn,
+    speakerName: mod.speakerName,
+    speakerRole: useFr ? mod.speakerRoleFr : mod.speakerRoleEn,
+    speakerAvatarUrl: mod.speakerAvatarUrl,
+    audioScript: useFr ? mod.audioScriptFr : mod.audioScriptEn,
+    title: useFr ? mod.titleFr : mod.titleEn,
+    durationMin: mod.durationMin,
+    summary: useFr ? mod.summaryFr : mod.summaryEn,
+    chapters: mod.chapters.map((ch) => ({
+      heading: useFr ? ch.headingFr : ch.headingEn,
+      body: useFr ? ch.bodyFr : ch.bodyEn,
+      tip: useFr ? ch.tipFr : ch.tipEn,
+    })),
+    keyRules: useFr ? mod.keyRulesFr : mod.keyRulesEn,
+  };
+}
+
+export interface LocalizedQuizView {
+  id: string;
+  signType?: QuizQuestion['signType'];
+  category: string;
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+}
+
+export function getLocalizedQuizQuestion(
+  q: QuizQuestion,
+  lang: string
+): LocalizedQuizView {
+  if (lang === 'ro' && RO_QUIZ_MAP[q.id]) {
+    const ro = RO_QUIZ_MAP[q.id];
+    return {
+      id: q.id,
+      signType: q.signType,
+      category: ro.category,
+      question: ro.question,
+      options: ro.options,
+      correctIndex: q.correctIndex,
+      explanation: ro.explanation,
+    };
+  }
+
+  const useFr = lang === 'fr';
+  return {
+    id: q.id,
+    signType: q.signType,
+    category: useFr ? q.categoryFr : q.categoryEn,
+    question: useFr ? q.questionFr : q.questionEn,
+    options: useFr ? q.optionsFr : q.optionsEn,
+    correctIndex: q.correctIndex,
+    explanation: useFr ? q.explanationFr : q.explanationEn,
+  };
+}

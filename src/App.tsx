@@ -17,17 +17,14 @@ import {
   ArrowRight,
   CarFront,
   CheckCircle2,
-  Clock,
   GraduationCap,
   Lock,
   Mail,
   MailCheck,
-  MapPin,
   MessageCircle,
   ShieldCheck,
   UserPlus,
   Volume2,
-  Wifi,
 } from 'lucide-react';
 import { AgentAdminPortal } from './components/AgentAdminPortal';
 import { AnimatedStageBackdrop } from './components/AnimatedStageBackdrop';
@@ -35,18 +32,17 @@ import { AuthModal } from './components/AuthModal';
 import { CandidatePortal } from './components/CandidatePortal';
 import { ContactQuestionModal } from './components/ContactQuestionModal';
 import { CountrySelector } from './components/CountrySelector';
+import { CountryFlagSvg, InstituteCrestSvg } from './components/CountryVisuals';
 import { DriveProLogo } from './components/DriveProLogo';
 import { LegalDocKey, LegalModal } from './components/LegalModals';
 import { PartnerLogos, SocialAccountsStrip } from './components/PartnerLogos';
 import { RegistrationFlow } from './components/RegistrationFlow';
 import {
   CATEGORY_FEES_EUR,
-  convertEurFee,
-  formatLocalCurrency,
   getCountryByCode,
-  getCountryFlagEmoji,
+  getCountryLocalizedName,
 } from './data/countries';
-import { formatCountryLocalTime, getCountryTheme } from './data/countryThemes';
+import { getCountryTheme } from './data/countryThemes';
 import { PARIS_HQ_CONTACT } from './data/curriculum';
 import { getTranslations, isRtlLanguage } from './data/i18n';
 import {
@@ -77,43 +73,53 @@ const TRACKING_SESSION_KEY = 'drivepro_tracking_ctx_v4';
 
 const HERO_COURSE_SLIDES = [
   {
-    code: 'COURS 01',
+    code: '01',
     titleFr: 'Signalisation & Panneau STOP',
+    titleRo: 'Indicatoare Rutiere & STOP',
     titleEn: 'Road Signs & Mandatory STOP',
     detailFr: 'Arrêt absolu devant la ligne · Explication audio multilingue',
+    detailRo: 'Oprire obligatorie la linie · Explicație audio multilingvă',
     detailEn: 'Full stop at the line · Multilingual voice guidance',
     badge: 'STOP',
   },
   {
-    code: 'COURS 02',
+    code: '02',
     titleFr: 'Giratoires & Priorité à Gauche',
+    titleRo: 'Sensuri Giratorii & Prioritate',
     titleEn: 'Roundabouts & Yield Rules',
     detailFr: 'Placement dans la voie · Clignotant droit avant sortie',
+    detailRo: 'Poziționare pe bandă · Semnalizare dreapta la ieșire',
     detailEn: 'Lane positioning · Right turn signal before exit',
     badge: '↻',
   },
   {
-    code: 'COURS 03',
+    code: '03',
     titleFr: 'Autoroute & Distance de Sécurité',
+    titleRo: 'Autostradă & Distanță de Siguranță',
     titleEn: 'Highway & Safe Braking Distance',
-    detailFr: 'Règle des 2 secondes (90m) · Voie de dépassement',
+    detailFr: 'Règle des 2 secondes (90 m) · Voie de dépassement',
+    detailRo: 'Regula celor 2 secunde (90 m) · Banda de depășire',
     detailEn: 'Two-second interval rule · Overtaking lane discipline',
     badge: '130',
   },
   {
-    code: 'COURS 04',
+    code: '04',
     titleFr: 'Conduite Urbaine & Piétons',
+    titleRo: 'Conducere Urbană & Pietoni',
     titleEn: 'Urban Driving & Pedestrians',
     detailFr: 'Angles morts · Zones 30 & passages protégés',
+    detailRo: 'Unghiuri moarte · Zone 30 km/h & treceri de pietoni',
     detailEn: 'Blind spots · 30 km/h urban zones & crosswalks',
     badge: '50',
   },
   {
-    code: 'COURS 05',
-    titleFr: 'QCM Officiel & Épreuves Physiques',
-    titleEn: 'Official Exam & Physical Tests',
-    detailFr: 'Correction complète + RDV examinateur agréé < 48h',
-    detailEn: 'Full corrections + certified physical test appointment < 48h',
+    code: '05',
+    titleFr: 'QCM Officiel & Preuve Physique',
+    titleRo: 'Examen Oficial & Probă Fizică',
+    titleEn: 'Official Exam & Physical Proof',
+    detailFr: 'Correction complète + Lien direct épreuves physiques',
+    detailRo: 'Corectare completă + Link direct probe fizice',
+    detailEn: 'Full corrections + direct physical test booking link',
     badge: '48H',
   },
 ];
@@ -175,7 +181,7 @@ export default function App() {
   const [referralCode, setReferralCode] = useState<string>('');
   const [referralPlatform, setReferralPlatform] = useState<string>('Direct');
 
-  // Auth & Firestore state (Account via Name, Email, Phone & Password)
+  // Auth & Firestore state
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserAccountRecord | null>(null);
   const [authReady, setAuthReady] = useState(false);
@@ -201,7 +207,6 @@ export default function App() {
   const [communitySlideIdx, setCommunitySlideIdx] = useState(0);
   const [heroImgFailed, setHeroImgFailed] = useState(false);
   const [classImgFailed, setClassImgFailed] = useState(false);
-  const [nowTick, setNowTick] = useState(() => Date.now());
 
   // Corporate Legal & Contact Modals
   const [legalDocOpen, setLegalDocOpen] = useState<LegalDocKey | null>(null);
@@ -212,14 +217,12 @@ export default function App() {
   const countryTheme = getCountryTheme(selectedCountry);
   const countryGalleryCount = countryTheme.galleryImages.length;
 
-  // Enforce strict creator-only route protection on activeView
   useEffect(() => {
     if (activeView === 'agent' && !isCreatorAdmin) {
       setActiveView('home');
     }
   }, [activeView, isCreatorAdmin]);
 
-  // Reset country photo showcase smoothly on country change
   useEffect(() => {
     setHeroSlideIdx(0);
     setCommunitySlideIdx(0);
@@ -227,7 +230,6 @@ export default function App() {
     setClassImgFailed(false);
   }, [selectedCountry.code]);
 
-  // Cycle hero showcase + lower training showcase + live country clock every 30s
   useEffect(() => {
     const heroTimer = setInterval(() => {
       setHeroSlideIdx((prev) => (prev + 1) % countryGalleryCount);
@@ -235,13 +237,9 @@ export default function App() {
     const communityTimer = setInterval(() => {
       setCommunitySlideIdx((prev) => (prev + 1) % countryGalleryCount);
     }, 4200);
-    const clockTimer = setInterval(() => {
-      setNowTick(Date.now());
-    }, 30000);
     return () => {
       clearInterval(heroTimer);
       clearInterval(communityTimer);
-      clearInterval(clockTimer);
     };
   }, [countryGalleryCount]);
 
@@ -442,7 +440,7 @@ export default function App() {
     };
   }, [authReady, user]);
 
-  // Subscribe to Social Links, All Registrations, Payments, and Contact Messages ONLY for verified Creator Admin
+  // Subscribe to Creator Admin collections ONLY for verified Creator Admin
   useEffect(() => {
     if (!authReady || !isCreatorAdmin) {
       setSocialLinks([]);
@@ -596,14 +594,15 @@ export default function App() {
   };
 
   const t = getTranslations(lang);
-  const isEn = lang === 'en';
-  const baseEur = CATEGORY_FEES_EUR[category];
-  const convertedFee = convertEurFee(baseEur, selectedCountry);
-  const formattedLocalFee = formatLocalCurrency(
-    convertedFee,
-    selectedCountry,
-    lang
+  const pick = (fr: string, ro: string, en: string) =>
+    lang === 'fr' ? fr : lang === 'ro' ? ro : en;
+
+  const localizedCountryName = getCountryLocalizedName(
+    selectedCountry.code,
+    lang,
+    selectedCountry.nameFr
   );
+  const baseEur = CATEGORY_FEES_EUR[category];
   const isCandidateUnlocked =
     activeRegistration !== null &&
     (activeRegistration.paymentStatus === 'paid' ||
@@ -624,48 +623,44 @@ export default function App() {
   const currentHeroCourse =
     HERO_COURSE_SLIDES[heroSlideIdx % HERO_COURSE_SLIDES.length] ||
     HERO_COURSE_SLIDES[0];
-  const countryFlag = getCountryFlagEmoji(selectedCountry.code);
-  const localClock = (() => {
-    void nowTick;
-    return formatCountryLocalTime(countryTheme.timeZone, lang);
-  })();
-  const localTimeStr = `${localClock.timeText} (${localClock.tzShort})`;
   const heroGalleryImages = countryTheme.galleryImages;
   const communityGalleryImages = [
     ...countryTheme.galleryImages.slice(1),
     countryTheme.galleryImages[0],
   ];
-  const communityCaptionsFr = [
-    `${countryTheme.heroCaptionFr} · ${countryTheme.cityLabel}`,
-    `Cours Audio multilingue · ${selectedCountry.nameFr}`,
-    `QCM Officiel & Préparation Épreuves Physiques (${selectedCountry.nameFr})`,
-    `Délivrance du permis · ${countryTheme.authorityName}`,
-  ];
-  const communityCaptionsEn = [
-    `${countryTheme.heroCaptionEn} · ${countryTheme.cityLabel}`,
-    `Multilingual Audio Theory · ${selectedCountry.nameEn}`,
-    `Official Exam & Physical Test Prep (${selectedCountry.nameEn})`,
-    `Official Permit Issuance · ${countryTheme.authorityName}`,
+  const communityCaptions = [
+    `${localizedCountryName} · ${countryTheme.authorityName}`,
+    `${t.candidateTabCode} · ${localizedCountryName}`,
+    `${t.quizTitle} · ${localizedCountryName}`,
+    `${t.physicalProofLabel} · ${countryTheme.authorityCode}`,
   ];
 
   return (
     <ErrorBoundary>
       <div
         dir={isRtlLanguage(lang) ? 'rtl' : 'ltr'}
+        style={
+          {
+            '--country-primary': countryTheme.primaryHex,
+            '--country-primary-hover': countryTheme.primaryHoverHex,
+            '--country-secondary': countryTheme.secondaryHex,
+            '--country-accent': countryTheme.accentHex,
+          } as React.CSSProperties
+        }
         className="relative min-h-screen text-slate-900 font-sans"
       >
-        {/* Dynamic Per-Country Animated Waving Flag + Local Driving Photography Stage */}
+        {/* Dynamic Per-Country Animated Waving Flag + Full-Color Local Photography Stage */}
         <AnimatedStageBackdrop scene={activeView} country={selectedCountry} />
 
         <div className="relative z-10 min-h-screen flex flex-col">
-          {/* Top Bar Contract: Exactly 3 zones separated by gap-8 */}
+          {/* Top Bar */}
           <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-sm">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-8">
               <button
                 type="button"
                 onClick={() => setActiveView('home')}
                 className="cursor-pointer whitespace-nowrap shrink-0"
-                aria-label="DrivePro Academy Accueil"
+                aria-label="DrivePro Academy"
               >
                 <DriveProLogo size="md" />
               </button>
@@ -678,10 +673,18 @@ export default function App() {
                       key={item.id}
                       type="button"
                       onClick={() => setActiveView(item.id)}
+                      style={
+                        active
+                          ? {
+                              color: countryTheme.primaryHex,
+                              borderColor: countryTheme.primaryHex,
+                            }
+                          : undefined
+                      }
                       className={`py-1 whitespace-nowrap shrink-0 transition-colors border-b-2 cursor-pointer ${
                         active
-                          ? 'text-blue-700 border-blue-700 font-semibold'
-                          : 'text-slate-600 border-transparent hover:text-slate-900'
+                          ? 'font-semibold'
+                          : 'text-slate-700 border-transparent hover:text-slate-900'
                       }`}
                     >
                       {item.label}
@@ -691,10 +694,10 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setContactModalOpen(true)}
-                  className="py-1 inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 text-slate-600 hover:text-blue-700 transition-colors cursor-pointer"
+                  className="py-1 inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 text-slate-700 hover:text-slate-950 transition-colors cursor-pointer"
                 >
-                  <Mail className="w-3.5 h-3.5" />
-                  <span>{isEn ? 'Contact' : 'Contact / Question'}</span>
+                  <Mail className="w-4 h-4" />
+                  <span>{t.navContact}</span>
                 </button>
               </nav>
 
@@ -703,7 +706,7 @@ export default function App() {
                   <button
                     type="button"
                     onClick={handleSignOut}
-                    className="px-4 py-2 text-xs font-semibold text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                    className="px-4 py-2 text-sm font-semibold text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
                   >
                     {firstDisplayName} · {t.navSignOut}
                   </button>
@@ -712,16 +715,17 @@ export default function App() {
                     <button
                       type="button"
                       onClick={() => openAuthModal('login')}
-                      className="hidden sm:inline-flex px-3.5 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                      className="hidden sm:inline-flex px-3.5 py-2 text-sm font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
                     >
-                      {isEn ? 'Sign In' : 'Se connecter'}
+                      {t.navLogin}
                     </button>
                     <button
                       type="button"
                       onClick={() => openAuthModal('register')}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                      style={{ backgroundColor: countryTheme.primaryHex }}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white hover:opacity-95 rounded-lg transition-opacity whitespace-nowrap shrink-0 cursor-pointer"
                     >
-                      <UserPlus className="w-3.5 h-3.5" />
+                      <UserPlus className="w-4 h-4" />
                       <span>{t.navSignIn}</span>
                     </button>
                   </>
@@ -736,10 +740,13 @@ export default function App() {
                   key={item.id}
                   type="button"
                   onClick={() => setActiveView(item.id)}
-                  className={`px-2.5 py-1 text-xs font-medium rounded-md whitespace-nowrap shrink-0 ${
+                  style={
                     activeView === item.id
-                      ? 'bg-slate-900 text-white'
-                      : 'text-slate-600'
+                      ? { backgroundColor: countryTheme.primaryHex }
+                      : undefined
+                  }
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap shrink-0 ${
+                    activeView === item.id ? 'text-white' : 'text-slate-700'
                   }`}
                 >
                   {item.label}
@@ -748,9 +755,9 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setContactModalOpen(true)}
-                className="px-2.5 py-1 text-xs font-medium text-blue-700 rounded-md whitespace-nowrap shrink-0 cursor-pointer"
+                className="px-3 py-1.5 text-xs font-semibold text-slate-800 rounded-md whitespace-nowrap shrink-0 cursor-pointer"
               >
-                {isEn ? 'Contact' : 'Question'}
+                {t.navContact}
               </button>
             </div>
           </header>
@@ -796,7 +803,7 @@ export default function App() {
               </div>
             )}
 
-            {/* Elevated Country & Language Selector Bar ONLY (Drops cleanly ABOVE everything via z-40 / z-[70]) */}
+            {/* Elevated Country & Language Selector Bar (Drops cleanly ABOVE via z-40) */}
             <CountrySelector
               selectedCountry={selectedCountry}
               lang={lang}
@@ -810,48 +817,29 @@ export default function App() {
                 <section className="grid lg:grid-cols-12 gap-7 items-stretch">
                   <div className="lg:col-span-6 bg-white/95 backdrop-blur border border-slate-200 rounded-2xl p-7 md:p-9 flex flex-col justify-between gap-6 shadow-lg">
                     <div className="space-y-4">
-                      {/* Per-Country Live Adaptation Bar: Flag, Local Clock, SIM Dial Prefix & National Authority */}
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800">
-                        <span className="inline-flex items-center gap-1.5 text-blue-800 font-bold">
-                          <span className="text-base leading-none">{countryFlag}</span>
-                          <span>{isEn ? selectedCountry.nameEn : selectedCountry.nameFr}</span>
-                        </span>
-                        <span className="inline-flex items-center gap-1 font-mono text-slate-700 tabular-nums">
-                          <Clock className="w-3.5 h-3.5 text-blue-700 shrink-0" />
-                          <span>{localTimeStr}</span>
-                        </span>
-                        <span className="inline-flex items-center gap-1 font-mono text-slate-700">
-                          <Wifi className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                          <span>
-                            {isEn ? countryTheme.simLabelEn : countryTheme.simLabelFr}
-                          </span>
-                        </span>
-                        <span className="inline-flex items-center gap-1 text-slate-600">
-                          <MapPin className="w-3.5 h-3.5 text-blue-700 shrink-0" />
-                          <span>{countryTheme.authorityName}</span>
-                        </span>
+                      {/* Per-Country Institute Header ONLY (with official Crest SVG — NO SIM, NO clock, NO MapPin) */}
+                      <div
+                        className="inline-flex items-center gap-3 rounded-xl px-4 py-2.5 border text-sm font-bold text-slate-900"
+                        style={{
+                          backgroundColor: countryTheme.surfaceTintHex,
+                          borderColor: `${countryTheme.primaryHex}33`,
+                        }}
+                      >
+                        <InstituteCrestSvg
+                          theme={countryTheme}
+                          className="w-8 h-8 shrink-0"
+                        />
+                        <span>{countryTheme.authorityName}</span>
                       </div>
+
                       <h1
                         className="font-display text-3xl sm:text-4xl lg:text-[2.75rem] font-extrabold tracking-tight text-slate-900 leading-[1.12]"
                         style={{ textWrap: 'balance' }}
                       >
-                        {lang === 'fr' ? (
-                          <>
-                            Votre permis international{' '}
-                            <span className="text-blue-700">
-                              en moins de 48 heures.
-                            </span>
-                          </>
-                        ) : lang === 'en' ? (
-                          <>
-                            Your international driver’s license{' '}
-                            <span className="text-blue-700">
-                              in under 48 hours.
-                            </span>
-                          </>
-                        ) : (
-                          t.heroTitle
-                        )}
+                        {t.heroTitleLead}{' '}
+                        <span style={{ color: countryTheme.primaryHex }}>
+                          {t.heroTitleAccent}
+                        </span>
                       </h1>
                       <p className="text-[15px] sm:text-base text-slate-700 leading-relaxed max-w-xl">
                         {t.heroSubtitle}
@@ -863,7 +851,8 @@ export default function App() {
                         <button
                           type="button"
                           onClick={() => setActiveView('enroll')}
-                          className="inline-flex items-center gap-2 px-6 py-3.5 bg-gradient-to-r from-blue-700 to-blue-800 hover:from-blue-600 hover:to-blue-700 text-white text-sm font-bold rounded-xl shadow-md transition-all cursor-pointer whitespace-nowrap"
+                          style={{ backgroundColor: countryTheme.primaryHex }}
+                          className="inline-flex items-center gap-2 px-6 py-3.5 hover:opacity-95 text-white text-sm font-bold rounded-xl shadow-md transition-opacity cursor-pointer whitespace-nowrap"
                         >
                           <span>{t.heroCtaPrimary}</span>
                           <ArrowRight className="w-4 h-4" />
@@ -883,24 +872,28 @@ export default function App() {
                           onClick={() => setContactModalOpen(true)}
                           className="inline-flex items-center gap-2 px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-sm font-semibold rounded-xl transition-colors cursor-pointer whitespace-nowrap"
                         >
-                          <Mail className="w-4 h-4 text-blue-700" />
-                          <span>{isEn ? 'Ask a Question' : 'Poser une question'}</span>
+                          <Mail
+                            className="w-4 h-4"
+                            style={{ color: countryTheme.primaryHex }}
+                          />
+                          <span>{t.askQuestionBtn}</span>
                         </button>
                       </div>
-                      <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono tabular-nums text-slate-700 pt-1 border-t border-slate-100">
-                        <span>
-                          {isEn
-                            ? `Permit ${category} : ${baseEur} € (${formattedLocalFee})`
-                            : `Permis ${category} : ${baseEur} € (${formattedLocalFee})`}
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-sm font-mono tabular-nums text-slate-700 pt-2 border-t border-slate-100">
+                        <span className="font-semibold">
+                          {t.permitLabel} {category} : {baseEur} €
                         </span>
-                        <span className="text-blue-700 font-bold">
-                          {isEn ? countryTheme.localPermitEn : countryTheme.localPermitFr}
+                        <span
+                          className="font-bold"
+                          style={{ color: countryTheme.primaryHex }}
+                        >
+                          {countryTheme.authorityCode} · {localizedCountryName}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Country-Adapted Animated Photo Showcase Carousel */}
+                  {/* Country-Adapted Full-Color Animated Photo Showcase Carousel */}
                   <div className="lg:col-span-6 relative rounded-2xl overflow-hidden border border-slate-200/80 bg-slate-950 min-h-[360px] shadow-lg flex flex-col justify-end">
                     {!heroImgFailed ? (
                       <>
@@ -908,11 +901,7 @@ export default function App() {
                           <img
                             key={`${selectedCountry.code}-${imgSrc}-${idx}`}
                             src={imgSrc}
-                            alt={
-                              isEn
-                                ? `${selectedCountry.nameEn} — ${countryTheme.heroCaptionEn}`
-                                : `${selectedCountry.nameFr} — ${countryTheme.heroCaptionFr}`
-                            }
+                            alt={`${localizedCountryName} — ${countryTheme.authorityName}`}
                             referrerPolicy="no-referrer"
                             onError={() => setHeroImgFailed(true)}
                             className={`absolute inset-0 w-full h-full object-cover transition-all duration-[1400ms] ease-in-out ${
@@ -922,47 +911,57 @@ export default function App() {
                             }`}
                           />
                         ))}
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent pointer-events-none" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/25 to-transparent pointer-events-none" />
 
-                        {/* Country Flag Tag + Animated Mini Interactive Course Card Overlay */}
                         <div className="relative z-10 p-5 sm:p-6 space-y-4">
                           <div className="flex items-center justify-between gap-2">
-                            <span className="inline-flex items-center gap-2 px-3 py-1 bg-slate-950/80 backdrop-blur border border-white/15 rounded-lg text-xs font-semibold text-white">
-                              <span>{countryFlag}</span>
-                              <span>
-                                {isEn ? selectedCountry.nameEn : selectedCountry.nameFr} · {localTimeStr}
-                              </span>
+                            <span className="inline-flex items-center gap-2.5 px-3 py-1.5 bg-slate-950/85 backdrop-blur border border-white/20 rounded-lg text-sm font-semibold text-white">
+                              <CountryFlagSvg
+                                theme={countryTheme}
+                                className="w-6 h-4"
+                              />
+                              <span>{localizedCountryName}</span>
                             </span>
                           </div>
 
                           <div className="bg-slate-950/85 backdrop-blur-md border border-slate-700/80 rounded-xl p-4 flex items-center justify-between gap-4 text-white">
                             <div className="flex items-center gap-3.5 min-w-0">
-                              <div className="w-12 h-12 rounded-xl bg-red-600 border-2 border-white flex items-center justify-center font-display font-extrabold text-sm shrink-0 shadow">
+                              <div
+                                style={{ backgroundColor: countryTheme.secondaryHex }}
+                                className="w-12 h-12 rounded-xl border-2 border-white flex items-center justify-center font-display font-extrabold text-sm shrink-0 shadow"
+                              >
                                 {currentHeroCourse.badge}
                               </div>
                               <div className="min-w-0">
-                                <div className="text-[11px] font-mono text-blue-300 font-semibold flex items-center gap-1.5">
+                                <div className="text-xs font-mono text-blue-300 font-semibold flex items-center gap-1.5">
                                   <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
-                                  <span>{currentHeroCourse.code} · AUDIO ACTIF</span>
+                                  <span>
+                                    {currentHeroCourse.code} · {t.activeAudioLabel}
+                                  </span>
                                 </div>
                                 <div className="text-sm sm:text-base font-bold truncate mt-0.5">
-                                  {isEn
-                                    ? currentHeroCourse.titleEn
-                                    : currentHeroCourse.titleFr}
+                                  {pick(
+                                    currentHeroCourse.titleFr,
+                                    currentHeroCourse.titleRo,
+                                    currentHeroCourse.titleEn
+                                  )}
                                 </div>
                                 <div className="text-xs text-slate-300 truncate">
-                                  {isEn
-                                    ? currentHeroCourse.detailEn
-                                    : currentHeroCourse.detailFr}
+                                  {pick(
+                                    currentHeroCourse.detailFr,
+                                    currentHeroCourse.detailRo,
+                                    currentHeroCourse.detailEn
+                                  )}
                                 </div>
                               </div>
                             </div>
                             <button
                               type="button"
                               onClick={() => setActiveView('enroll')}
-                              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg whitespace-nowrap shrink-0 cursor-pointer"
+                              style={{ backgroundColor: countryTheme.primaryHex }}
+                              className="px-4 py-2 hover:opacity-95 text-white text-xs font-bold rounded-lg whitespace-nowrap shrink-0 cursor-pointer"
                             >
-                              {isEn ? 'Open' : 'Voir'}
+                              {t.openBtn}
                             </button>
                           </div>
 
@@ -982,7 +981,7 @@ export default function App() {
                                 />
                               ))}
                             </div>
-                            <span className="text-xs font-mono text-white/80 tabular-nums">
+                            <span className="text-xs font-mono text-white/85 tabular-nums">
                               0{(heroSlideIdx % heroGalleryImages.length) + 1} / 0{heroGalleryImages.length}
                             </span>
                           </div>
@@ -999,64 +998,55 @@ export default function App() {
                   </div>
                 </section>
 
-                {/* Full-Width 4-Column Tariff Strip (Increased Rates: 300 / 450 / 650 €) */}
+                {/* Full-Width 4-Column Tariff Strip (Strict Euro Rates: 300 / 450 / 650 € + Physical Proof) */}
                 <section className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {[
                     {
-                      metric: `${formatLocalCurrency(convertEurFee(300, selectedCountry), selectedCountry, lang)}`,
-                      accent: 'text-blue-700',
-                      titleFr: 'Permis A · 300 €',
-                      titleEn: 'Permit A · €300',
-                      descFr: 'Moto · Dossier complet, cours audio & facture PDF officielle.',
-                      descEn: 'Motorcycle · Complete dossier, audio courses & official PDF invoice.',
+                      metric: '300 €',
+                      color: countryTheme.primaryHex,
+                      title: t.tariffATitle,
+                      desc: t.tariffADesc,
                     },
                     {
-                      metric: `${formatLocalCurrency(convertEurFee(450, selectedCountry), selectedCountry, lang)}`,
-                      accent: 'text-slate-900',
-                      titleFr: 'Permis B · 450 €',
-                      titleEn: 'Permit B · €450',
-                      descFr: 'Voiture · Réinscription rapide & déclenchement dès réception.',
-                      descEn: 'Passenger car · Fast re-enrollment & instant trigger on receipt.',
+                      metric: '450 €',
+                      color: '#0F172A',
+                      title: t.tariffBTitle,
+                      desc: t.tariffBDesc,
                     },
                     {
-                      metric: `${formatLocalCurrency(convertEurFee(650, selectedCountry), selectedCountry, lang)}`,
-                      accent: 'text-emerald-700',
-                      titleFr: 'Permis C · 650 €',
-                      titleEn: 'Permit C · €650',
-                      descFr: 'Poids lourd · Formation complète & épreuves physiques.',
-                      descEn: 'Heavy truck · Complete training & physical examination.',
+                      metric: '650 €',
+                      color: '#047857',
+                      title: t.tariffCTitle,
+                      desc: t.tariffCDesc,
                     },
                     {
-                      metric: '< 48h',
-                      accent: 'text-blue-700',
-                      titleFr: 'QCM → Épreuves Physiques',
-                      titleEn: 'Quiz → Physical Tests',
-                      descFr:
-                        'Suivez vos cours, passez le QCM et ouvrez votre lien d’épreuves physiques.',
-                      descEn:
-                        'Follow courses, pass the quiz and open your physical test scheduling link.',
+                      metric: countryTheme.authorityCode,
+                      color: countryTheme.primaryHex,
+                      title: t.physicalProofLabel,
+                      desc: t.physicalProofDesc,
                     },
                   ].map((item) => (
                     <div
-                      key={item.titleEn}
-                      className="bg-white/95 backdrop-blur border border-slate-200 rounded-2xl p-5 space-y-2 shadow-sm hover:border-blue-300 transition-colors"
+                      key={item.title}
+                      className="bg-white/95 backdrop-blur border border-slate-200 rounded-2xl p-5 space-y-2 shadow-sm hover:border-slate-300 transition-colors"
                     >
                       <div
-                        className={`text-2xl font-mono font-bold tabular-nums ${item.accent}`}
+                        className="text-2xl font-mono font-bold tabular-nums"
+                        style={{ color: item.color }}
                       >
                         {item.metric}
                       </div>
                       <div className="text-[15px] font-bold text-slate-900">
-                        {isEn ? item.titleEn : item.titleFr}
+                        {item.title}
                       </div>
-                      <p className="text-xs sm:text-[13px] text-slate-600 leading-relaxed">
-                        {isEn ? item.descEn : item.descFr}
+                      <p className="text-sm text-slate-700 leading-relaxed">
+                        {item.desc}
                       </p>
                     </div>
                   ))}
                 </section>
 
-                {/* Lower Animated Country-Specific Community Classroom + Parcours complet */}
+                {/* Lower Animated Country-Specific Community Classroom + Complete Pathway */}
                 <section className="grid lg:grid-cols-12 gap-6 items-stretch">
                   <div className="lg:col-span-5 relative rounded-2xl overflow-hidden border border-slate-200/80 bg-slate-900 min-h-[290px] shadow-md flex flex-col justify-end">
                     {!classImgFailed ? (
@@ -1065,11 +1055,7 @@ export default function App() {
                           <img
                             key={`${selectedCountry.code}-comm-${imgSrc}-${idx}`}
                             src={imgSrc}
-                            alt={
-                              isEn
-                                ? communityCaptionsEn[idx % communityCaptionsEn.length]
-                                : communityCaptionsFr[idx % communityCaptionsFr.length]
-                            }
+                            alt={communityCaptions[idx % communityCaptions.length]}
                             referrerPolicy="no-referrer"
                             onError={() => setClassImgFailed(true)}
                             className={`absolute inset-0 w-full h-full object-cover transition-all duration-[1400ms] ease-in-out ${
@@ -1081,17 +1067,19 @@ export default function App() {
                         ))}
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent pointer-events-none" />
                         <div className="relative z-10 p-5 space-y-2.5 text-white">
-                          <div className="text-xs font-mono text-amber-300 font-semibold">
-                            {countryFlag} {isEn ? selectedCountry.nameEn : selectedCountry.nameFr}
+                          <div className="inline-flex items-center gap-2 text-xs font-mono text-amber-300 font-semibold">
+                            <CountryFlagSvg
+                              theme={countryTheme}
+                              className="w-5 h-3.5"
+                            />
+                            <span>{localizedCountryName}</span>
                           </div>
                           <div className="text-sm font-bold">
-                            {isEn
-                              ? communityCaptionsEn[
-                                  communitySlideIdx % communityCaptionsEn.length
-                                ]
-                              : communityCaptionsFr[
-                                  communitySlideIdx % communityCaptionsFr.length
-                                ]}
+                            {
+                              communityCaptions[
+                                communitySlideIdx % communityCaptions.length
+                              ]
+                            }
                           </div>
                           <div className="flex items-center gap-1.5 pt-1">
                             {communityGalleryImages.map((_, idx) => (
@@ -1114,7 +1102,7 @@ export default function App() {
                       <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center text-white">
                         <GraduationCap className="w-10 h-10 text-blue-400 mb-2" />
                         <span className="font-semibold">
-                          Code Audio & QCM Officiel
+                          {t.candidateTabCode}
                         </span>
                       </div>
                     )}
@@ -1123,70 +1111,46 @@ export default function App() {
                   <div className="lg:col-span-7 bg-white/95 backdrop-blur border border-slate-200 rounded-2xl p-6 md:p-8 flex flex-col justify-between gap-6 shadow-md">
                     <div className="space-y-4">
                       <h2 className="font-display text-2xl sm:text-3xl font-bold text-slate-900">
-                        {isEn ? (
-                          <>
-                            Complete Pathway:{' '}
-                            <span className="text-blue-700">
-                              from Dossier to Physical Exam
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            Parcours complet :{' '}
-                            <span className="text-blue-700">
-                              du dossier à l’obtention du permis
-                            </span>
-                          </>
-                        )}
+                        {t.pathwayTitleLead}{' '}
+                        <span style={{ color: countryTheme.primaryHex }}>
+                          {t.pathwayTitleAccent}
+                        </span>
                       </h2>
                       <div className="grid sm:grid-cols-2 gap-5 pt-2">
                         {[
                           {
                             num: '01.',
-                            titleFr: 'Dossier à fournir & Réinscription',
-                            titleEn: 'Dossier & Multi-Permit Enrollment',
-                            textFr:
-                              'Créez votre compte (Nom, E-mail, Téléphone). Déjà détenteur du Permis A ? Inscrivez-vous au Permis B ou C en 1 clic.',
-                            textEn:
-                              'Create your account (Name, Email, Phone). Already hold Permit A? Re-enroll easily for Permit B or C.',
+                            title: t.path01Title,
+                            text: t.path01Desc,
                           },
                           {
                             num: '02.',
-                            titleFr: 'Preuve de paiement → Montant déclenché',
-                            titleEn: 'Payment Proof → Triggered Funds',
-                            textFr:
-                              'Réglez via le lien officiel et soumettez votre ID réel : dès réception de l’argent, le montant déclenché active vos cours et votre facture PDF.',
-                            textEn:
-                              'Pay via the official link and submit your real Transaction ID: as soon as funds are received, the triggered amount unlocks courses and PDF invoice.',
+                            title: t.path02Title,
+                            text: t.path02Desc,
                           },
                           {
                             num: '03.',
-                            titleFr: 'Cours Audio Animés Multilingues',
-                            titleEn: 'Multilingual Animated Audio',
-                            textFr:
-                              'Suivez vos 5 modules animés avec voix audio adaptée automatiquement à votre langue.',
-                            textEn:
-                              'Follow your 5 animated courses with voice audio adapted to your chosen language.',
+                            title: t.path03Title,
+                            text: t.path03Desc,
                           },
                           {
                             num: '04.',
-                            titleFr: 'QCM → Épreuves Physiques < 48h',
-                            titleEn: 'Quiz → Physical Tests < 48h',
-                            textFr:
-                              'Reprenez l’examen ou passez à l’étape suivante pour recevoir la correction complète et le rendez-vous physique.',
-                            textEn:
-                              'Retake quiz or proceed to next step for full corrections and physical test appointment.',
+                            title: t.path04Title,
+                            text: t.path04Desc,
                           },
                         ].map((step) => (
                           <div key={step.num} className="space-y-1">
-                            <div className="text-xs font-mono text-blue-700 font-bold">
+                            <div
+                              className="text-xs font-mono font-bold"
+                              style={{ color: countryTheme.primaryHex }}
+                            >
                               {step.num}
                             </div>
                             <div className="text-[15px] font-bold text-slate-900">
-                              {isEn ? step.titleEn : step.titleFr}
+                              {step.title}
                             </div>
-                            <p className="text-xs sm:text-[13px] text-slate-600 leading-relaxed">
-                              {isEn ? step.textEn : step.textFr}
+                            <p className="text-sm text-slate-700 leading-relaxed">
+                              {step.text}
                             </p>
                           </div>
                         ))}
@@ -1197,24 +1161,20 @@ export default function App() {
                       <button
                         type="button"
                         onClick={() => setActiveView('enroll')}
-                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold rounded-lg cursor-pointer whitespace-nowrap"
+                        style={{ backgroundColor: countryTheme.primaryHex }}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 hover:opacity-95 text-white text-sm font-semibold rounded-lg cursor-pointer whitespace-nowrap"
                       >
                         <ShieldCheck className="w-4 h-4" />
-                        <span>
-                          {isEn
-                            ? 'Open Registration Funnel'
-                            : 'Ouvrir le tunnel d’inscription'}
-                        </span>
+                        <span>{t.openFunnelBtn}</span>
                       </button>
                       {isCreatorAdmin && (
                         <button
                           type="button"
                           onClick={() => setActiveView('agent')}
-                          className="text-xs font-semibold text-blue-700 hover:underline cursor-pointer"
+                          style={{ color: countryTheme.primaryHex }}
+                          className="text-sm font-semibold hover:underline cursor-pointer"
                         >
-                          {isEn
-                            ? 'Open Creator Console →'
-                            : 'Accéder à mon Espace Direction →'}
+                          {t.openCreatorConsoleBtn}
                         </button>
                       )}
                     </div>
@@ -1249,7 +1209,7 @@ export default function App() {
             {activeView === 'candidate' && (
               <CandidatePortal
                 lang={lang}
-                countryName={isEn ? selectedCountry.nameEn : selectedCountry.nameFr}
+                countryName={localizedCountryName}
                 user={user}
                 registration={activeRegistration}
                 allMyRegistrations={myRegistrations}
@@ -1261,7 +1221,7 @@ export default function App() {
               />
             )}
 
-            {/* CREATOR-ONLY AGENT & ADMIN VIEW (Invisible to all clients & regular visitors) */}
+            {/* CREATOR-ONLY AGENT & ADMIN VIEW */}
             {activeView === 'agent' && isCreatorAdmin && (
               <AgentAdminPortal
                 lang={lang}
@@ -1276,27 +1236,24 @@ export default function App() {
             )}
           </main>
 
-          {/* Clean Corporate Footer (Direct Links Only) + Single-Line Socials + Scrolling Partenaire Officiel */}
+          {/* Clean Corporate Footer (Direct Links Only — Zero Street Address / Zero Phone Number) */}
           <footer className="bg-slate-900 text-slate-200 border-t border-slate-800 mt-12">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-7 text-xs">
-              {/* Top Row: Direct Links (Left, zero street address & zero phone number) + Policy Links (Right) */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-7 text-sm">
               <div className="grid md:grid-cols-12 gap-8 items-start">
                 <div className="md:col-span-7 space-y-3.5">
                   <div className="flex flex-wrap items-center gap-3">
                     <DriveProLogo dark size="sm" />
-                    <span className="text-slate-400 font-mono text-xs font-semibold">
-                      v4.4.0
-                    </span>
+                    <CountryFlagSvg
+                      theme={countryTheme}
+                      className="w-7 h-5"
+                    />
                   </div>
                   <div className="text-slate-300 leading-relaxed">
-                    {countryFlag} DrivePro Academy ·{' '}
+                    DrivePro Academy ·{' '}
                     <span className="text-white font-semibold">
-                      {isEn ? selectedCountry.nameEn : selectedCountry.nameFr}
+                      {localizedCountryName}
                     </span>{' '}
-                    —{' '}
-                    {isEn
-                      ? '100% digital direct links, online audio courses & physical exam scheduling'
-                      : 'Accompagnement 100 % par lien direct, cours audio en ligne & rendez-vous épreuves physiques'}
+                    — {t.footerDirectDesc}
                   </div>
                   <div className="flex flex-wrap items-center gap-2.5 pt-1">
                     <a
@@ -1305,18 +1262,17 @@ export default function App() {
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold whitespace-nowrap transition-colors"
                     >
-                      <MessageCircle className="w-3.5 h-3.5" />
-                      <span>
-                        {isEn ? 'Direct WhatsApp Link' : 'Lien Direct WhatsApp'}
-                      </span>
+                      <MessageCircle className="w-4 h-4" />
+                      <span>{t.footerWhatsappBtn}</span>
                     </a>
                     <button
                       type="button"
                       onClick={() => setContactModalOpen(true)}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-600 text-white rounded-lg font-semibold whitespace-nowrap transition-colors cursor-pointer"
+                      style={{ backgroundColor: countryTheme.primaryHex }}
+                      className="inline-flex items-center gap-2 px-4 py-2 hover:opacity-95 text-white rounded-lg font-semibold whitespace-nowrap transition-opacity cursor-pointer"
                     >
-                      <Mail className="w-3.5 h-3.5" />
-                      <span>{isEn ? 'Ask a Question' : 'Poser une question'}</span>
+                      <Mail className="w-4 h-4" />
+                      <span>{t.askQuestionBtn}</span>
                     </button>
                   </div>
                 </div>
@@ -1325,12 +1281,12 @@ export default function App() {
                 <div className="md:col-span-5 grid grid-cols-2 gap-y-2.5 gap-x-4 pt-1">
                   {(
                     [
-                      { key: 'politique', labelFr: 'Politique d’utilisation', labelEn: 'Usage Policy' },
-                      { key: 'conditions', labelFr: 'Conditions d’utilisation', labelEn: 'Terms of Service' },
-                      { key: 'confidentialite', labelFr: 'Confidentialité (RGPD)', labelEn: 'Privacy Policy' },
-                      { key: 'cookies', labelFr: 'Préférence de cookies', labelEn: 'Cookie Preferences' },
-                      { key: 'securite', labelFr: 'Sécurité & Paiement', labelEn: 'Payment Security' },
-                      { key: 'contact', labelFr: 'Contact & Lien Direct', labelEn: 'Contact & Direct Link' },
+                      { key: 'politique', label: t.policyUsage },
+                      { key: 'conditions', label: t.policyTerms },
+                      { key: 'confidentialite', label: t.policyPrivacy },
+                      { key: 'cookies', label: t.policyCookies },
+                      { key: 'securite', label: t.policySecurity },
+                      { key: 'contact', label: t.policyContact },
                     ] as const
                   ).map((item) => (
                     <button
@@ -1339,25 +1295,29 @@ export default function App() {
                       onClick={() => setLegalDocOpen(item.key)}
                       className="text-left text-slate-300 hover:text-white hover:underline cursor-pointer"
                     >
-                      {isEn ? item.labelEn : item.labelFr}
+                      {item.label}
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Single-Line Official Social Networks (Facebook · Instagram · LinkedIn · TikTok — DrivePro Academy) */}
+              {/* Single-Line Official Social Networks */}
               <div className="border-t border-slate-800 pt-5">
                 <SocialAccountsStrip dark />
               </div>
 
-              {/* Official Partners Scrolling at the Very Bottom of the Page (Partenaire Officiel) */}
+              {/* Official Partners Dynamic Per Country (Government, National Flag, National Institute + Global Partners) */}
               <div className="border-t border-slate-800 pt-6">
-                <PartnerLogos lang={lang} dark />
+                <PartnerLogos
+                  country={selectedCountry}
+                  lang={lang}
+                  dark
+                />
               </div>
 
-              <div className="border-t border-slate-800 pt-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[11px] text-slate-400">
+              <div className="border-t border-slate-800 pt-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-400">
                 <div>
-                  © {new Date().getFullYear()} DrivePro Academy · Tous droits réservés.
+                  © {new Date().getFullYear()} DrivePro Academy · {t.footerRights}
                 </div>
                 <div className="flex flex-wrap items-center gap-4">
                   <button
@@ -1379,7 +1339,7 @@ export default function App() {
                     onClick={() => setContactModalOpen(true)}
                     className="hover:text-white cursor-pointer"
                   >
-                    {isEn ? 'Contact' : 'Contact / Question'}
+                    {t.navContact}
                   </button>
                   {isCreatorAdmin && (
                     <button
@@ -1417,7 +1377,7 @@ export default function App() {
           onClose={() => setLegalDocOpen(null)}
         />
 
-        {/* Visitor Contact & Question Modal -> Saved to Firebase & Emailed to firefile486@gmail.com */}
+        {/* Visitor Contact & Question Modal */}
         <ContactQuestionModal
           isOpen={contactModalOpen}
           lang={lang}

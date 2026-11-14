@@ -137,7 +137,7 @@ service cloud.firestore {
       && data.transactionRef is string && data.transactionRef.size() >= 6 && data.transactionRef.size() <= 80
       && data.verificationCode is string && data.verificationCode.size() >= 4 && data.verificationCode.size() <= 40
       && data.receiptFileName is string && data.receiptFileName.size() <= 120
-      && data.receiptThumbnail is string && data.receiptThumbnail.size() <= 90000
+      && data.receiptThumbnail is string && data.receiptThumbnail.size() <= 600000
       && data.status in ['completed', 'refunded']
       && data.createdAt is timestamp;
     }
