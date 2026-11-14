@@ -291,8 +291,8 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
           </h2>
           <p className="text-sm text-slate-600 leading-relaxed">
             {isEn
-              ? `This dashboard (social bio links, client ID verification, and CSV/Excel exports) is hidden from public visitors and candidates. Only ${ADMIN_EMAIL} can access it.`
-              : `Ce panneau (liens traqués pour bios TikTok/Instagram/Facebook, vérification des pièces d’identité et exports) est invisible pour les clients. Seul le compte créateur (${ADMIN_EMAIL}) y a accès.`}
+              ? 'This dashboard (social bio links, client ID verification, and CSV/Excel exports) is hidden from public visitors and candidates. Access is strictly restricted to the authorized administrator account.'
+              : 'Ce panneau (liens traqués pour bios TikTok/Instagram/Facebook, vérification des pièces d’identité et exports) est invisible pour les clients. L’accès est strictement réservé au compte Direction habilité.'}
           </p>
         </div>
         {!user && (
@@ -376,7 +376,7 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
               Cliquez sur <span className="font-semibold text-white">Modèle E-mail « DrivePro Academy »</span> ci-dessus →{' '}
               <span className="font-semibold text-white">Réinitialisation du mot de passe</span> → icône crayon → mettez{' '}
               <span className="font-mono text-amber-300">Nom de l’expéditeur : DrivePro Academy</span> et{' '}
-              <span className="font-mono text-emerald-300">Adresse de réponse : {ADMIN_EMAIL}</span> → Enregistrer.
+              <span className="font-mono text-emerald-300">Adresse de réponse : Messagerie Direction</span> → Enregistrer.
             </p>
             <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5">
               <span className="font-mono text-[11px] text-white truncate">
@@ -410,8 +410,8 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
           <div>
             <div className="text-xs font-mono text-blue-700 font-semibold">
               {isEn
-                ? `Private Creator Workspace · ${ADMIN_EMAIL}`
-                : `Espace Direction Privé · Réservé à ${ADMIN_EMAIL}`}
+                ? 'Private Direction Workspace · DrivePro Academy'
+                : 'Espace Direction Privé · DrivePro Academy'}
             </div>
             <h2 className="font-display text-xl sm:text-2xl font-bold text-slate-900 mt-1">
               {t.agentModuleTitle}
@@ -1205,8 +1205,8 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
             </h2>
             <p className="text-xs text-slate-600 mt-1">
               {isEn
-                ? `Every inquiry submitted from Contact is stored in Firebase and forwarded to ${ADMIN_EMAIL}.`
-                : `Chaque question envoyée via Contact est enregistrée dans Firebase et transmise à ${ADMIN_EMAIL}.`}
+                ? 'Every inquiry submitted from Contact is stored in Firebase and routed to the Direction team.'
+                : 'Chaque question envoyée via Contact est enregistrée dans Firebase et transmise à l’équipe Direction.'}
             </p>
           </div>
         </div>

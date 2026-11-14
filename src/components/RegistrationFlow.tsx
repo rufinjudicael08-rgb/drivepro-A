@@ -10,7 +10,6 @@ import {
   FileText,
   IdCard,
   Lock,
-  MessageCircle,
   PlusCircle,
   Receipt,
   Send,
@@ -19,6 +18,7 @@ import {
   Upload,
   Wifi,
 } from 'lucide-react';
+import { WhatsAppLogo } from './CountryVisuals';
 import {
   CATEGORY_FEES_EUR,
   convertEurFee,
@@ -1315,7 +1315,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg whitespace-nowrap"
                   >
-                    <MessageCircle className="w-4 h-4" />
+                    <WhatsAppLogo className="w-4 h-4" />
                     <span>{t.notifyDirectBtn}</span>
                   </a>
                 </div>

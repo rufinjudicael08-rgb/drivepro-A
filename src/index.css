@@ -126,13 +126,31 @@
   will-change: transform;
 }
 
+@keyframes driveproShowcaseZoom {
+  0% {
+    transform: scale(1) translate3d(0%, 0%, 0);
+  }
+  50% {
+    transform: scale(1.09) translate3d(-1.5%, -1%, 0);
+  }
+  100% {
+    transform: scale(1.02) translate3d(1.2%, 0.6%, 0);
+  }
+}
+
+.animate-showcase-photo {
+  animation: driveproShowcaseZoom 11s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-kenburns-a,
   .animate-kenburns-b,
   .animate-kenburns-c,
   .animate-audio-bar,
   .animate-marquee,
-  .animate-flag-wave {
+  .animate-flag-wave,
+  .animate-showcase-photo {
     animation: none !important;
     transform: none !important;
   }

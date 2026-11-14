@@ -1,4 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode, useEffect, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import {
   onAuthStateChanged,
   sendEmailVerification,
@@ -21,7 +22,6 @@ import {
   Lock,
   Mail,
   MailCheck,
-  MessageCircle,
   ShieldCheck,
   UserPlus,
   Volume2,
@@ -32,7 +32,11 @@ import { AuthModal } from './components/AuthModal';
 import { CandidatePortal } from './components/CandidatePortal';
 import { ContactQuestionModal } from './components/ContactQuestionModal';
 import { CountrySelector } from './components/CountrySelector';
-import { CountryFlagSvg, InstituteCrestSvg } from './components/CountryVisuals';
+import {
+  CountryFlagSvg,
+  InstituteCrestSvg,
+  WhatsAppLogo,
+} from './components/CountryVisuals';
 import { DriveProLogo } from './components/DriveProLogo';
 import { LegalDocKey, LegalModal } from './components/LegalModals';
 import { PartnerLogos, SocialAccountsStrip } from './components/PartnerLogos';
@@ -186,7 +190,8 @@ export default function App() {
   const [userProfile, setUserProfile] = useState<UserAccountRecord | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authModalMode, setAuthModalMode] = useState<'register' | 'login'>('register');
+  const [authModalMode, setAuthModalMode] = useState<'register' | 'login' | 'reset'>('register');
+  const [resetOobCode, setResetOobCode] = useState<string | null>(null);
   const [adminVerifyNotice, setAdminVerifyNotice] = useState<string | null>(null);
   const [adminVerifySending, setAdminVerifySending] = useState(false);
 
@@ -265,6 +270,24 @@ export default function App() {
     const refParam = params.get('ref');
     const srcParam = params.get('src');
     const countryParam = params.get('country');
+    const authActionMode = params.get('mode');
+    const oobCodeParam = params.get('oobCode');
+
+    if (authActionMode === 'resetPassword' && oobCodeParam) {
+      setResetOobCode(oobCodeParam);
+      setAuthModalMode('reset');
+      setAuthModalOpen(true);
+      try {
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete('mode');
+        cleanUrl.searchParams.delete('oobCode');
+        cleanUrl.searchParams.delete('apiKey');
+        cleanUrl.searchParams.delete('lang');
+        window.history.replaceState({}, '', cleanUrl.toString());
+      } catch {
+        // Ignore history cleanup errors
+      }
+    }
 
     const normalizePlatform = (srcVal: string | null) => {
       if (!srcVal) return 'Direct';
@@ -523,7 +546,7 @@ export default function App() {
     setLang(country.defaultLang);
   };
 
-  const openAuthModal = async (mode: 'register' | 'login' = 'register') => {
+  const openAuthModal = async (mode: 'register' | 'login' | 'reset' = 'register') => {
     setAuthModalMode(mode);
     setAuthModalOpen(true);
   };
@@ -539,7 +562,7 @@ export default function App() {
     try {
       await sendEmailVerification(user);
       setAdminVerifyNotice(
-        `Un lien de confirmation vient d’être envoyé à ${user.email}. Vérifiez votre boîte de réception (et les spams), cliquez dessus puis cliquez sur « Actualiser ».`
+        'Un message de confirmation vient d’être envoyé à votre messagerie de Direction. Validez-le puis cliquez sur « Actualiser ».'
       );
     } catch (err) {
       setAdminVerifyNotice(translateAuthErrorFr(err));
@@ -770,11 +793,11 @@ export default function App() {
                   <div className="flex items-center gap-2 font-bold text-sm">
                     <MailCheck className="w-4 h-4 text-amber-700 shrink-0" />
                     <span>
-                      Compte créateur détecté ({ADMIN_EMAIL}) — Vérification requise pour l’Espace Direction
+                      Compte Direction détecté — Vérification requise pour l’Espace Direction
                     </span>
                   </div>
                   <p className="text-xs text-amber-900 leading-relaxed">
-                    Cliquez sur le lien de vérification envoyé dans votre boîte e-mail (vérifiez aussi les Spams), puis cliquez sur « J’ai validé mon e-mail ».
+                    Validez la confirmation envoyée sur votre messagerie de Direction (vérifiez aussi les Spams), puis cliquez sur « J’ai validé (Actualiser) ».
                   </p>
                   {adminVerifyNotice && (
                     <p className="text-xs font-semibold text-blue-800 pt-1">
@@ -789,7 +812,7 @@ export default function App() {
                     onClick={handleResendAdminVerification}
                     className="px-3.5 py-2 bg-white border border-amber-400 hover:bg-amber-100 text-xs font-semibold rounded-lg cursor-pointer whitespace-nowrap"
                   >
-                    {adminVerifySending ? 'Envoi...' : 'Renvoyer le lien par e-mail'}
+                    {adminVerifySending ? 'Envoi...' : 'Renvoyer la confirmation'}
                   </button>
                   <button
                     type="button"
@@ -797,7 +820,7 @@ export default function App() {
                     className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg cursor-pointer whitespace-nowrap"
                   >
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>J’ai validé mon e-mail (Actualiser)</span>
+                    <span>J’ai validé (Actualiser)</span>
                   </button>
                 </div>
               </div>
@@ -894,92 +917,148 @@ export default function App() {
                   </div>
 
                   {/* Country-Adapted Full-Color Animated Photo Showcase Carousel */}
-                  <div className="lg:col-span-6 relative rounded-2xl overflow-hidden border border-slate-200/80 bg-slate-950 min-h-[360px] shadow-lg flex flex-col justify-end">
+                  <div
+                    className="lg:col-span-6 relative rounded-2xl overflow-hidden border-2 bg-slate-950 min-h-[360px] shadow-lg flex flex-col justify-between"
+                    style={{ borderColor: `${countryTheme.primaryHex}66` }}
+                  >
                     {!heroImgFailed ? (
                       <>
-                        {heroGalleryImages.map((imgSrc, idx) => (
-                          <img
-                            key={`${selectedCountry.code}-${imgSrc}-${idx}`}
-                            src={imgSrc}
-                            alt={`${localizedCountryName} — ${countryTheme.authorityName}`}
-                            referrerPolicy="no-referrer"
-                            onError={() => setHeroImgFailed(true)}
-                            className={`absolute inset-0 w-full h-full object-cover transition-all duration-[1400ms] ease-in-out ${
-                              idx === heroSlideIdx % heroGalleryImages.length
-                                ? 'opacity-100 scale-105'
-                                : 'opacity-0 scale-100'
-                            }`}
-                          />
-                        ))}
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/25 to-transparent pointer-events-none" />
+                        {heroGalleryImages.map((imgSrc, idx) => {
+                          const isActiveSlide =
+                            idx === heroSlideIdx % heroGalleryImages.length;
+                          return (
+                            <img
+                              key={`${selectedCountry.code}-${imgSrc}-${idx}`}
+                              src={imgSrc}
+                              alt={`${localizedCountryName} — ${countryTheme.authorityName}`}
+                              referrerPolicy="no-referrer"
+                              onError={() => setHeroImgFailed(true)}
+                              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${
+                                isActiveSlide
+                                  ? 'opacity-100 animate-showcase-photo'
+                                  : 'opacity-0 scale-100 pointer-events-none'
+                              }`}
+                            />
+                          );
+                        })}
+                        <div
+                          className="absolute inset-0 pointer-events-none"
+                          style={{
+                            background: `linear-gradient(180deg, ${countryTheme.primaryHex}33 0%, rgba(2,6,23,0.18) 42%, rgba(2,6,23,0.92) 100%)`,
+                          }}
+                        />
+
+                        {/* Country Flag & Top National Crest Accent Ribbon */}
+                        <div className="relative z-10 p-5 sm:p-6 flex items-center justify-between gap-2">
+                          <motion.div
+                            key={`hero-country-pill-${selectedCountry.code}`}
+                            initial={{ opacity: 0, y: -8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.45 }}
+                            className="inline-flex items-center gap-2.5 px-3.5 py-1.5 bg-slate-950/85 backdrop-blur-md border rounded-lg text-sm font-bold text-white shadow-md"
+                            style={{ borderColor: `${countryTheme.accentHex}66` }}
+                          >
+                            <CountryFlagSvg
+                              theme={countryTheme}
+                              className="w-6 h-4"
+                            />
+                            <span>{localizedCountryName}</span>
+                          </motion.div>
+                          <motion.div
+                            key={`hero-auth-badge-${selectedCountry.code}`}
+                            initial={{ opacity: 0, scale: 0.94 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.45 }}
+                            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-mono font-bold text-white shadow-md backdrop-blur-md border border-white/20"
+                            style={{ backgroundColor: `${countryTheme.primaryHex}CC` }}
+                          >
+                            <InstituteCrestSvg
+                              theme={countryTheme}
+                              className="w-5 h-5 shrink-0"
+                            />
+                            <span>{countryTheme.authorityCode}</span>
+                          </motion.div>
+                        </div>
 
                         <div className="relative z-10 p-5 sm:p-6 space-y-4">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="inline-flex items-center gap-2.5 px-3 py-1.5 bg-slate-950/85 backdrop-blur border border-white/20 rounded-lg text-sm font-semibold text-white">
-                              <CountryFlagSvg
-                                theme={countryTheme}
-                                className="w-6 h-4"
-                              />
-                              <span>{localizedCountryName}</span>
-                            </span>
-                          </div>
-
-                          <div className="bg-slate-950/85 backdrop-blur-md border border-slate-700/80 rounded-xl p-4 flex items-center justify-between gap-4 text-white">
-                            <div className="flex items-center gap-3.5 min-w-0">
-                              <div
-                                style={{ backgroundColor: countryTheme.secondaryHex }}
-                                className="w-12 h-12 rounded-xl border-2 border-white flex items-center justify-center font-display font-extrabold text-sm shrink-0 shadow"
-                              >
-                                {currentHeroCourse.badge}
-                              </div>
-                              <div className="min-w-0">
-                                <div className="text-xs font-mono text-blue-300 font-semibold flex items-center gap-1.5">
-                                  <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
-                                  <span>
-                                    {currentHeroCourse.code} · {t.activeAudioLabel}
-                                  </span>
-                                </div>
-                                <div className="text-sm sm:text-base font-bold truncate mt-0.5">
-                                  {pick(
-                                    currentHeroCourse.titleFr,
-                                    currentHeroCourse.titleRo,
-                                    currentHeroCourse.titleEn
-                                  )}
-                                </div>
-                                <div className="text-xs text-slate-300 truncate">
-                                  {pick(
-                                    currentHeroCourse.detailFr,
-                                    currentHeroCourse.detailRo,
-                                    currentHeroCourse.detailEn
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => setActiveView('enroll')}
-                              style={{ backgroundColor: countryTheme.primaryHex }}
-                              className="px-4 py-2 hover:opacity-95 text-white text-xs font-bold rounded-lg whitespace-nowrap shrink-0 cursor-pointer"
+                          <AnimatePresence mode="wait">
+                            <motion.div
+                              key={`${selectedCountry.code}-hero-card-${heroSlideIdx % heroGalleryImages.length}`}
+                              initial={{ opacity: 0, y: 12 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -8 }}
+                              transition={{ duration: 0.45, ease: 'easeOut' }}
+                              className="bg-slate-950/85 backdrop-blur-md border rounded-xl p-4 flex items-center justify-between gap-4 text-white shadow-lg"
+                              style={{ borderColor: `${countryTheme.primaryHex}55` }}
                             >
-                              {t.openBtn}
-                            </button>
-                          </div>
+                              <div className="flex items-center gap-3.5 min-w-0">
+                                <div
+                                  style={{ backgroundColor: countryTheme.secondaryHex }}
+                                  className="w-12 h-12 rounded-xl border-2 border-white flex items-center justify-center font-display font-extrabold text-sm shrink-0 shadow"
+                                >
+                                  {currentHeroCourse.badge}
+                                </div>
+                                <div className="min-w-0">
+                                  <div
+                                    className="text-xs font-mono font-semibold flex items-center gap-1.5"
+                                    style={{ color: countryTheme.accentHex }}
+                                  >
+                                    <Volume2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                                    <span className="truncate">
+                                      {currentHeroCourse.code} · {t.activeAudioLabel} · {countryTheme.authorityCode}
+                                    </span>
+                                  </div>
+                                  <div className="text-sm sm:text-base font-display font-bold truncate mt-0.5">
+                                    {pick(
+                                      currentHeroCourse.titleFr,
+                                      currentHeroCourse.titleRo,
+                                      currentHeroCourse.titleEn
+                                    )}
+                                  </div>
+                                  <div className="text-xs text-slate-300 truncate">
+                                    {pick(
+                                      currentHeroCourse.detailFr,
+                                      currentHeroCourse.detailRo,
+                                      currentHeroCourse.detailEn
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setActiveView('enroll')}
+                                style={{ backgroundColor: countryTheme.primaryHex }}
+                                className="px-4 py-2 hover:opacity-95 text-white text-xs font-bold rounded-lg whitespace-nowrap shrink-0 cursor-pointer shadow"
+                              >
+                                {t.openBtn}
+                              </button>
+                            </motion.div>
+                          </AnimatePresence>
 
                           <div className="flex items-center justify-between gap-3">
                             <div className="flex items-center gap-1.5">
-                              {heroGalleryImages.map((_, idx) => (
-                                <button
-                                  key={idx}
-                                  type="button"
-                                  onClick={() => setHeroSlideIdx(idx)}
-                                  aria-label={`Slide ${idx + 1}`}
-                                  className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                                    idx === heroSlideIdx % heroGalleryImages.length
-                                      ? 'w-7 bg-amber-400'
-                                      : 'w-2 bg-white/40 hover:bg-white/70'
-                                  }`}
-                                />
-                              ))}
+                              {heroGalleryImages.map((_, idx) => {
+                                const isDotActive =
+                                  idx === heroSlideIdx % heroGalleryImages.length;
+                                return (
+                                  <button
+                                    key={idx}
+                                    type="button"
+                                    onClick={() => setHeroSlideIdx(idx)}
+                                    aria-label={`Slide ${idx + 1}`}
+                                    style={
+                                      isDotActive
+                                        ? { backgroundColor: countryTheme.accentHex }
+                                        : undefined
+                                    }
+                                    className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                                      isDotActive
+                                        ? 'w-7'
+                                        : 'w-2 bg-white/40 hover:bg-white/70'
+                                    }`}
+                                  />
+                                );
+                              })}
                             </div>
                             <span className="text-xs font-mono text-white/85 tabular-nums">
                               0{(heroSlideIdx % heroGalleryImages.length) + 1} / 0{heroGalleryImages.length}
@@ -1048,53 +1127,109 @@ export default function App() {
 
                 {/* Lower Animated Country-Specific Community Classroom + Complete Pathway */}
                 <section className="grid lg:grid-cols-12 gap-6 items-stretch">
-                  <div className="lg:col-span-5 relative rounded-2xl overflow-hidden border border-slate-200/80 bg-slate-900 min-h-[290px] shadow-md flex flex-col justify-end">
+                  <div
+                    className="lg:col-span-5 relative rounded-2xl overflow-hidden border-2 bg-slate-900 min-h-[290px] shadow-md flex flex-col justify-between"
+                    style={{ borderColor: `${countryTheme.primaryHex}55` }}
+                  >
                     {!classImgFailed ? (
                       <>
-                        {communityGalleryImages.map((imgSrc, idx) => (
-                          <img
-                            key={`${selectedCountry.code}-comm-${imgSrc}-${idx}`}
-                            src={imgSrc}
-                            alt={communityCaptions[idx % communityCaptions.length]}
-                            referrerPolicy="no-referrer"
-                            onError={() => setClassImgFailed(true)}
-                            className={`absolute inset-0 w-full h-full object-cover transition-all duration-[1400ms] ease-in-out ${
-                              idx === communitySlideIdx % communityGalleryImages.length
-                                ? 'opacity-100 scale-105'
-                                : 'opacity-0 scale-100'
-                            }`}
-                          />
-                        ))}
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent pointer-events-none" />
-                        <div className="relative z-10 p-5 space-y-2.5 text-white">
-                          <div className="inline-flex items-center gap-2 text-xs font-mono text-amber-300 font-semibold">
+                        {communityGalleryImages.map((imgSrc, idx) => {
+                          const isActiveSlide =
+                            idx ===
+                            communitySlideIdx % communityGalleryImages.length;
+                          return (
+                            <img
+                              key={`${selectedCountry.code}-comm-${imgSrc}-${idx}`}
+                              src={imgSrc}
+                              alt={communityCaptions[idx % communityCaptions.length]}
+                              referrerPolicy="no-referrer"
+                              onError={() => setClassImgFailed(true)}
+                              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${
+                                isActiveSlide
+                                  ? 'opacity-100 animate-showcase-photo'
+                                  : 'opacity-0 scale-100 pointer-events-none'
+                              }`}
+                            />
+                          );
+                        })}
+                        <div
+                          className="absolute inset-0 pointer-events-none"
+                          style={{
+                            background: `linear-gradient(180deg, ${countryTheme.secondaryHex}2B 0%, rgba(2,6,23,0.18) 38%, rgba(2,6,23,0.92) 100%)`,
+                          }}
+                        />
+
+                        <div className="relative z-10 p-4 flex items-center justify-between">
+                          <span
+                            className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-slate-950/80 backdrop-blur-md border text-xs font-mono font-bold text-white"
+                            style={{ borderColor: `${countryTheme.accentHex}66` }}
+                          >
                             <CountryFlagSvg
                               theme={countryTheme}
                               className="w-5 h-3.5"
                             />
                             <span>{localizedCountryName}</span>
-                          </div>
-                          <div className="text-sm font-bold">
-                            {
-                              communityCaptions[
-                                communitySlideIdx % communityCaptions.length
-                              ]
-                            }
-                          </div>
+                          </span>
+                          <span
+                            className="px-2.5 py-1 rounded-md text-[11px] font-mono font-bold text-white shadow"
+                            style={{ backgroundColor: `${countryTheme.primaryHex}CC` }}
+                          >
+                            {countryTheme.authorityCode}
+                          </span>
+                        </div>
+
+                        <div className="relative z-10 p-5 space-y-2.5 text-white">
+                          <AnimatePresence mode="wait">
+                            <motion.div
+                              key={`${selectedCountry.code}-comm-caption-${communitySlideIdx % communityGalleryImages.length}`}
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              exit={{ opacity: 0, x: 10 }}
+                              transition={{ duration: 0.4, ease: 'easeOut' }}
+                              className="space-y-1"
+                            >
+                              <div
+                                className="text-[11px] font-mono font-bold uppercase tracking-wider"
+                                style={{ color: countryTheme.accentHex }}
+                              >
+                                {lang === 'fr'
+                                  ? countryTheme.governmentNameFr
+                                  : countryTheme.governmentNameNative ||
+                                    countryTheme.governmentNameEn}
+                              </div>
+                              <div className="text-sm sm:text-base font-display font-bold leading-snug">
+                                {
+                                  communityCaptions[
+                                    communitySlideIdx % communityCaptions.length
+                                  ]
+                                }
+                              </div>
+                            </motion.div>
+                          </AnimatePresence>
                           <div className="flex items-center gap-1.5 pt-1">
-                            {communityGalleryImages.map((_, idx) => (
-                              <button
-                                key={idx}
-                                type="button"
-                                onClick={() => setCommunitySlideIdx(idx)}
-                                aria-label={`Scène ${idx + 1}`}
-                                className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                                  idx === communitySlideIdx % communityGalleryImages.length
-                                    ? 'w-6 bg-emerald-400'
-                                    : 'w-2 bg-white/40 hover:bg-white/70'
-                                }`}
-                              />
-                            ))}
+                            {communityGalleryImages.map((_, idx) => {
+                              const isDotActive =
+                                idx ===
+                                communitySlideIdx % communityGalleryImages.length;
+                              return (
+                                <button
+                                  key={idx}
+                                  type="button"
+                                  onClick={() => setCommunitySlideIdx(idx)}
+                                  aria-label={`Scène ${idx + 1}`}
+                                  style={
+                                    isDotActive
+                                      ? { backgroundColor: countryTheme.accentHex }
+                                      : undefined
+                                  }
+                                  className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                                    isDotActive
+                                      ? 'w-7'
+                                      : 'w-2 bg-white/40 hover:bg-white/70'
+                                  }`}
+                                />
+                              );
+                            })}
                           </div>
                         </div>
                       </>
@@ -1262,7 +1397,7 @@ export default function App() {
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold whitespace-nowrap transition-colors"
                     >
-                      <MessageCircle className="w-4 h-4" />
+                      <WhatsAppLogo className="w-4 h-4" />
                       <span>{t.footerWhatsappBtn}</span>
                     </a>
                     <button
@@ -1360,10 +1495,15 @@ export default function App() {
         <AuthModal
           isOpen={authModalOpen}
           initialMode={authModalMode}
+          resetOobCode={resetOobCode}
           lang={lang}
           defaultDialCode={selectedCountry.dialCode}
-          onClose={() => setAuthModalOpen(false)}
+          onClose={() => {
+            setAuthModalOpen(false);
+            setResetOobCode(null);
+          }}
           onAuthSuccess={(profile) => {
+            setResetOobCode(null);
             if (profile) {
               setUserProfile(profile);
             }

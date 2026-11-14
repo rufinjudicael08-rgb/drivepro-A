@@ -40,6 +40,15 @@ export const AnimatedStageBackdrop: React.FC<AnimatedStageBackdropProps> = ({
     >
       {/* Layer 1: Vivid Animated Waving National Flag Layer */}
       <div className="absolute inset-0 opacity-65 animate-flag-wave">
+        {theme.flagLayout === 'benin' && (
+          <div className="w-full h-full flex">
+            <div className="w-[38%] h-full" style={{ backgroundColor: c1 }} />
+            <div className="flex-1 h-full flex flex-col">
+              <div className="flex-1" style={{ backgroundColor: c2 }} />
+              <div className="flex-1" style={{ backgroundColor: c3 }} />
+            </div>
+          </div>
+        )}
         {theme.flagLayout === 'horizontal' && (
           <div className="w-full h-full flex flex-col">
             <div className="flex-1" style={{ backgroundColor: c1 }} />

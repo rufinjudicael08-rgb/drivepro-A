@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Building2, CheckCircle2, Lock, MessageCircle, ShieldCheck, X } from 'lucide-react';
+import { Building2, CheckCircle2, Lock, ShieldCheck, X } from 'lucide-react';
 import { PARIS_HQ_CONTACT } from '../data/curriculum';
 import { getTranslations } from '../data/i18n';
 import { Language } from '../types';
+import { WhatsAppLogo } from './CountryVisuals';
 
 export type LegalDocKey =
   | 'politique'
@@ -221,13 +222,19 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg"
                 >
-                  <MessageCircle className="w-4 h-4" />
+                  <WhatsAppLogo className="w-4 h-4" />
                   <span>{t.notifyDirectBtn}</span>
                 </a>
               </div>
               <div className="flex items-center gap-2 text-xs text-slate-600">
                 <ShieldCheck className="w-4 h-4 text-blue-700" />
-                <span>firefile486@gmail.com</span>
+                <span>
+                  {pick(
+                    'DrivePro Academy · Assistance par lien direct uniquement',
+                    'DrivePro Academy · Asistență exclusiv prin link direct',
+                    'DrivePro Academy · Direct link support only'
+                  )}
+                </span>
               </div>
             </div>
           )}

@@ -11,13 +11,13 @@ import {
   FastForward,
   FileText,
   Lock,
-  MessageCircle,
   PlusCircle,
   RotateCcw,
   ShieldCheck,
   Volume2,
   XCircle,
 } from 'lucide-react';
+import { WhatsAppLogo } from './CountryVisuals';
 import {
   CERTIFIED_INSTRUCTORS,
   CODE_MODULES,
@@ -1146,7 +1146,7 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                               rel="noopener noreferrer"
                               className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-lg whitespace-nowrap"
                             >
-                              <MessageCircle className="w-4 h-4" />
+                              <WhatsAppLogo className="w-4 h-4" />
                               <span>{t.instructorWhatsappBtn}</span>
                             </a>
                             <button
@@ -1335,7 +1335,7 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                     rel="noopener noreferrer"
                     className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg whitespace-nowrap transition-colors shadow-sm"
                   >
-                    <ExternalLink className="w-4 h-4" />
+                    <WhatsAppLogo className="w-4 h-4" />
                     <span>{t.instructorWhatsappBtn}</span>
                   </a>
                 </div>

@@ -140,12 +140,6 @@ export const ContactQuestionModal: React.FC<ContactQuestionModalProps> = ({
     onClose();
   };
 
-  const mailtoHref = `mailto:${ADMIN_EMAIL}?subject=${encodeURIComponent(
-    `[DrivePro Academy] ${subject}`
-  )}&body=${encodeURIComponent(
-    `Nom : ${name}\nE-mail : ${email}\nTéléphone : ${phone}\n\nQuestion :\n${message}`
-  )}`;
-
   return (
     <div
       className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4"
@@ -190,27 +184,17 @@ export const ContactQuestionModal: React.FC<ContactQuestionModalProps> = ({
                 </h4>
                 <p className="text-sm text-slate-700 leading-relaxed">
                   {pick(
-                    `Votre question a été transmise par e-mail à notre équipe (${ADMIN_EMAIL}). Vous recevrez une réponse très rapidement.`,
-                    `Întrebarea ta a fost transmisă echipei noastre (${ADMIN_EMAIL}). Vei primi un răspuns în cel mai scurt timp.`,
-                    `Your question has been transmitted to our team (${ADMIN_EMAIL}). We will reply shortly.`
+                    'Votre question a bien été transmise à notre équipe. Merci pour votre message — L’équipe DrivePro Academy vous répondra très rapidement.',
+                    'Întrebarea ta a fost transmisă echipei noastre. Mulțumim pentru mesaj — Echipa DrivePro Academy îți va răspunde rapid.',
+                    'Your question has been transmitted to our team. Thank you for your message — DrivePro Academy will reply shortly.'
                   )}
                 </p>
               </div>
               <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-                <a
-                  href={mailtoHref}
-                  className="px-4 py-2 text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg"
-                >
-                  {pick(
-                    'Envoyer aussi via ma messagerie',
-                    'Deschide și în aplicația de e-mail',
-                    'Also open in my email app'
-                  )}
-                </a>
                 <button
                   type="button"
                   onClick={handleResetAndClose}
-                  className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold rounded-lg cursor-pointer"
+                  className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold rounded-lg cursor-pointer"
                 >
                   {pick('Fermer', 'Închide', 'Close')}
                 </button>
@@ -298,8 +282,12 @@ export const ContactQuestionModal: React.FC<ContactQuestionModalProps> = ({
               </div>
 
               <div className="flex items-center justify-between gap-3 pt-1">
-                <span className="text-xs text-slate-600">
-                  {pick('Envoyé directement à', 'Trimis direct către', 'Sent to')} {ADMIN_EMAIL}
+                <span className="text-xs font-medium text-slate-600">
+                  {pick(
+                    'Merci pour votre message — DrivePro Academy',
+                    'Mulțumim pentru mesaj — DrivePro Academy',
+                    'Thank you for reaching out — DrivePro Academy'
+                  )}
                 </span>
                 <button
                   type="submit"
