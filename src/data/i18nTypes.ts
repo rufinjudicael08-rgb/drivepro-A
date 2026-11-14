@@ -357,4 +357,25 @@ export type TranslationKeys = {
   animAudioGuideLabel: string;
   // Payment mode names
   payOnlineLabel: string;
+  // Student testimonials section
+  testimonialsTitleLead: string;
+  testimonialsTitleAccent: string;
+  testimonialsSubtitle: string;
+  testimonialsVerifiedLabel: string;
+  testimonialsAvgLabel: string;
+  testimonialsCountLabel: string;
+  testimonialsFilterAll: string;
+  testimonialsCountryOnlyBtn: string;
+  testimonialsAllCountriesBtn: string;
+  testimonialsShareBtn: string;
+  testimonialsCancelBtn: string;
+  testimonialsFormTitle: string;
+  testimonialsRatingLabel: string;
+  testimonialsCityLabel: string;
+  testimonialsHoursLabel: string;
+  testimonialsQuoteLabel: string;
+  testimonialsSubmitBtn: string;
+  testimonialsSubmittedMsg: string;
+  testimonialsAuthHint: string;
+  testimonialsEmptyFiltered: string;
 };

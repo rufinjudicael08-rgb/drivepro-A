@@ -198,6 +198,33 @@ service cloud.firestore {
       && data.createdAt is timestamp;
     }
 
+    function isValidTestimonial(data) {
+      return data.keys().hasAll([
+        'id', 'userId', 'registrationId', 'authorName', 'countryCode', 'countryName',
+        'city', 'licenseCategory', 'rating', 'completionHours', 'quote',
+        'verifiedGraduate', 'status', 'createdAt'
+      ])
+      && data.keys().hasOnly([
+        'id', 'userId', 'registrationId', 'authorName', 'countryCode', 'countryName',
+        'city', 'licenseCategory', 'rating', 'completionHours', 'quote',
+        'verifiedGraduate', 'status', 'createdAt'
+      ])
+      && isValidId(data.id)
+      && data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128
+      && data.registrationId is string && data.registrationId.size() <= 128
+      && data.authorName is string && data.authorName.size() >= 2 && data.authorName.size() <= 100
+      && data.countryCode is string && data.countryCode.size() >= 2 && data.countryCode.size() <= 3
+      && data.countryName is string && data.countryName.size() >= 2 && data.countryName.size() <= 100
+      && data.city is string && data.city.size() >= 2 && data.city.size() <= 100
+      && data.licenseCategory in ['A', 'B', 'C', 'D']
+      && data.rating is number && data.rating >= 1 && data.rating <= 5
+      && data.completionHours is number && data.completionHours >= 1 && data.completionHours <= 240
+      && data.quote is string && data.quote.size() >= 10 && data.quote.size() <= 500
+      && data.verifiedGraduate is bool
+      && data.status in ['published', 'pending']
+      && data.createdAt is timestamp;
+    }
+
     match /admins/{adminId} {
       allow get: if isVerified() && (request.auth.uid == adminId || isBootstrappedAdmin());
       allow list: if isBootstrappedAdmin();
@@ -378,6 +405,46 @@ service cloud.firestore {
         && incoming().createdAt == existing().createdAt;
 
       allow delete: if isAdmin() && isValidId(messageId);
+    }
+
+    match /testimonials/{testimonialId} {
+      allow get: if isValidId(testimonialId) && (
+        existing().status == 'published'
+        || (isSignedIn() && existing().userId == request.auth.uid)
+        || isAdmin()
+      );
+      allow list: if resource.data.status == 'published'
+        || (isSignedIn() && resource.data.userId == request.auth.uid)
+        || isBootstrappedAdmin();
+
+      allow create: if isSignedIn()
+        && isValidId(testimonialId)
+        && isValidTestimonial(incoming())
+        && incoming().id == testimonialId
+        && incoming().userId == request.auth.uid
+        && incoming().createdAt == request.time
+        && (
+          isAdmin() || (
+            isValidId(incoming().registrationId)
+            && exists(/databases/$(database)/documents/registrations/$(incoming().registrationId))
+            && get(/databases/$(database)/documents/registrations/$(incoming().registrationId)).data.userId == request.auth.uid
+            && get(/databases/$(database)/documents/registrations/$(incoming().registrationId)).data.paymentStatus in ['paid', 'verified']
+            && incoming().verifiedGraduate == true
+            && incoming().status == 'published'
+          )
+        );
+
+      allow update: if isAdmin()
+        && isValidId(testimonialId)
+        && isValidTestimonial(incoming())
+        && incoming().id == existing().id
+        && incoming().userId == existing().userId
+        && incoming().createdAt == existing().createdAt;
+
+      allow delete: if isValidId(testimonialId) && (
+        isAdmin()
+        || (isSignedIn() && existing().userId == request.auth.uid)
+      );
     }
   }
 }

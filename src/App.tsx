@@ -40,6 +40,7 @@ import {
 import { LegalDocKey, LegalModal } from './components/LegalModals';
 import { PartnerLogos, SocialAccountsStrip } from './components/PartnerLogos';
 import { RegistrationFlow } from './components/RegistrationFlow';
+import { StudentTestimonials } from './components/StudentTestimonials';
 import {
   CATEGORY_FEES_EUR,
   formatTariffForCountry,
@@ -1237,6 +1238,16 @@ export default function App() {
                     </div>
                   </div>
                 </section>
+
+                {/* Verified Student Success Stories & Star Ratings (Firestore + Country-Adapted Social Proof) */}
+                <StudentTestimonials
+                  country={selectedCountry}
+                  lang={lang}
+                  user={user}
+                  activeRegistration={activeRegistration}
+                  onOpenAuth={() => openAuthModal('register')}
+                  onOpenEnroll={() => setActiveView('enroll')}
+                />
               </div>
             )}
 

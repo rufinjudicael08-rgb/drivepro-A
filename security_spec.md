@@ -21,3 +21,6 @@
 10. Attacker injecting a >128 char or non-alphanumeric document ID -> `PERMISSION_DENIED`
 11. Attacker creating a `quiz_attempt` referencing a non-existent `registrationId` -> `PERMISSION_DENIED`
 12. Non-admin trying to create or read `/social_links` belonging to another agent -> `PERMISSION_DENIED`
+13. Unverified or non-owner user trying to publish a `/testimonials` story spoofing `verifiedGraduate: true` without a paid/verified registration -> `PERMISSION_DENIED`
+14. Candidate trying to list `'pending'` testimonials belonging to other users -> `PERMISSION_DENIED`
+

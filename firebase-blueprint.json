@@ -516,6 +516,90 @@
         "status",
         "createdAt"
       ]
+    },
+    "StudentTestimonial": {
+      "title": "Student Success Testimonial",
+      "description": "Verified graduate success stories and star ratings displayed on the homepage.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "registrationId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "authorName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "countryCode": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 3
+        },
+        "countryName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "city": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "licenseCategory": {
+          "type": "string",
+          "enum": ["A", "B", "C", "D"]
+        },
+        "rating": {
+          "type": "number"
+        },
+        "completionHours": {
+          "type": "number"
+        },
+        "quote": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 500
+        },
+        "verifiedGraduate": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["published", "pending"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "registrationId",
+        "authorName",
+        "countryCode",
+        "countryName",
+        "city",
+        "licenseCategory",
+        "rating",
+        "completionHours",
+        "quote",
+        "verifiedGraduate",
+        "status",
+        "createdAt"
+      ]
     }
   },
   "firestore": {
@@ -554,6 +638,12 @@
         "$ref": "#/entities/ContactMessage"
       },
       "description": "Visitor and candidate questions stored for email and creator inbox follow-up."
+    },
+    "/testimonials/{testimonialId}": {
+      "schema": {
+        "$ref": "#/entities/StudentTestimonial"
+      },
+      "description": "Publicly readable verified student success stories and star ratings."
     }
   }
 }

@@ -148,3 +148,22 @@ export interface ContactMessageRecord {
   status: 'new' | 'replied';
   createdAt?: unknown;
 }
+
+export interface StudentTestimonialRecord {
+  id: string;
+  userId: string;
+  registrationId: string;
+  authorName: string;
+  countryCode: string;
+  countryName: string;
+  city: string;
+  licenseCategory: LicenseCategory;
+  rating: number;
+  completionHours: number;
+  quote: string;
+  verifiedGraduate: boolean;
+  status: 'published' | 'pending';
+  createdAt?: unknown;
+  isBaseline?: boolean;
+}
+
