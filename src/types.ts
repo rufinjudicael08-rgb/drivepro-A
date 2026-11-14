@@ -66,6 +66,8 @@ export interface RegistrationRecord {
   paymentStatus: PaymentStatus;
   dossierStatus: DossierStatus;
   latestPaymentId: string;
+  triggeredAmountEur?: number;
+  confirmationCode?: string;
   queueNumber: number;
   completedModuleIds?: string[];
   codeProgress: number;

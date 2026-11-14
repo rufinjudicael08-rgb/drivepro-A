@@ -90,7 +90,7 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
 
   // Agent Social Link Generator state
   const [platform, setPlatform] = useState<SocialPlatform>('TikTok');
-  const [campaignName, setCampaignName] = useState('Driveo Academy — Permis en moins de 48h');
+  const [campaignName, setCampaignName] = useState('DrivePro Academy — Permis en moins de 48h');
   const [targetCountry, setTargetCountry] = useState('FR');
   const [creatingLink, setCreatingLink] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -106,7 +106,7 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
   const [copiedDomain, setCopiedDomain] = useState(false);
 
   const appOrigin =
-    typeof window !== 'undefined' ? window.location.origin : 'https://driveo.academy';
+    typeof window !== 'undefined' ? window.location.origin : 'https://drivepro.academy';
   const currentHostname =
     typeof window !== 'undefined' ? window.location.hostname : 'localhost';
 
@@ -133,7 +133,7 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
       await setDoc(doc(db, 'social_links', linkId), {
         id: linkId,
         agentId: user.uid,
-        agentName: (user.displayName || user.email || 'Driveo Creator').slice(0, 80),
+        agentName: (user.displayName || user.email || 'DrivePro Creator').slice(0, 80),
         platform,
         campaignName: campaignName.trim().slice(0, 100) || `${platform} Bio Link`,
         trackingCode,
@@ -169,14 +169,24 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
     onSimulateTrackedVisit(link.trackingCode, link.platform);
   };
 
-  const handleVerifyCandidate = async (reg: RegistrationRecord) => {
+  const handleConfirmMoneyReceived = async (reg: RegistrationRecord) => {
     if (!isAdmin) return;
+    const triggeredEur = reg.baseFeeEur;
+    const confirmationCode = `DPA-${triggeredEur}EUR-${reg.queueNumber}`;
     try {
       await updateDoc(doc(db, 'registrations', reg.id), {
         paymentStatus: 'verified',
-        dossierStatus: 'practical_ready',
+        dossierStatus: 'code_unlocked',
+        triggeredAmountEur: triggeredEur,
+        confirmationCode,
         updatedAt: serverTimestamp(),
       });
+      if (reg.latestPaymentId) {
+        await updateDoc(doc(db, 'payments', reg.latestPaymentId), {
+          verificationCode: confirmationCode,
+          status: 'completed',
+        });
+      }
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `registrations/${reg.id}`);
     }
@@ -188,6 +198,8 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
       await updateDoc(doc(db, 'registrations', reg.id), {
         paymentStatus: 'pending',
         dossierStatus: 'locked',
+        triggeredAmountEur: 0,
+        confirmationCode: '',
         updatedAt: serverTimestamp(),
       });
       if (reg.latestPaymentId) {
@@ -234,7 +246,11 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
           platformFilter.toLowerCase();
 
       const matchesStatus =
-        statusFilter === 'ALL' || r.paymentStatus === statusFilter;
+        statusFilter === 'ALL'
+          ? true
+          : statusFilter === 'queue'
+          ? r.paymentStatus === 'pending' && r.dossierStatus === 'queue'
+          : r.paymentStatus === statusFilter;
 
       return matchesSearch && matchesPlatform && matchesStatus;
     });
@@ -242,16 +258,22 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
 
   const stats = useMemo(() => {
     const total = registrations.length;
-    const paidOrVerified = registrations.filter(
-      (r) => r.paymentStatus === 'paid' || r.paymentStatus === 'verified'
+    const awaitingTrigger = registrations.filter(
+      (r) => r.paymentStatus === 'pending' && r.dossierStatus === 'queue'
     ).length;
-    const verifiedPractical = registrations.filter(
-      (r) => r.dossierStatus === 'practical_ready'
-    ).length;
+    const totalTriggeredEur = registrations.reduce(
+      (sum, r) =>
+        sum +
+        (r.triggeredAmountEur ||
+          (r.paymentStatus === 'verified' || r.paymentStatus === 'paid'
+            ? r.baseFeeEur
+            : 0)),
+      0
+    );
     const socialLeads = registrations.filter(
       (r) => r.referralPlatform && r.referralPlatform !== 'Direct'
     ).length;
-    return { total, paidOrVerified, verifiedPractical, socialLeads };
+    return { total, awaitingTrigger, totalTriggeredEur, socialLeads };
   }, [registrations]);
 
   if (!isAdmin) {
@@ -327,7 +349,7 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-lg whitespace-nowrap"
             >
               <Mail className="w-4 h-4" />
-              <span>Modèle E-mail « Driveo Academy »</span>
+              <span>Modèle E-mail « DrivePro Academy »</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
           </div>
@@ -347,12 +369,12 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
 
           <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-4 space-y-2">
             <div className="text-xs font-semibold text-amber-300">
-              2. Nom d’expéditeur « Driveo Academy » (Mot de passe oublié) :
+              2. Nom d’expéditeur « DrivePro Academy » (Mot de passe oublié) :
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
-              Cliquez sur <span className="font-semibold text-white">Modèle E-mail « Driveo Academy »</span> ci-dessus →{' '}
+              Cliquez sur <span className="font-semibold text-white">Modèle E-mail « DrivePro Academy »</span> ci-dessus →{' '}
               <span className="font-semibold text-white">Réinitialisation du mot de passe</span> → icône crayon → mettez{' '}
-              <span className="font-mono text-amber-300">Nom de l’expéditeur : Driveo Academy</span> et{' '}
+              <span className="font-mono text-amber-300">Nom de l’expéditeur : DrivePro Academy</span> et{' '}
               <span className="font-mono text-emerald-300">Adresse de réponse : {ADMIN_EMAIL}</span> → Enregistrer.
             </p>
             <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5">
@@ -401,44 +423,44 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
           </div>
         </div>
 
-        {/* Operational Social Automation Playbooks — Branded Driveo Academy */}
+        {/* Operational Social Automation Playbooks — Branded DrivePro Academy */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             {
-              platform: 'TikTok · Driveo Academy',
+              platform: 'TikTok · DrivePro Academy',
               titleFr: '01. Bio TikTok & Auto-DM',
               titleEn: '01. TikTok Bio & Auto-DM',
               descFr:
-                'Placez ?src=tiktok en bio sur votre compte « Driveo Academy » ou en réponse automatique aux commentaires « PERMIS ».',
+                'Placez ?src=tiktok en bio sur votre compte « DrivePro Academy » ou en réponse automatique aux commentaires « PERMIS ».',
               descEn:
-                'Place ?src=tiktok in your Driveo Academy TikTok bio or automated comment replies.',
+                'Place ?src=tiktok in your DrivePro Academy TikTok bio or automated comment replies.',
             },
             {
-              platform: 'Facebook · Driveo Academy',
+              platform: 'Facebook · DrivePro Academy',
               titleFr: '02. Page Facebook & Ads',
               titleEn: '02. Facebook Lead Ads',
               descFr:
-                'Reliez vos publications et campagnes automatiques Facebook « Driveo Academy » directement au télépaiement.',
+                'Reliez vos publications et campagnes automatiques Facebook « DrivePro Academy » directement au télépaiement.',
               descEn:
-                'Route Driveo Academy Facebook Posts & Lead Ads straight to your verified checkout URL.',
+                'Route DrivePro Academy Facebook Posts & Lead Ads straight to your official checkout URL.',
             },
             {
-              platform: 'Instagram · Driveo Academy',
+              platform: 'Instagram · DrivePro Academy',
               titleFr: '03. Bio Instagram & Reels',
               titleEn: '03. Instagram Bio & Reels',
               descFr:
-                'Ajoutez le lien traqué en bio et en sticker Story sur « Driveo Academy » pour capter vos candidats.',
+                'Ajoutez le lien traqué en bio et en sticker Story sur « DrivePro Academy » pour capter vos candidats.',
               descEn:
-                'Add the tracked URL in your Driveo Academy Instagram bio and Story stickers.',
+                'Add the tracked URL in your DrivePro Academy Instagram bio and Story stickers.',
             },
             {
-              platform: 'LinkedIn · Driveo Academy',
+              platform: 'LinkedIn · DrivePro Academy',
               titleFr: '04. Page LinkedIn Pro',
               titleEn: '04. LinkedIn Pro Page',
               descFr:
-                'Ciblez les professionnels et conducteurs (Permis B & C) via votre page « Driveo Academy » avec inscription directe.',
+                'Ciblez les professionnels et conducteurs (Permis B & C) via votre page « DrivePro Academy » avec inscription directe.',
               descEn:
-                'Capture professionals seeking Permit B & C directly from your Driveo Academy LinkedIn page.',
+                'Capture professionals seeking Permit B & C directly from your DrivePro Academy LinkedIn page.',
             },
           ].map((card) => (
             <div
@@ -472,10 +494,10 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
               onChange={(e) => setPlatform(e.target.value as SocialPlatform)}
               className="w-full px-3 py-2.5 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-700"
             >
-              <option value="TikTok">TikTok (Driveo Academy)</option>
-              <option value="Facebook">Facebook (Driveo Academy)</option>
-              <option value="Instagram">Instagram (Driveo Academy)</option>
-              <option value="LinkedIn">LinkedIn (Driveo Academy)</option>
+              <option value="TikTok">TikTok (DrivePro Academy)</option>
+              <option value="Facebook">Facebook (DrivePro Academy)</option>
+              <option value="Instagram">Instagram (DrivePro Academy)</option>
+              <option value="LinkedIn">LinkedIn (DrivePro Academy)</option>
             </select>
           </div>
 
@@ -629,7 +651,7 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
                 <Megaphone className="w-5 h-5 text-amber-400 shrink-0" />
                 <div>
                   <h3 className="text-base font-bold text-white">
-                    Pack Publicités Automatisées · Driveo Academy (Facebook, Instagram, LinkedIn, TikTok)
+                    Pack Publicités Automatisées · DrivePro Academy (Facebook, Instagram, LinkedIn, TikTok)
                   </h3>
                   <p className="text-xs text-slate-300">
                     Copiez vos annonces prêtes à l’emploi et lancez vos campagnes automatiques avec votre lien traqué.
@@ -668,13 +690,13 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
               {[
                 {
                   id: 'fb_ig',
-                  network: 'Facebook & Instagram Ads · Driveo Academy',
-                  text: `🚗 Votre permis international en moins de 48h avec Driveo Academy !\n✅ Auto-école internationale agréée (UE · France · USA)\n✅ Télépaiement vérifié et sécurisé + Facture PDF\n✅ Cours audio multilingues\n👉 Inscrivez-vous maintenant : ${appOrigin}/?src=facebook&ref=FB_AUTO`,
+                  network: 'Facebook & Instagram Ads · DrivePro Academy',
+                  text: `🚗 Votre permis international en moins de 48h avec DrivePro Academy !\n✅ Auto-école internationale agréée (UE · France · USA)\n✅ Télépaiement officiel + Facture PDF\n✅ Cours audio multilingues\n👉 Inscrivez-vous maintenant : ${appOrigin}/?src=facebook&ref=FB_AUTO`,
                 },
                 {
                   id: 'tiktok_li',
-                  network: 'TikTok & LinkedIn Ads · Driveo Academy',
-                  text: `🔥 Permis A (200€) · Permis B (350€) · Permis C (500€) en moins de 48h !\nDriveo Academy accompagne votre dossier complet, votre code audio et vos épreuves physiques.\n👉 Lien officiel : ${appOrigin}/?src=tiktok&ref=TT_AUTO`,
+                  network: 'TikTok & LinkedIn Ads · DrivePro Academy',
+                  text: `🔥 Permis A (300€) · Permis B (450€) · Permis C (650€) en moins de 48h !\nDrivePro Academy accompagne votre dossier complet, votre code audio et vos épreuves physiques.\n👉 Lien officiel : ${appOrigin}/?src=tiktok&ref=TT_AUTO`,
                 },
               ].map((ad) => (
                 <div
@@ -776,12 +798,12 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
               value: stats.total,
             },
             {
-              label: isEn ? 'Paid / Unlocked' : 'Paiements validés',
-              value: stats.paidOrVerified,
+              label: isEn ? 'Proofs to Trigger' : 'Preuves à déclencher',
+              value: stats.awaitingTrigger,
             },
             {
-              label: isEn ? 'Physical Ready' : 'Prêts Épreuves Physiques',
-              value: stats.verifiedPractical,
+              label: isEn ? 'Triggered Amount (€)' : 'Montant déclenché (€)',
+              value: `${stats.totalTriggeredEur} €`,
             },
             {
               label: isEn ? 'Social Attributed' : 'Leads Réseaux',
@@ -841,12 +863,14 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
               <option value="ALL">
                 {isEn ? 'All Statuses' : 'Tous statuts'}
               </option>
+              <option value="queue">
+                {isEn ? 'Proof Received (Trigger Pending)' : 'Preuve reçue (À déclencher)'}
+              </option>
               <option value="pending">
                 {isEn ? 'Pending' : 'En attente'}
               </option>
-              <option value="paid">{isEn ? 'Paid' : 'Payé'}</option>
               <option value="verified">
-                {isEn ? 'Verified' : 'Vérifié'}
+                {isEn ? 'Funds Triggered' : 'Montant déclenché'}
               </option>
             </select>
           </div>
@@ -988,16 +1012,29 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
                       </td>
                       <td className="py-3 px-4 text-xs font-semibold">
                         {reg.paymentStatus === 'verified' ? (
-                          <span className="text-emerald-700 inline-flex items-center gap-1">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            {isEn ? 'Verified' : 'Vérifié'}
-                          </span>
+                          <div className="space-y-0.5">
+                            <span className="text-emerald-700 inline-flex items-center gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              {isEn
+                                ? `Triggered: ${reg.triggeredAmountEur || reg.baseFeeEur} €`
+                                : `Déclenché : ${reg.triggeredAmountEur || reg.baseFeeEur} €`}
+                            </span>
+                            {reg.confirmationCode && (
+                              <div className="font-mono text-[10px] text-slate-600">
+                                {reg.confirmationCode}
+                              </div>
+                            )}
+                          </div>
                         ) : reg.paymentStatus === 'paid' ? (
                           <span className="text-blue-700">
                             {isEn ? 'Paid' : 'Payé'}
                           </span>
+                        ) : reg.dossierStatus === 'queue' ? (
+                          <span className="text-amber-700 font-bold">
+                            {isEn ? 'Proof submitted (Trigger pending)' : 'Preuve transmise (À déclencher)'}
+                          </span>
                         ) : (
-                          <span className="text-amber-700">
+                          <span className="text-slate-500">
                             {isEn ? 'Pending' : 'En attente'}
                           </span>
                         )}
@@ -1022,25 +1059,32 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
                           {reg.paymentStatus !== 'verified' ? (
                             <button
                               type="button"
-                              onClick={() => handleVerifyCandidate(reg)}
+                              onClick={() => handleConfirmMoneyReceived(reg)}
                               className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-md whitespace-nowrap cursor-pointer"
                             >
                               <UserCheck className="w-3.5 h-3.5" />
                               <span>
-                                {isEn ? 'Confirm Real' : 'Confirmer Réel'}
+                                {isEn
+                                  ? `Funds Received — Trigger ${reg.baseFeeEur} €`
+                                  : `Argent reçu — Déclencher ${reg.baseFeeEur} €`}
                               </span>
                             </button>
                           ) : (
                             <span className="text-xs text-emerald-700 font-mono font-bold">
-                              OK
+                              {reg.triggeredAmountEur || reg.baseFeeEur} € OK
                             </span>
                           )}
-                          {reg.paymentStatus !== 'pending' && (
+                          {(reg.paymentStatus !== 'pending' ||
+                            reg.dossierStatus === 'queue') && (
                             <button
                               type="button"
                               onClick={() => handleRejectFakePayment(reg)}
                               className="inline-flex items-center gap-1 px-2 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-semibold rounded-md whitespace-nowrap cursor-pointer"
-                              title={isEn ? 'Reject fake receipt & relock' : 'Rejeter (faux reçu) & reverrouiller'}
+                              title={
+                                isEn
+                                  ? 'Reject fake receipt & relock'
+                                  : 'Rejeter (faux reçu) & reverrouiller'
+                              }
                             >
                               <Ban className="w-3.5 h-3.5" />
                               <span>{isEn ? 'Reject' : 'Rejeter'}</span>
@@ -1060,8 +1104,8 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
         <div className="space-y-3 pt-2">
           <h3 className="text-sm font-semibold text-slate-900">
             {isEn
-              ? `Recent Payment Audit Logs (${payments.length})`
-              : `Journal des paiements vérifiés (${payments.length})`}
+              ? `Recent Payment Proofs & Trigger Logs (${payments.length})`
+              : `Journal des preuves de paiement & montants déclenchés (${payments.length})`}
           </h3>
           <div className="border border-slate-200 rounded-xl overflow-x-auto bg-white">
             <table className="w-full text-left text-xs">
@@ -1227,7 +1271,7 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
                     <td className="py-3 px-4 align-top text-right">
                       <a
                         href={`mailto:${msg.email}?subject=${encodeURIComponent(
-                          `Re: ${msg.subject} — Driveo Academy`
+                          `Re: ${msg.subject} — DrivePro Academy`
                         )}`}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold rounded-md whitespace-nowrap"
                       >
@@ -1344,8 +1388,8 @@ export const AgentAdminPortal: React.FC<AgentAdminPortalProps> = ({
                 <Receipt className="w-5 h-5 mx-auto text-emerald-700" />
                 <div>
                   {isEn
-                    ? 'Verified by unique transaction ID & security trigger code (no screenshot required).'
-                    : 'Validé par ID de transaction et code déclencheur unique (sans envoi de photo).'}
+                    ? 'Submitted with real transaction ID — triggered upon receipt of funds.'
+                    : 'Preuve enregistrée avec ID réel — déclenchement actif dès réception des fonds.'}
                 </div>
               </div>
             )}

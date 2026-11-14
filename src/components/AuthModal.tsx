@@ -198,8 +198,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       await sendPasswordResetEmail(auth, email.trim());
       setInfoMsg(
         isEn
-          ? 'Reset link sent under Driveo Academy! Check your inbox and Spam folder.'
-          : 'E-mail de réinitialisation envoyé par Driveo Academy ! Vérifiez votre boîte de réception (et vos Spams).'
+          ? 'Reset link sent under DrivePro Academy! Check your inbox and Spam folder.'
+          : 'E-mail de réinitialisation envoyé par DrivePro Academy ! Vérifiez votre boîte de réception (et vos Spams).'
       );
     } catch (err) {
       setErrorMsg(translateAuthErrorFr(err));
@@ -219,7 +219,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         <div className="bg-slate-900 text-white px-6 py-5 flex items-start justify-between gap-4">
           <div className="space-y-1">
             <div className="text-xs font-mono text-blue-300 font-semibold">
-              Driveo Academy · {isEn ? 'Candidate Account' : 'Compte Personnel'}
+              DrivePro Academy · {isEn ? 'Candidate Account' : 'Compte Personnel'}
             </div>
             <h2 className="font-display text-xl font-bold">
               {mode === 'register'
@@ -477,8 +477,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 />
                 <p className="text-[11px] text-slate-500 pt-1">
                   {isEn
-                    ? 'The password reset link is sent automatically on behalf of Driveo Academy.'
-                    : 'Le lien de réinitialisation est envoyé au nom de « Driveo Academy ».'}
+                    ? 'The password reset link is sent automatically on behalf of DrivePro Academy.'
+                    : 'Le lien de réinitialisation est envoyé au nom de « DrivePro Academy ».'}
                 </p>
               </div>
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Building2, CheckCircle2, Lock, MessageCircle, Phone, ShieldCheck, X } from 'lucide-react';
+import { Building2, CheckCircle2, Lock, MessageCircle, ShieldCheck, X } from 'lucide-react';
 import { PARIS_HQ_CONTACT } from '../data/curriculum';
 import { Language } from '../types';
 
@@ -49,8 +49,8 @@ export const LegalModal: React.FC<LegalModalProps> = ({
     conditions: isEn ? 'Terms of Service' : 'Conditions générales d’utilisation (CGU)',
     confidentialite: isEn ? 'Privacy Policy (GDPR)' : 'Politique de confidentialité (RGPD)',
     cookies: isEn ? 'Cookie Preferences' : 'Préférences de cookies',
-    securite: isEn ? 'Payment & Data Security' : 'Sécurité & Vérification des paiements',
-    contact: isEn ? 'Contact & Paris Headquarters' : 'Contact & Siège social Paris',
+    securite: isEn ? 'Payment & Trigger Verification' : 'Validation & Déclenchement des Fonds',
+    contact: isEn ? 'Direct Contact Link' : 'Contact & Lien Direct',
   };
 
   return (
@@ -76,12 +76,12 @@ export const LegalModal: React.FC<LegalModalProps> = ({
           {activeDoc === 'politique' && (
             <>
               <p>
-                <strong>Driveo Academy</strong> (Agrément officiel{' '}
+                <strong>DrivePro Academy</strong> (Agrément officiel{' '}
                 <span className="font-mono">{PARIS_HQ_CONTACT.accreditation}</span>)
                 fournit une plateforme internationale de formation théorique et pratique au permis de conduire (Catégories A, B, C, D).
               </p>
               <p>
-                Toute inscription nécessite la création d’un compte authentifié, un dossier complet avec pièce d’identité officielle et la validation effective d’un paiement vérifié avec code et ID de transaction.
+                Toute inscription nécessite la création d’un compte authentifié, un dossier complet avec pièce d’identité officielle et la transmission d’une preuve réelle de règlement permettant le déclenchement de votre montant.
               </p>
             </>
           )}
@@ -89,10 +89,10 @@ export const LegalModal: React.FC<LegalModalProps> = ({
           {activeDoc === 'conditions' && (
             <>
               <p>
-                Les frais administratifs et pédagogiques sont fixés selon la catégorie choisie (Permis A : 200 €, Permis B : 350 €, Permis C : 500 €, Permis D : 650 €) et convertis automatiquement dans la devise locale.
+                Les frais administratifs et pédagogiques sont fixés selon la catégorie choisie (Permis A : 300 €, Permis B : 450 €, Permis C : 650 €, Permis D : 800 €) et convertis automatiquement dans la devise locale de votre pays.
               </p>
               <p>
-                Les cours audio séquentiels, le QCM officiel ainsi que le rendez-vous pour les épreuves physiques sont strictement réservés aux candidats dont le paiement et le justificatif ont été validés.
+                Les cours audio séquentiels, le QCM officiel ainsi que le lien de rendez-vous pour les épreuves physiques sont strictement réservés aux candidats dont le dossier et la réception des fonds ont été confirmés.
               </p>
             </>
           )}
@@ -167,28 +167,21 @@ export const LegalModal: React.FC<LegalModalProps> = ({
               <div className="flex items-start gap-2.5">
                 <Building2 className="w-4 h-4 text-blue-700 shrink-0 mt-1" />
                 <div>
-                  <div className="font-semibold text-slate-900">Siège Social Paris · Driveo Academy</div>
+                  <div className="font-semibold text-slate-900">DrivePro Academy · Direction Internationale</div>
                   <div className="text-xs text-slate-600">
-                    {PARIS_HQ_CONTACT.addressFr} · Agrément {PARIS_HQ_CONTACT.accreditation} · Code Centre +103
+                    Agrément {PARIS_HQ_CONTACT.accreditation} · Assistance via lien direct uniquement
                   </div>
                 </div>
               </div>
               <div className="flex flex-wrap gap-2.5">
                 <a
-                  href={`tel:${PARIS_HQ_CONTACT.phone}`}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 text-white text-xs font-semibold rounded-lg"
-                >
-                  <Phone className="w-4 h-4" />
-                  <span>{PARIS_HQ_CONTACT.displayPhone}</span>
-                </a>
-                <a
                   href={PARIS_HQ_CONTACT.whatsappUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white text-xs font-semibold rounded-lg"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg"
                 >
                   <MessageCircle className="w-4 h-4" />
-                  <span>WhatsApp Officiel</span>
+                  <span>{isEn ? 'Open Direct Appointment Link' : 'Ouvrir le lien direct officiel'}</span>
                 </a>
               </div>
               <div className="flex items-center gap-2 text-xs text-slate-600">

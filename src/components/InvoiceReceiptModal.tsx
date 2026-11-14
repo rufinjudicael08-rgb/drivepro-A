@@ -30,9 +30,13 @@ export const InvoiceReceiptModal: React.FC<InvoiceReceiptModalProps> = ({
     country,
     lang
   );
+  const triggeredEur = registration.triggeredAmountEur || registration.baseFeeEur;
   const invoiceNo = `FAC-${registration.queueNumber}-${registration.licenseCategory}`;
   const txRef = payment?.transactionRef || registration.latestPaymentId || 'TP-ENREGISTRE';
-  const verifCode = payment?.verificationCode || `DP-${registration.queueNumber}`;
+  const verifCode =
+    registration.confirmationCode ||
+    payment?.verificationCode ||
+    `DPA-${triggeredEur}EUR-${registration.queueNumber}`;
   const isVerifiedByAdmin = registration.paymentStatus === 'verified';
 
   const handleDownloadPdfReceipt = () => {
@@ -44,25 +48,25 @@ export const InvoiceReceiptModal: React.FC<InvoiceReceiptModalProps> = ({
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(20);
-    doc.text('Driveo Academy', 16, 16);
+    doc.text('DrivePro Academy', 16, 16);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
     doc.setTextColor(191, 219, 254);
     doc.text(
       isEn
-        ? 'OFFICIAL INVOICE & PAYMENT RECEIPT'
-        : 'FACTURE OFFICIELLE & RECU DE PAIEMENT',
+        ? 'OFFICIAL INVOICE & TRIGGERED FUNDS RECEIPT'
+        : 'FACTURE OFFICIELLE & RECU DE MONTANT DECLENCHE',
       16,
       24
     );
     doc.text(`N° ${invoiceNo}`, 194, 16, { align: 'right' });
     doc.text(new Date().toLocaleDateString('fr-FR'), 194, 24, { align: 'right' });
 
-    // HQ details
+    // Accreditation line (without street address or phone number)
     doc.setTextColor(71, 85, 105);
     doc.setFontSize(9.5);
     doc.text(
-      `${PARIS_HQ_CONTACT.addressFr}  |  Agrément ${PARIS_HQ_CONTACT.accreditation}  |  ${PARIS_HQ_CONTACT.displayPhone}`,
+      `DrivePro Academy International  |  Agrément ${PARIS_HQ_CONTACT.accreditation}  |  ${registration.countryName}`,
       16,
       44
     );
@@ -74,17 +78,17 @@ export const InvoiceReceiptModal: React.FC<InvoiceReceiptModalProps> = ({
       [isEn ? 'Invoice Number' : 'Numéro de Facture', invoiceNo],
       [isEn ? 'Candidate' : 'Candidat', registration.fullName],
       [isEn ? 'Email' : 'Adresse e-mail', registration.email],
-      [isEn ? 'Phone' : 'Téléphone', registration.phone],
+      [isEn ? 'Country' : 'Pays du Dossier', registration.countryName],
       [
         isEn ? 'Permit Category' : 'Catégorie de Permis',
         `${isEn ? 'Permit' : 'Permis'} ${registration.licenseCategory} (#${registration.queueNumber})`,
       ],
-      [isEn ? 'Payment Mode' : 'Mode de Paiement', 'Télépaiement Vérifié'],
-      [isEn ? 'Transaction ID' : 'ID Transaction', txRef],
-      [isEn ? 'Verification Code' : 'Code de Vérification', verifCode],
+      [isEn ? 'Payment Mode' : 'Mode de Règlement', 'Télépaiement Officiel'],
+      [isEn ? 'Transaction Proof ID' : 'Référence Preuve', txRef],
+      [isEn ? 'Confirmation Code' : 'Code Déclencheur', verifCode],
       [
-        isEn ? 'Amount Paid' : 'Montant Réglé',
-        `${formattedFee} (${registration.baseFeeEur} EUR)`,
+        isEn ? 'Triggered Amount' : 'Montant Déclenché',
+        `${formattedFee} (${triggeredEur} EUR)`,
       ],
     ];
 
@@ -104,7 +108,6 @@ export const InvoiceReceiptModal: React.FC<InvoiceReceiptModalProps> = ({
       y += 12;
     });
 
-    // Official validation stamp box
     y += 6;
     doc.setFillColor(236, 253, 245);
     doc.setDrawColor(16, 185, 129);
@@ -115,11 +118,11 @@ export const InvoiceReceiptModal: React.FC<InvoiceReceiptModalProps> = ({
     doc.text(
       isVerifiedByAdmin
         ? isEn
-          ? 'CONFIRMED & VERIFIED BY DIRECTION — ACCESS UNLOCKED'
-          : 'PAIEMENT CONFIRMÉ & VALIDÉ — ACCÈS COURS & EXAMENS DÉBLOQUÉS'
+          ? `FUNDS RECEIVED (${triggeredEur} EUR) — COURSES & EXAMS UNLOCKED`
+          : `FONDS REÇUS (${triggeredEur} EUR) — ACCÈS COURS & EXAMENS DÉBLOQUÉS`
         : isEn
-        ? 'PAYMENT RECORDED & VERIFIED — OFFICIAL RECEIPT ISSUED'
-        : 'PAIEMENT ENREGISTRÉ & VÉRIFIÉ — FACTURE OFFICIELLE ÉMISE',
+        ? 'PROOF RECORDED — OFFICIAL RECEIPT ISSUED'
+        : 'PREUVE ENREGISTRÉE — FACTURE OFFICIELLE ÉMISE',
       105,
       y + 10.5,
       { align: 'center' }
@@ -129,13 +132,13 @@ export const InvoiceReceiptModal: React.FC<InvoiceReceiptModalProps> = ({
     doc.setFontSize(8.5);
     doc.setTextColor(100, 116, 139);
     doc.text(
-      'Driveo Academy International · Document officiel généré automatiquement.',
+      'DrivePro Academy International · Document officiel généré automatiquement.',
       105,
       282,
       { align: 'center' }
     );
 
-    doc.save(`Facture_${invoiceNo}_DriveoAcademy.pdf`);
+    doc.save(`Facture_${invoiceNo}_DriveProAcademy.pdf`);
   };
 
   return (
@@ -167,18 +170,18 @@ export const InvoiceReceiptModal: React.FC<InvoiceReceiptModalProps> = ({
                 {invoiceNo}
               </h3>
               <p className="text-xs text-slate-600 mt-0.5">
-                {PARIS_HQ_CONTACT.addressFr} · {PARIS_HQ_CONTACT.accreditation}
+                DrivePro Academy · {PARIS_HQ_CONTACT.accreditation} · {registration.countryName}
               </p>
             </div>
             <div className="text-right">
               <div className="text-xs text-slate-500">
-                {isEn ? 'Paid Amount' : 'Montant réglé'}
+                {isEn ? 'Triggered Amount' : 'Montant déclenché'}
               </div>
               <div className="text-xl font-mono font-bold text-emerald-700 tabular-nums">
                 {formattedFee}
               </div>
               <div className="text-xs font-mono text-slate-500">
-                ({registration.baseFeeEur} €)
+                ({triggeredEur} €)
               </div>
             </div>
           </div>
@@ -195,20 +198,20 @@ export const InvoiceReceiptModal: React.FC<InvoiceReceiptModalProps> = ({
               </span>
             </div>
             <div className="py-2.5 flex justify-between gap-4">
-              <span className="text-slate-600">{isEn ? 'Payment Method' : 'Mode de paiement'}</span>
+              <span className="text-slate-600">{isEn ? 'Payment Method' : 'Mode de règlement'}</span>
               <span className="font-semibold text-blue-700">
-                {isEn ? 'Verified E-Payment' : 'Télépaiement vérifié'}
+                {isEn ? 'Official E-Payment' : 'Télépaiement Officiel'}
               </span>
             </div>
             <div className="py-2.5 flex justify-between gap-4">
               <span className="text-slate-600">
-                {isEn ? 'Transaction ID' : 'ID de transaction'}
+                {isEn ? 'Transaction Proof ID' : 'Référence preuve'}
               </span>
               <span className="font-mono font-semibold text-slate-900">{txRef}</span>
             </div>
             <div className="py-2.5 flex justify-between gap-4">
               <span className="text-slate-600">
-                {isEn ? 'Verification Code' : 'Code de vérification'}
+                {isEn ? 'Trigger Code' : 'Code déclencheur'}
               </span>
               <span className="font-mono font-bold text-slate-900">{verifCode}</span>
             </div>
@@ -218,11 +221,11 @@ export const InvoiceReceiptModal: React.FC<InvoiceReceiptModalProps> = ({
                 <CheckCircle2 className="w-4 h-4" />
                 {isVerifiedByAdmin
                   ? isEn
-                    ? 'Verified by Direction'
-                    : 'Confirmé par Direction'
+                    ? 'Funds Received & Triggered by Direction'
+                    : 'Fonds reçus & déclenchés par la Direction'
                   : isEn
-                  ? 'Payment Recorded & Verified'
-                  : 'Paiement enregistré & confirmé'}
+                  ? 'Recorded'
+                  : 'Enregistré'}
               </span>
             </div>
           </div>
@@ -231,8 +234,8 @@ export const InvoiceReceiptModal: React.FC<InvoiceReceiptModalProps> = ({
             <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0" />
             <span>
               {isEn
-                ? 'This official PDF invoice certifies your payment receipt for online courses and physical test scheduling.'
-                : 'Cette facture officielle PDF certifie votre paiement et vous donne accès à vos cours et épreuves physiques.'}
+                ? 'This official PDF invoice certifies your triggered payment for online courses and physical test link access.'
+                : 'Cette facture officielle PDF certifie le déclenchement de votre montant et ouvre l’accès à vos cours et au lien des épreuves physiques.'}
             </span>
           </div>
 

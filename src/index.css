@@ -109,12 +109,30 @@
   animation-play-state: paused;
 }
 
+@keyframes driveproFlagWave {
+  0% {
+    transform: scale(1.06) translate3d(-1.5%, -1%, 0) skewX(-2deg);
+  }
+  50% {
+    transform: scale(1.11) translate3d(1.8%, 1%, 0) skewX(2deg);
+  }
+  100% {
+    transform: scale(1.06) translate3d(-1.5%, -1%, 0) skewX(-2deg);
+  }
+}
+
+.animate-flag-wave {
+  animation: driveproFlagWave 14s ease-in-out infinite;
+  will-change: transform;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-kenburns-a,
   .animate-kenburns-b,
   .animate-kenburns-c,
   .animate-audio-bar,
-  .animate-marquee {
+  .animate-marquee,
+  .animate-flag-wave {
     animation: none !important;
     transform: none !important;
   }

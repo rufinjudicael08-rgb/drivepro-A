@@ -2,7 +2,7 @@
   "entities": {
     "Registration": {
       "title": "Candidate Registration",
-      "description": "Candidate driving school dossier including legal address, Wi-Fi readiness, mandatory ID card verification, category-based EUR fee (200-350 EUR), locked funnel state, sequential course progress, and physical exam readiness.",
+      "description": "Candidate driving school dossier including legal address, Wi-Fi readiness, mandatory ID card verification, category-based EUR fee (300-800 EUR), locked funnel state, payment proof queue trigger, sequential course progress, and physical exam readiness.",
       "type": "object",
       "properties": {
         "id": {
@@ -109,6 +109,13 @@
           "type": "string",
           "maxLength": 128
         },
+        "triggeredAmountEur": {
+          "type": "number"
+        },
+        "confirmationCode": {
+          "type": "string",
+          "maxLength": 40
+        },
         "queueNumber": {
           "type": "number"
         },
@@ -166,6 +173,8 @@
         "paymentStatus",
         "dossierStatus",
         "latestPaymentId",
+        "triggeredAmountEur",
+        "confirmationCode",
         "queueNumber",
         "completedModuleIds",
         "codeProgress",

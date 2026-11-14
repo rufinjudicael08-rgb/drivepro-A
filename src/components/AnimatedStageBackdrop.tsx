@@ -1,49 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { APP_MEDIA } from '../assets/media';
+import React, { useEffect, useMemo, useState } from 'react';
+import { getCountryTheme } from '../data/countryThemes';
+import { CountryConfig } from '../types';
 
-export type BackdropSceneKey =
-  | 'home'
-  | 'enroll'
-  | 'candidate'
-  | 'agent';
+export type BackdropSceneKey = 'home' | 'enroll' | 'candidate' | 'agent';
 
 interface AnimatedStageBackdropProps {
   scene: BackdropSceneKey;
+  country: CountryConfig;
 }
-
-const SCENE_GALLERY: Record<BackdropSceneKey, string[]> = {
-  home: [
-    APP_MEDIA.bgDrivingPractice,
-    APP_MEDIA.bgCityIntersection,
-    APP_MEDIA.bgHighwayLesson,
-    APP_MEDIA.bgTheoryStudents,
-    APP_MEDIA.bgStudentSuccess,
-    APP_MEDIA.bgNightDashboard,
-    APP_MEDIA.bgInstructorBriefing,
-  ],
-  enroll: [
-    APP_MEDIA.bgInstructorBriefing,
-    APP_MEDIA.bgStudentSuccess,
-    APP_MEDIA.heroParisAcademy,
-    APP_MEDIA.bgCityIntersection,
-    APP_MEDIA.bgTheoryStudents,
-    APP_MEDIA.bgHighwayLesson,
-  ],
-  candidate: [
-    APP_MEDIA.bgTheoryStudents,
-    APP_MEDIA.courseSignsRoundabout,
-    APP_MEDIA.bgDrivingPractice,
-    APP_MEDIA.courseHighwaySafety,
-    APP_MEDIA.bgNightDashboard,
-    APP_MEDIA.bgCityIntersection,
-  ],
-  agent: [
-    APP_MEDIA.theoryClassroomHub,
-    APP_MEDIA.bgInstructorBriefing,
-    APP_MEDIA.bgStudentSuccess,
-    APP_MEDIA.heroParisAcademy,
-  ],
-};
 
 const MOTION_CLASSES = [
   'animate-kenburns-a',
@@ -53,8 +17,10 @@ const MOTION_CLASSES = [
 
 export const AnimatedStageBackdrop: React.FC<AnimatedStageBackdropProps> = ({
   scene,
+  country,
 }) => {
-  const images = SCENE_GALLERY[scene] || SCENE_GALLERY.home;
+  const theme = useMemo(() => getCountryTheme(country), [country]);
+  const images = theme.galleryImages;
   const [slideIdx, setSlideIdx] = useState(0);
 
   useEffect(() => {
@@ -63,33 +29,87 @@ export const AnimatedStageBackdrop: React.FC<AnimatedStageBackdropProps> = ({
       setSlideIdx((prev) => (prev + 1) % images.length);
     }, 6200);
     return () => clearInterval(id);
-  }, [scene, images.length]);
+  }, [scene, country.code, images.length]);
+
+  const [c1, c2, c3] = theme.flagColors;
 
   return (
     <div
       aria-hidden="true"
       className="fixed inset-0 z-0 overflow-hidden pointer-events-none select-none bg-slate-950"
     >
+      {/* Layer 1: Animated Waving National Flag Behind Country Photography */}
+      <div className="absolute inset-0 opacity-45 animate-flag-wave">
+        {theme.flagLayout === 'horizontal' && (
+          <div className="w-full h-full flex flex-col">
+            <div className="flex-1" style={{ backgroundColor: c1 }} />
+            <div className="flex-1" style={{ backgroundColor: c2 }} />
+            <div className="flex-1" style={{ backgroundColor: c3 }} />
+          </div>
+        )}
+        {theme.flagLayout === 'vertical' && (
+          <div className="w-full h-full flex">
+            <div className="flex-1" style={{ backgroundColor: c1 }} />
+            <div className="flex-1" style={{ backgroundColor: c2 }} />
+            <div className="flex-1" style={{ backgroundColor: c3 }} />
+          </div>
+        )}
+        {theme.flagLayout === 'cross' && (
+          <div className="relative w-full h-full" style={{ backgroundColor: c1 }}>
+            <div
+              className="absolute inset-y-0 left-[28%] w-[14%]"
+              style={{ backgroundColor: c2 }}
+            />
+            <div
+              className="absolute inset-x-0 top-[41%] h-[18%]"
+              style={{ backgroundColor: c2 }}
+            />
+          </div>
+        )}
+        {theme.flagLayout === 'canton' && (
+          <div className="relative w-full h-full flex flex-col">
+            {[0, 1, 2, 3, 4, 5].map((stripe) => (
+              <div
+                key={stripe}
+                className="flex-1"
+                style={{ backgroundColor: stripe % 2 === 0 ? c2 : c3 }}
+              />
+            ))}
+            <div
+              className="absolute top-0 left-0 w-[42%] h-[52%]"
+              style={{ backgroundColor: c1 }}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Layer 2: Country-Specific Photorealistic Driving & Law Enforcement Photography */}
       {images.map((src, idx) => {
         const active = idx === slideIdx;
         const motionClass = MOTION_CLASSES[idx % MOTION_CLASSES.length];
         return (
           <img
-            key={`${scene}-${idx}`}
+            key={`${country.code}-${scene}-${idx}`}
             src={src}
             alt=""
             loading="eager"
             decoding="async"
             referrerPolicy="no-referrer"
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[1600ms] ease-out ${motionClass} ${
-              active ? 'opacity-65' : 'opacity-0'
+            className={`absolute inset-0 w-full h-full object-cover mix-blend-luminosity transition-opacity duration-[1600ms] ease-out ${motionClass} ${
+              active ? 'opacity-70' : 'opacity-0'
             }`}
           />
         );
       })}
-      {/* Balanced contrast scrim preserving vivid moving scenes and crisp UI readability */}
-      <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-slate-950/55 to-slate-950/80" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(37,99,235,0.20),transparent_55%)]" />
+
+      {/* Layer 3: Balanced contrast scrim preserving waving national flag + vivid scene & UI contrast */}
+      <div className="absolute inset-0 bg-gradient-to-b from-slate-950/75 via-slate-950/55 to-slate-950/85" />
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `radial-gradient(circle at top right, ${theme.accentHex}33, transparent 58%)`,
+        }}
+      />
     </div>
   );
 };

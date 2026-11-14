@@ -15,21 +15,20 @@ import {
 } from 'firebase/firestore';
 import {
   ArrowRight,
-  Building2,
   CarFront,
   CheckCircle2,
+  Clock,
   GraduationCap,
   Lock,
   Mail,
   MailCheck,
   MapPin,
   MessageCircle,
-  Phone,
   ShieldCheck,
   UserPlus,
   Volume2,
+  Wifi,
 } from 'lucide-react';
-import { APP_MEDIA, HERO_SHOWCASE_GALLERY } from './assets/media';
 import { AgentAdminPortal } from './components/AgentAdminPortal';
 import { AnimatedStageBackdrop } from './components/AnimatedStageBackdrop';
 import { AuthModal } from './components/AuthModal';
@@ -45,7 +44,9 @@ import {
   convertEurFee,
   formatLocalCurrency,
   getCountryByCode,
+  getCountryFlagEmoji,
 } from './data/countries';
+import { formatCountryLocalTime, getCountryTheme } from './data/countryThemes';
 import { PARIS_HQ_CONTACT } from './data/curriculum';
 import { getTranslations, isRtlLanguage } from './data/i18n';
 import {
@@ -114,29 +115,6 @@ const HERO_COURSE_SLIDES = [
     detailFr: 'Correction complète + RDV examinateur agréé < 48h',
     detailEn: 'Full corrections + certified physical test appointment < 48h',
     badge: '48H',
-  },
-];
-
-const COMMUNITY_GALLERY_SLIDES = [
-  {
-    src: APP_MEDIA.bgTheoryStudents,
-    captionFr: 'Salle de préparation Code Audio multilingue',
-    captionEn: 'Multilingual Audio Theory Classroom',
-  },
-  {
-    src: APP_MEDIA.theoryClassroomHub,
-    captionFr: 'Sessions interactives QCM & Correction détaillée',
-    captionEn: 'Interactive Practice Exam & Full Corrections',
-  },
-  {
-    src: APP_MEDIA.bgInstructorBriefing,
-    captionFr: 'Accompagnement physique avant épreuve pratique',
-    captionEn: 'In-Person Coaching Before Physical Driving Test',
-  },
-  {
-    src: APP_MEDIA.bgStudentSuccess,
-    captionFr: 'Remise officielle du permis après épreuves physiques',
-    captionEn: 'Official License Issuance After Physical Tests',
   },
 ];
 
@@ -218,11 +196,12 @@ export default function App() {
   const [socialLinks, setSocialLinks] = useState<SocialLinkRecord[]>([]);
   const [contactMessages, setContactMessages] = useState<ContactMessageRecord[]>([]);
 
-  // Animated carousels in Hero & Lower Classroom Gallery
+  // Animated carousels in Hero & Lower Classroom Gallery (Country-Specific)
   const [heroSlideIdx, setHeroSlideIdx] = useState(0);
   const [communitySlideIdx, setCommunitySlideIdx] = useState(0);
   const [heroImgFailed, setHeroImgFailed] = useState(false);
   const [classImgFailed, setClassImgFailed] = useState(false);
+  const [nowTick, setNowTick] = useState(() => Date.now());
 
   // Corporate Legal & Contact Modals
   const [legalDocOpen, setLegalDocOpen] = useState<LegalDocKey | null>(null);
@@ -230,6 +209,8 @@ export default function App() {
 
   const isCreatorAdmin =
     user !== null && user.emailVerified && user.email === ADMIN_EMAIL;
+  const countryTheme = getCountryTheme(selectedCountry);
+  const countryGalleryCount = countryTheme.galleryImages.length;
 
   // Enforce strict creator-only route protection on activeView
   useEffect(() => {
@@ -238,21 +219,31 @@ export default function App() {
     }
   }, [activeView, isCreatorAdmin]);
 
-  // Cycle hero showcase + lower training showcase smoothly
+  // Reset country photo showcase smoothly on country change
+  useEffect(() => {
+    setHeroSlideIdx(0);
+    setCommunitySlideIdx(0);
+    setHeroImgFailed(false);
+    setClassImgFailed(false);
+  }, [selectedCountry.code]);
+
+  // Cycle hero showcase + lower training showcase + live country clock every 30s
   useEffect(() => {
     const heroTimer = setInterval(() => {
-      setHeroSlideIdx((prev) => (prev + 1) % HERO_SHOWCASE_GALLERY.length);
+      setHeroSlideIdx((prev) => (prev + 1) % countryGalleryCount);
     }, 4800);
     const communityTimer = setInterval(() => {
-      setCommunitySlideIdx(
-        (prev) => (prev + 1) % COMMUNITY_GALLERY_SLIDES.length
-      );
+      setCommunitySlideIdx((prev) => (prev + 1) % countryGalleryCount);
     }, 4200);
+    const clockTimer = setInterval(() => {
+      setNowTick(Date.now());
+    }, 30000);
     return () => {
       clearInterval(heroTimer);
       clearInterval(communityTimer);
+      clearInterval(clockTimer);
     };
-  }, []);
+  }, [countryGalleryCount]);
 
   useEffect(() => {
     testFirestoreConnection();
@@ -631,7 +622,31 @@ export default function App() {
     t.navSignOut;
 
   const currentHeroCourse =
-    HERO_COURSE_SLIDES[heroSlideIdx] || HERO_COURSE_SLIDES[0];
+    HERO_COURSE_SLIDES[heroSlideIdx % HERO_COURSE_SLIDES.length] ||
+    HERO_COURSE_SLIDES[0];
+  const countryFlag = getCountryFlagEmoji(selectedCountry.code);
+  const localClock = (() => {
+    void nowTick;
+    return formatCountryLocalTime(countryTheme.timeZone, lang);
+  })();
+  const localTimeStr = `${localClock.timeText} (${localClock.tzShort})`;
+  const heroGalleryImages = countryTheme.galleryImages;
+  const communityGalleryImages = [
+    ...countryTheme.galleryImages.slice(1),
+    countryTheme.galleryImages[0],
+  ];
+  const communityCaptionsFr = [
+    `${countryTheme.heroCaptionFr} · ${countryTheme.cityLabel}`,
+    `Cours Audio multilingue · ${selectedCountry.nameFr}`,
+    `QCM Officiel & Préparation Épreuves Physiques (${selectedCountry.nameFr})`,
+    `Délivrance du permis · ${countryTheme.authorityName}`,
+  ];
+  const communityCaptionsEn = [
+    `${countryTheme.heroCaptionEn} · ${countryTheme.cityLabel}`,
+    `Multilingual Audio Theory · ${selectedCountry.nameEn}`,
+    `Official Exam & Physical Test Prep (${selectedCountry.nameEn})`,
+    `Official Permit Issuance · ${countryTheme.authorityName}`,
+  ];
 
   return (
     <ErrorBoundary>
@@ -639,8 +654,8 @@ export default function App() {
         dir={isRtlLanguage(lang) ? 'rtl' : 'ltr'}
         className="relative min-h-screen text-slate-900 font-sans"
       >
-        {/* Dynamic Multi-Image Animated Photography Stage */}
-        <AnimatedStageBackdrop scene={activeView} />
+        {/* Dynamic Per-Country Animated Waving Flag + Local Driving Photography Stage */}
+        <AnimatedStageBackdrop scene={activeView} country={selectedCountry} />
 
         <div className="relative z-10 min-h-screen flex flex-col">
           {/* Top Bar Contract: Exactly 3 zones separated by gap-8 */}
@@ -650,7 +665,7 @@ export default function App() {
                 type="button"
                 onClick={() => setActiveView('home')}
                 className="cursor-pointer whitespace-nowrap shrink-0"
-                aria-label="Driveo Academy Accueil"
+                aria-label="DrivePro Academy Accueil"
               >
                 <DriveProLogo size="md" />
               </button>
@@ -795,9 +810,26 @@ export default function App() {
                 <section className="grid lg:grid-cols-12 gap-7 items-stretch">
                   <div className="lg:col-span-6 bg-white/95 backdrop-blur border border-slate-200 rounded-2xl p-7 md:p-9 flex flex-col justify-between gap-6 shadow-lg">
                     <div className="space-y-4">
-                      <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-800">
-                        <MapPin className="w-4 h-4 text-blue-700 shrink-0" />
-                        <span>{t.hqLabel}</span>
+                      {/* Per-Country Live Adaptation Bar: Flag, Local Clock, SIM Dial Prefix & National Authority */}
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800">
+                        <span className="inline-flex items-center gap-1.5 text-blue-800 font-bold">
+                          <span className="text-base leading-none">{countryFlag}</span>
+                          <span>{isEn ? selectedCountry.nameEn : selectedCountry.nameFr}</span>
+                        </span>
+                        <span className="inline-flex items-center gap-1 font-mono text-slate-700 tabular-nums">
+                          <Clock className="w-3.5 h-3.5 text-blue-700 shrink-0" />
+                          <span>{localTimeStr}</span>
+                        </span>
+                        <span className="inline-flex items-center gap-1 font-mono text-slate-700">
+                          <Wifi className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                          <span>
+                            {isEn ? countryTheme.simLabelEn : countryTheme.simLabelFr}
+                          </span>
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-slate-600">
+                          <MapPin className="w-3.5 h-3.5 text-blue-700 shrink-0" />
+                          <span>{countryTheme.authorityName}</span>
+                        </span>
                       </div>
                       <h1
                         className="font-display text-3xl sm:text-4xl lg:text-[2.75rem] font-extrabold tracking-tight text-slate-900 leading-[1.12]"
@@ -861,30 +893,30 @@ export default function App() {
                             ? `Permit ${category} : ${baseEur} € (${formattedLocalFee})`
                             : `Permis ${category} : ${baseEur} € (${formattedLocalFee})`}
                         </span>
-                        <span className="text-emerald-700 font-bold">
-                          Paiement vérifié · Sécurisé
+                        <span className="text-blue-700 font-bold">
+                          {isEn ? countryTheme.localPermitEn : countryTheme.localPermitFr}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Animated Course Showcase Carousel in Hero Right Column (Clean Image without Overlay Header) */}
+                  {/* Country-Adapted Animated Photo Showcase Carousel */}
                   <div className="lg:col-span-6 relative rounded-2xl overflow-hidden border border-slate-200/80 bg-slate-950 min-h-[360px] shadow-lg flex flex-col justify-end">
                     {!heroImgFailed ? (
                       <>
-                        {HERO_SHOWCASE_GALLERY.map((imgSrc, idx) => (
+                        {heroGalleryImages.map((imgSrc, idx) => (
                           <img
-                            key={imgSrc}
+                            key={`${selectedCountry.code}-${imgSrc}-${idx}`}
                             src={imgSrc}
                             alt={
                               isEn
-                                ? currentHeroCourse.titleEn
-                                : currentHeroCourse.titleFr
+                                ? `${selectedCountry.nameEn} — ${countryTheme.heroCaptionEn}`
+                                : `${selectedCountry.nameFr} — ${countryTheme.heroCaptionFr}`
                             }
                             referrerPolicy="no-referrer"
                             onError={() => setHeroImgFailed(true)}
                             className={`absolute inset-0 w-full h-full object-cover transition-all duration-[1400ms] ease-in-out ${
-                              idx === heroSlideIdx
+                              idx === heroSlideIdx % heroGalleryImages.length
                                 ? 'opacity-100 scale-105'
                                 : 'opacity-0 scale-100'
                             }`}
@@ -892,8 +924,17 @@ export default function App() {
                         ))}
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent pointer-events-none" />
 
-                        {/* Animated Mini Interactive Course Card Overlay */}
+                        {/* Country Flag Tag + Animated Mini Interactive Course Card Overlay */}
                         <div className="relative z-10 p-5 sm:p-6 space-y-4">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="inline-flex items-center gap-2 px-3 py-1 bg-slate-950/80 backdrop-blur border border-white/15 rounded-lg text-xs font-semibold text-white">
+                              <span>{countryFlag}</span>
+                              <span>
+                                {isEn ? selectedCountry.nameEn : selectedCountry.nameFr} · {localTimeStr}
+                              </span>
+                            </span>
+                          </div>
+
                           <div className="bg-slate-950/85 backdrop-blur-md border border-slate-700/80 rounded-xl p-4 flex items-center justify-between gap-4 text-white">
                             <div className="flex items-center gap-3.5 min-w-0">
                               <div className="w-12 h-12 rounded-xl bg-red-600 border-2 border-white flex items-center justify-center font-display font-extrabold text-sm shrink-0 shadow">
@@ -927,14 +968,14 @@ export default function App() {
 
                           <div className="flex items-center justify-between gap-3">
                             <div className="flex items-center gap-1.5">
-                              {HERO_SHOWCASE_GALLERY.map((_, idx) => (
+                              {heroGalleryImages.map((_, idx) => (
                                 <button
                                   key={idx}
                                   type="button"
                                   onClick={() => setHeroSlideIdx(idx)}
                                   aria-label={`Slide ${idx + 1}`}
                                   className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                                    idx === heroSlideIdx
+                                    idx === heroSlideIdx % heroGalleryImages.length
                                       ? 'w-7 bg-amber-400'
                                       : 'w-2 bg-white/40 hover:bg-white/70'
                                   }`}
@@ -942,7 +983,7 @@ export default function App() {
                               ))}
                             </div>
                             <span className="text-xs font-mono text-white/80 tabular-nums">
-                              0{heroSlideIdx + 1} / 0{HERO_SHOWCASE_GALLERY.length}
+                              0{(heroSlideIdx % heroGalleryImages.length) + 1} / 0{heroGalleryImages.length}
                             </span>
                           </div>
                         </div>
@@ -951,39 +992,39 @@ export default function App() {
                       <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center text-white bg-gradient-to-br from-slate-900 to-blue-950">
                         <CarFront className="w-12 h-12 text-blue-400 mb-3" />
                         <div className="font-display text-xl font-semibold">
-                          Driveo Academy International
+                          DrivePro Academy International
                         </div>
                       </div>
                     )}
                   </div>
                 </section>
 
-                {/* Full-Width 4-Column Tariff Strip (Permis Seulement — Partners Moved to Bottom Footer) */}
+                {/* Full-Width 4-Column Tariff Strip (Increased Rates: 300 / 450 / 650 €) */}
                 <section className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {[
                     {
-                      metric: `${formatLocalCurrency(convertEurFee(200, selectedCountry), selectedCountry, lang)}`,
+                      metric: `${formatLocalCurrency(convertEurFee(300, selectedCountry), selectedCountry, lang)}`,
                       accent: 'text-blue-700',
-                      titleFr: 'Permis A · 200 €',
-                      titleEn: 'Permit A · €200',
-                      descFr: 'Paiement vérifié, sécurisé · Dossier complet & cours audio.',
-                      descEn: 'Verified secure payment · Complete dossier & audio courses.',
+                      titleFr: 'Permis A · 300 €',
+                      titleEn: 'Permit A · €300',
+                      descFr: 'Moto · Dossier complet, cours audio & facture PDF officielle.',
+                      descEn: 'Motorcycle · Complete dossier, audio courses & official PDF invoice.',
                     },
                     {
-                      metric: `${formatLocalCurrency(convertEurFee(350, selectedCountry), selectedCountry, lang)}`,
+                      metric: `${formatLocalCurrency(convertEurFee(450, selectedCountry), selectedCountry, lang)}`,
                       accent: 'text-slate-900',
-                      titleFr: 'Permis B · 350 €',
-                      titleEn: 'Permit B · €350',
-                      descFr: 'Réinscription facile après Permis A · Télépaiement immédiat.',
-                      descEn: 'Easy re-enrollment after Permit A · Instant verified checkout.',
+                      titleFr: 'Permis B · 450 €',
+                      titleEn: 'Permit B · €450',
+                      descFr: 'Voiture · Réinscription rapide & déclenchement dès réception.',
+                      descEn: 'Passenger car · Fast re-enrollment & instant trigger on receipt.',
                     },
                     {
-                      metric: `${formatLocalCurrency(convertEurFee(500, selectedCountry), selectedCountry, lang)}`,
+                      metric: `${formatLocalCurrency(convertEurFee(650, selectedCountry), selectedCountry, lang)}`,
                       accent: 'text-emerald-700',
-                      titleFr: 'Permis C · 500 €',
-                      titleEn: 'Permit C · €500',
-                      descFr: 'Paiement vérifié · Facture PDF officielle générée immédiatement.',
-                      descEn: 'Verified payment · Official PDF invoice generated instantly.',
+                      titleFr: 'Permis C · 650 €',
+                      titleEn: 'Permit C · €650',
+                      descFr: 'Poids lourd · Formation complète & épreuves physiques.',
+                      descEn: 'Heavy truck · Complete training & physical examination.',
                     },
                     {
                       metric: '< 48h',
@@ -991,9 +1032,9 @@ export default function App() {
                       titleFr: 'QCM → Épreuves Physiques',
                       titleEn: 'Quiz → Physical Tests',
                       descFr:
-                        'Suivez vos cours, passez le QCM et fixez vos épreuves physiques.',
+                        'Suivez vos cours, passez le QCM et ouvrez votre lien d’épreuves physiques.',
                       descEn:
-                        'Follow courses, pass the quiz and schedule your physical tests.',
+                        'Follow courses, pass the quiz and open your physical test scheduling link.',
                     },
                   ].map((item) => (
                     <div
@@ -1015,20 +1056,24 @@ export default function App() {
                   ))}
                 </section>
 
-                {/* Lower Animated Multi-Image Community Classroom + Parcours complet */}
+                {/* Lower Animated Country-Specific Community Classroom + Parcours complet */}
                 <section className="grid lg:grid-cols-12 gap-6 items-stretch">
                   <div className="lg:col-span-5 relative rounded-2xl overflow-hidden border border-slate-200/80 bg-slate-900 min-h-[290px] shadow-md flex flex-col justify-end">
                     {!classImgFailed ? (
                       <>
-                        {COMMUNITY_GALLERY_SLIDES.map((slide, idx) => (
+                        {communityGalleryImages.map((imgSrc, idx) => (
                           <img
-                            key={slide.src}
-                            src={slide.src}
-                            alt={isEn ? slide.captionEn : slide.captionFr}
+                            key={`${selectedCountry.code}-comm-${imgSrc}-${idx}`}
+                            src={imgSrc}
+                            alt={
+                              isEn
+                                ? communityCaptionsEn[idx % communityCaptionsEn.length]
+                                : communityCaptionsFr[idx % communityCaptionsFr.length]
+                            }
                             referrerPolicy="no-referrer"
                             onError={() => setClassImgFailed(true)}
                             className={`absolute inset-0 w-full h-full object-cover transition-all duration-[1400ms] ease-in-out ${
-                              idx === communitySlideIdx
+                              idx === communitySlideIdx % communityGalleryImages.length
                                 ? 'opacity-100 scale-105'
                                 : 'opacity-0 scale-100'
                             }`}
@@ -1036,20 +1081,27 @@ export default function App() {
                         ))}
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent pointer-events-none" />
                         <div className="relative z-10 p-5 space-y-2.5 text-white">
+                          <div className="text-xs font-mono text-amber-300 font-semibold">
+                            {countryFlag} {isEn ? selectedCountry.nameEn : selectedCountry.nameFr}
+                          </div>
                           <div className="text-sm font-bold">
                             {isEn
-                              ? COMMUNITY_GALLERY_SLIDES[communitySlideIdx].captionEn
-                              : COMMUNITY_GALLERY_SLIDES[communitySlideIdx].captionFr}
+                              ? communityCaptionsEn[
+                                  communitySlideIdx % communityCaptionsEn.length
+                                ]
+                              : communityCaptionsFr[
+                                  communitySlideIdx % communityCaptionsFr.length
+                                ]}
                           </div>
                           <div className="flex items-center gap-1.5 pt-1">
-                            {COMMUNITY_GALLERY_SLIDES.map((_, idx) => (
+                            {communityGalleryImages.map((_, idx) => (
                               <button
                                 key={idx}
                                 type="button"
                                 onClick={() => setCommunitySlideIdx(idx)}
                                 aria-label={`Scène ${idx + 1}`}
                                 className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                                  idx === communitySlideIdx
+                                  idx === communitySlideIdx % communityGalleryImages.length
                                     ? 'w-6 bg-emerald-400'
                                     : 'w-2 bg-white/40 hover:bg-white/70'
                                 }`}
@@ -1100,12 +1152,12 @@ export default function App() {
                           },
                           {
                             num: '02.',
-                            titleFr: 'Paiement · Mode Télépaiement',
-                            titleEn: 'Verified & Secure Payment',
+                            titleFr: 'Preuve de paiement → Montant déclenché',
+                            titleEn: 'Payment Proof → Triggered Funds',
                             textFr:
-                              'Paiement vérifié, sécurisé directement via le lien officiel avec facture générée.',
+                              'Réglez via le lien officiel et soumettez votre ID réel : dès réception de l’argent, le montant déclenché active vos cours et votre facture PDF.',
                             textEn:
-                              'Verified, secure payment via direct official link with instant invoice.',
+                              'Pay via the official link and submit your real Transaction ID: as soon as funds are received, the triggered amount unlocks courses and PDF invoice.',
                           },
                           {
                             num: '03.',
@@ -1224,52 +1276,44 @@ export default function App() {
             )}
           </main>
 
-          {/* Clean Corporate Footer + Single-Line Socials + Scrolling Partenaire Officiel at Very Bottom */}
+          {/* Clean Corporate Footer (Direct Links Only) + Single-Line Socials + Scrolling Partenaire Officiel */}
           <footer className="bg-slate-900 text-slate-200 border-t border-slate-800 mt-12">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-7 text-xs">
-              {/* Top Row: Contact & Siège (Left) + Policy Links (Right, no heading, no Certifications box) */}
+              {/* Top Row: Direct Links (Left, zero street address & zero phone number) + Policy Links (Right) */}
               <div className="grid md:grid-cols-12 gap-8 items-start">
                 <div className="md:col-span-7 space-y-3.5">
                   <div className="flex flex-wrap items-center gap-3">
                     <DriveProLogo dark size="sm" />
                     <span className="text-slate-400 font-mono text-xs font-semibold">
-                      v4.3.1
+                      v4.4.0
                     </span>
                   </div>
-                  <div className="flex items-start gap-2 text-slate-300 leading-relaxed">
-                    <Building2 className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
-                    <span>
-                      Siège social : {PARIS_HQ_CONTACT.addressFr} · Agrément{' '}
-                      <span className="font-mono text-white font-semibold">
-                        {PARIS_HQ_CONTACT.accreditation}
-                      </span>{' '}
-                      · Code Centre{' '}
-                      <span className="font-mono text-white font-semibold">
-                        +103 · Paris 75008
-                      </span>
-                    </span>
+                  <div className="text-slate-300 leading-relaxed">
+                    {countryFlag} DrivePro Academy ·{' '}
+                    <span className="text-white font-semibold">
+                      {isEn ? selectedCountry.nameEn : selectedCountry.nameFr}
+                    </span>{' '}
+                    —{' '}
+                    {isEn
+                      ? '100% digital direct links, online audio courses & physical exam scheduling'
+                      : 'Accompagnement 100 % par lien direct, cours audio en ligne & rendez-vous épreuves physiques'}
                   </div>
                   <div className="flex flex-wrap items-center gap-2.5 pt-1">
-                    <a
-                      href={`tel:${PARIS_HQ_CONTACT.phone}`}
-                      className="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-mono font-semibold whitespace-nowrap transition-colors"
-                    >
-                      <Phone className="w-3.5 h-3.5 text-blue-400" />
-                      <span>{PARIS_HQ_CONTACT.displayPhone}</span>
-                    </a>
                     <a
                       href={PARIS_HQ_CONTACT.whatsappUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold whitespace-nowrap transition-colors"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold whitespace-nowrap transition-colors"
                     >
                       <MessageCircle className="w-3.5 h-3.5" />
-                      <span>WhatsApp Direct</span>
+                      <span>
+                        {isEn ? 'Direct WhatsApp Link' : 'Lien Direct WhatsApp'}
+                      </span>
                     </a>
                     <button
                       type="button"
                       onClick={() => setContactModalOpen(true)}
-                      className="inline-flex items-center gap-2 px-3.5 py-2 bg-blue-700 hover:bg-blue-600 text-white rounded-lg font-semibold whitespace-nowrap transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-600 text-white rounded-lg font-semibold whitespace-nowrap transition-colors cursor-pointer"
                     >
                       <Mail className="w-3.5 h-3.5" />
                       <span>{isEn ? 'Ask a Question' : 'Poser une question'}</span>
@@ -1277,7 +1321,7 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Legal & Policy Links (Clean grid, no header) */}
+                {/* Legal & Policy Links */}
                 <div className="md:col-span-5 grid grid-cols-2 gap-y-2.5 gap-x-4 pt-1">
                   {(
                     [
@@ -1286,7 +1330,7 @@ export default function App() {
                       { key: 'confidentialite', labelFr: 'Confidentialité (RGPD)', labelEn: 'Privacy Policy' },
                       { key: 'cookies', labelFr: 'Préférence de cookies', labelEn: 'Cookie Preferences' },
                       { key: 'securite', labelFr: 'Sécurité & Paiement', labelEn: 'Payment Security' },
-                      { key: 'contact', labelFr: 'Contact & Siège Paris', labelEn: 'Contact & Paris HQ' },
+                      { key: 'contact', labelFr: 'Contact & Lien Direct', labelEn: 'Contact & Direct Link' },
                     ] as const
                   ).map((item) => (
                     <button
@@ -1301,7 +1345,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Single-Line Official Social Networks (Facebook · Instagram · LinkedIn · TikTok — Driveo Academy) */}
+              {/* Single-Line Official Social Networks (Facebook · Instagram · LinkedIn · TikTok — DrivePro Academy) */}
               <div className="border-t border-slate-800 pt-5">
                 <SocialAccountsStrip dark />
               </div>
@@ -1313,7 +1357,7 @@ export default function App() {
 
               <div className="border-t border-slate-800 pt-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[11px] text-slate-400">
                 <div>
-                  © {new Date().getFullYear()} Driveo Academy · Tous droits réservés.
+                  © {new Date().getFullYear()} DrivePro Academy · Tous droits réservés.
                 </div>
                 <div className="flex flex-wrap items-center gap-4">
                   <button

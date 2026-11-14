@@ -61,18 +61,18 @@ service cloud.firestore {
         'idCardType', 'idCardNumber', 'idCardFileName', 'idCardThumbnail',
         'countryCode', 'countryName', 'licenseCategory', 'preferredLanguage', 'currency',
         'baseFeeEur', 'convertedAmount', 'paymentMethod', 'paymentStatus', 'dossierStatus',
-        'latestPaymentId', 'queueNumber', 'completedModuleIds', 'codeProgress',
-        'quizBestScore', 'referralCode', 'referralPlatform', 'assignedInstructorId',
-        'createdAt', 'updatedAt'
+        'latestPaymentId', 'triggeredAmountEur', 'confirmationCode', 'queueNumber',
+        'completedModuleIds', 'codeProgress', 'quizBestScore', 'referralCode',
+        'referralPlatform', 'assignedInstructorId', 'createdAt', 'updatedAt'
       ])
       && data.keys().hasOnly([
         'id', 'userId', 'fullName', 'email', 'phone', 'address', 'city', 'wifiReady',
         'idCardType', 'idCardNumber', 'idCardFileName', 'idCardThumbnail',
         'countryCode', 'countryName', 'licenseCategory', 'preferredLanguage', 'currency',
         'baseFeeEur', 'convertedAmount', 'paymentMethod', 'paymentStatus', 'dossierStatus',
-        'latestPaymentId', 'queueNumber', 'completedModuleIds', 'codeProgress',
-        'quizBestScore', 'referralCode', 'referralPlatform', 'assignedInstructorId',
-        'createdAt', 'updatedAt'
+        'latestPaymentId', 'triggeredAmountEur', 'confirmationCode', 'queueNumber',
+        'completedModuleIds', 'codeProgress', 'quizBestScore', 'referralCode',
+        'referralPlatform', 'assignedInstructorId', 'createdAt', 'updatedAt'
       ])
       && isValidId(data.id)
       && data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128
@@ -91,12 +91,14 @@ service cloud.firestore {
       && data.licenseCategory in ['A', 'B', 'C', 'D']
       && data.preferredLanguage is string && data.preferredLanguage.size() >= 2 && data.preferredLanguage.size() <= 10
       && data.currency is string && data.currency.size() >= 3 && data.currency.size() <= 10
-      && data.baseFeeEur is number && data.baseFeeEur in [200, 350, 500, 650]
+      && data.baseFeeEur is number && data.baseFeeEur in [300, 450, 650, 800]
       && data.convertedAmount is number && data.convertedAmount > 0 && data.convertedAmount <= 100000000
       && data.paymentMethod is string && data.paymentMethod.size() >= 2 && data.paymentMethod.size() <= 80
       && data.paymentStatus in ['pending', 'paid', 'verified']
       && data.dossierStatus in ['locked', 'queue', 'code_unlocked', 'practical_ready']
       && data.latestPaymentId is string && data.latestPaymentId.size() <= 128
+      && data.triggeredAmountEur is number && data.triggeredAmountEur >= 0 && data.triggeredAmountEur <= 10000
+      && data.confirmationCode is string && data.confirmationCode.size() <= 40
       && data.queueNumber is number && data.queueNumber >= 1 && data.queueNumber <= 1000000
       && isValidCompletedModules(data.completedModuleIds)
       && data.codeProgress is number && data.codeProgress >= 0 && data.codeProgress <= 100
@@ -129,7 +131,7 @@ service cloud.firestore {
       && data.senderPhone is string && data.senderPhone.size() <= 40
       && data.countryCode is string && data.countryCode.size() >= 2 && data.countryCode.size() <= 3
       && data.currency is string && data.currency.size() >= 3 && data.currency.size() <= 10
-      && data.baseAmountEur is number && data.baseAmountEur in [200, 350, 500, 650]
+      && data.baseAmountEur is number && data.baseAmountEur in [300, 450, 650, 800]
       && data.amountPaid is number && data.amountPaid > 0 && data.amountPaid <= 100000000
       && data.method is string && data.method.size() >= 2 && data.method.size() <= 80
       && data.transactionRef is string && data.transactionRef.size() >= 6 && data.transactionRef.size() <= 80
@@ -245,6 +247,8 @@ service cloud.firestore {
         && incoming().paymentStatus == 'pending'
         && incoming().dossierStatus == 'locked'
         && incoming().latestPaymentId == ''
+        && incoming().triggeredAmountEur == 0
+        && incoming().confirmationCode == ''
         && incoming().completedModuleIds.size() == 0
         && incoming().codeProgress == 0
         && incoming().quizBestScore == 0
@@ -267,19 +271,19 @@ service cloud.firestore {
               (
                 existing().paymentStatus == 'pending'
                 && incoming().paymentStatus == 'pending'
-                && incoming().dossierStatus == 'locked'
+                && incoming().dossierStatus == existing().dossierStatus
                 && incoming().diff(existing()).affectedKeys().hasOnly([
                   'countryCode', 'countryName', 'currency', 'convertedAmount', 'updatedAt'
                 ])
               )
               || (
                 existing().paymentStatus == 'pending'
-                && incoming().paymentStatus == 'paid'
-                && incoming().dossierStatus == 'code_unlocked'
+                && incoming().paymentStatus == 'pending'
+                && incoming().dossierStatus == 'queue'
                 && isValidId(incoming().latestPaymentId)
                 && existsAfter(/databases/$(database)/documents/payments/$(incoming().latestPaymentId))
                 && incoming().diff(existing()).affectedKeys().hasOnly([
-                  'paymentStatus', 'dossierStatus', 'paymentMethod', 'latestPaymentId', 'updatedAt'
+                  'dossierStatus', 'paymentMethod', 'latestPaymentId', 'updatedAt'
                 ])
               )
               || (

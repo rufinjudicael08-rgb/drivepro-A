@@ -48,7 +48,7 @@ export const DriveProLogo: React.FC<DriveProLogoProps> = ({
           dark ? 'text-white' : 'text-slate-900'
         }`}
       >
-        <span className={dark ? 'text-blue-400' : 'text-blue-700'}>Driveo</span>{' '}
+        <span className={dark ? 'text-blue-400' : 'text-blue-700'}>DrivePro</span>{' '}
         <span className={`font-semibold ${dark ? 'text-slate-200' : 'text-slate-700'}`}>
           Academy
         </span>

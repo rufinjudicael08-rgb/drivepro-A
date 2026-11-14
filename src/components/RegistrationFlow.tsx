@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { User } from 'firebase/auth';
-import { doc, serverTimestamp, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import { doc, serverTimestamp, setDoc, writeBatch } from 'firebase/firestore';
 import {
   ArrowRight,
-  Check,
   CheckCircle2,
-  Copy,
+  Clock,
   ExternalLink,
   FileCheck2,
   FileText,
   IdCard,
   Lock,
+  MessageCircle,
   PlusCircle,
   Receipt,
   Send,
@@ -26,7 +26,8 @@ import {
   getCategoryFeeEur,
   TAPTAP_SEND_CHECKOUT,
 } from '../data/countries';
-import { getInstructorForCountry } from '../data/curriculum';
+import { getCountryTheme } from '../data/countryThemes';
+import { getInstructorForCountry, PARIS_HQ_CONTACT } from '../data/curriculum';
 import { getTranslations } from '../data/i18n';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import {
@@ -130,16 +131,20 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
 }) => {
   const t = getTranslations(lang);
   const isEn = lang === 'en';
+  const countryTheme = getCountryTheme(country);
 
   const activeCategory: LicenseCategory =
     registration?.licenseCategory || category;
   const baseFeeEur = getCategoryFeeEur(activeCategory);
-  const convertedFee = convertEurFee(baseFeeEur, country);
   const xofEquivalent = Math.round(baseFeeEur * 655.957);
 
   const isUnlocked =
     registration !== null &&
     (registration.paymentStatus === 'paid' || registration.paymentStatus === 'verified');
+  const isProofSubmitted =
+    registration !== null &&
+    registration.paymentStatus === 'pending' &&
+    registration.dossierStatus === 'queue';
 
   const [step, setStep] = useState<1 | 2 | 3 | 4>(() => {
     if (isUnlocked) return 4;
@@ -187,16 +192,14 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
   );
   const [acceptedTerms, setAcceptedTerms] = useState(false);
 
-  // Step 3 Strict Payment Verification State (without receipt photo upload)
+  // Step 3 Real Payment Proof State (awaiting actual funds receipt & amount trigger)
   const [senderName, setSenderName] = useState(
     registration?.fullName || user?.displayName || ''
   );
   const [senderPhone, setSenderPhone] = useState(registration?.phone || '');
   const [txIdInput, setTxIdInput] = useState('');
-  const [triggerCodeInput, setTriggerCodeInput] = useState('');
   const [linkOpened, setLinkOpened] = useState(false);
   const [transferConfirmed, setTransferConfirmed] = useState(false);
-  const [copiedTrigger, setCopiedTrigger] = useState(false);
   const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
   const [justCompletedPayment, setJustCompletedPayment] =
     useState<PaymentLogRecord | null>(null);
@@ -279,17 +282,6 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
     setIdCardThumbnail(thumb);
   };
 
-  const expectedTriggerCode = registration
-    ? `DP-${registration.queueNumber}-${registration.licenseCategory}`
-    : '';
-
-  const handleCopyTriggerCode = () => {
-    if (!expectedTriggerCode) return;
-    navigator.clipboard.writeText(expectedTriggerCode);
-    setCopiedTrigger(true);
-    setTimeout(() => setCopiedTrigger(false), 2000);
-  };
-
   const handleSaveDossier = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
@@ -354,7 +346,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
     if (!acceptedTerms) {
       setFormError(
         isEn
-          ? 'You must accept the Driveo Academy enrollment policy.'
+          ? 'You must accept the DrivePro Academy enrollment policy.'
           : 'Vous devez confirmer l’exactitude des informations de votre dossier.'
       );
       return;
@@ -370,7 +362,6 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
     }
 
     setIsSubmitting(true);
-    // Support multiple permit categories cleanly (e.g., reg_<uid>_A then reg_<uid>_B)
     const existingForCategory = allMyRegistrations.find(
       (r) => r.licenseCategory === category
     );
@@ -403,6 +394,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
       paymentStatus: 'pending',
       dossierStatus: 'locked',
       latestPaymentId: '',
+      triggeredAmountEur: 0,
+      confirmationCode: '',
       queueNumber: queueNum,
       completedModuleIds: [],
       codeProgress: 0,
@@ -443,8 +436,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
     if (!linkOpened && !transferConfirmed) {
       setFormError(
         isEn
-          ? 'Please open the official payment link and confirm your completed payment first.'
-          : 'Veuillez d’abord ouvrir le lien officiel de paiement et cocher la confirmation de règlement réel.'
+          ? 'Please open the official payment link and confirm your real transfer first.'
+          : 'Veuillez d’abord ouvrir le lien officiel de paiement et confirmer l’envoi réel des fonds.'
       );
       return;
     }
@@ -469,19 +462,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
     ) {
       setFormError(
         isEn
-          ? 'Invalid Transaction ID. Please enter your real transfer reference (at least 6 valid alphanumeric characters).'
-          : 'ID de transaction invalide ou fictif refusé. Saisissez votre véritable référence de paiement reçue (minimum 6 caractères réels).'
-      );
-      return;
-    }
-
-    // Strict Trigger Verification Code match (no image/file upload required)
-    const cleanedTrigger = triggerCodeInput.trim().toUpperCase();
-    if (cleanedTrigger !== expectedTriggerCode) {
-      setFormError(
-        isEn
-          ? `Verification Trigger Code mismatch. Enter exact code: ${expectedTriggerCode}`
-          : `Code déclencheur incorrect. Saisissez exactement le code affiché sur votre bordereau : ${expectedTriggerCode}`
+          ? 'Invalid Transaction ID. Please enter the real transfer reference from your payment receipt (minimum 6 alphanumeric characters).'
+          : 'ID de transaction invalide ou fictif refusé. Saisissez votre véritable référence reçue après paiement (minimum 6 caractères réels).'
       );
       return;
     }
@@ -489,6 +471,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
     setIsSubmitting(true);
     const paymentId = `pay_${user.uid}_${Date.now()}`;
     const formattedTxRef = rawTx.startsWith('TP-') ? rawTx : `TP-${rawTx}`;
+    const awaitingCode = `ATT-${registration.baseFeeEur}-${registration.queueNumber}`;
 
     const newPaymentObj: PaymentLogRecord = {
       id: paymentId,
@@ -503,8 +486,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
       amountPaid: registration.convertedAmount,
       method: 'Télépaiement',
       transactionRef: formattedTxRef.slice(0, 80),
-      verificationCode: expectedTriggerCode,
-      receiptFileName: 'CODE-VERIFIE',
+      verificationCode: awaitingCode,
+      receiptFileName: 'PREUVE-TRANSMISE',
       receiptThumbnail: '',
       status: 'completed',
     };
@@ -519,9 +502,9 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
         createdAt: serverTimestamp(),
       });
 
+      // Candidate transitions dossier to 'queue' awaiting actual funds receipt & amount trigger by Direction
       batch.update(regRef, {
-        paymentStatus: 'paid',
-        dossierStatus: 'code_unlocked',
+        dossierStatus: 'queue',
         paymentMethod: 'Télépaiement',
         latestPaymentId: paymentId,
         updatedAt: serverTimestamp(),
@@ -529,8 +512,6 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
 
       await batch.commit();
       setJustCompletedPayment(newPaymentObj);
-      setStep(4);
-      setInvoiceModalOpen(true);
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, `payments/${paymentId}`);
     } finally {
@@ -634,8 +615,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
             <p className="text-sm text-slate-200 max-w-3xl leading-relaxed">
               {isUnlocked
                 ? isEn
-                  ? 'Your verified payment and PDF invoice are recorded. Study all 5 modules, pass the quiz, or book your final physical tests.'
-                  : 'Votre paiement vérifié et votre facture PDF officielle sont enregistrés. Suivez les 5 modules, passez le QCM et fixez vos épreuves physiques.'
+                  ? 'Your funds trigger and PDF invoice are confirmed. Study all 5 modules, pass the quiz, or open your physical test booking link.'
+                  : 'Votre montant déclenché et votre facture PDF officielle sont confirmés. Suivez les 5 modules, passez le QCM et ouvrez votre lien d’épreuves physiques.'
                 : t.lockedNoticeBody}
             </p>
           </div>
@@ -708,10 +689,13 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
         })}
       </div>
 
-      {/* Step 1: License Category Selection (200 / 350 / 500 / 650 EUR) */}
+      {/* Step 1: License Category Selection (300 / 450 / 650 / 800 EUR) */}
       {step === 1 && !isUnlocked && (
         <div className="bg-white/95 backdrop-blur border border-slate-200 rounded-xl p-6 md:p-8 space-y-6 shadow-md">
           <div className="border-b border-slate-200 pb-5">
+            <div className="text-xs font-mono font-semibold text-blue-700 mb-1">
+              {isEn ? countryTheme.localPermitEn : countryTheme.localPermitFr} · {countryTheme.authorityName}
+            </div>
             <h3 className="text-2xl font-bold text-slate-900">
               {isEn ? (
                 <>
@@ -727,8 +711,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
             </h3>
             <p className="text-[15px] text-slate-700 mt-1">
               {isEn
-                ? 'Select your permit category (A: €200, B: €350, C: €500, D: €650). Direct verified payment.'
-                : 'Sélectionnez votre permis (Permis A : 200 €, Permis B : 350 €, Permis C : 500 €). Mode télépaiement vérifié.'}
+                ? `Select your permit (A: €300, B: €450, C: €650, D: €800) adapted for ${country.nameEn} (${countryTheme.simLabelEn}).`
+                : `Sélectionnez votre permis (A : 300 €, B : 450 €, C : 650 €, D : 800 €) adapté pour ${country.nameFr} (${countryTheme.simLabelFr}).`}
             </p>
           </div>
 
@@ -1118,30 +1102,22 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
         </form>
       )}
 
-      {/* Step 3: Paiement — Mode Télépaiement Vérifié & Sécurisé */}
+      {/* Step 3: Paiement & Déclenchement par réception des fonds */}
       {step === 3 && registration && !isUnlocked && (
-        <form
-          onSubmit={handleValidatePayment}
-          className="bg-white/95 backdrop-blur border border-slate-200 rounded-2xl p-6 md:p-8 space-y-6 shadow-lg"
-        >
+        <div className="bg-white/95 backdrop-blur border border-slate-200 rounded-2xl p-6 md:p-8 space-y-6 shadow-lg">
           <div className="border-b border-slate-200 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <div className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-emerald-700 mb-1">
-                <ShieldCheck className="w-4 h-4" />
-                <span>
-                  {isEn
-                    ? 'VERIFIED & SECURE PAYMENT'
-                    : 'PAIEMENT VÉRIFIÉ · SÉCURISÉ'}
-                </span>
+              <div className="text-xs font-mono font-bold text-blue-700 mb-1">
+                {isEn ? countryTheme.localPermitEn : countryTheme.localPermitFr}
               </div>
               <h3 className="text-2xl font-display font-bold text-slate-900">
                 {isEn ? (
                   <>
-                    Step 3 — <span className="text-blue-700">Payment</span>
+                    Step 3 — <span className="text-blue-700">Payment & Funds Proof</span>
                   </>
                 ) : (
                   <>
-                    Étape 3 — <span className="text-blue-700">Paiement</span>
+                    Étape 3 — <span className="text-blue-700">Paiement & Preuve</span>
                   </>
                 )}
               </h3>
@@ -1152,7 +1128,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
             </div>
             <div className="bg-gradient-to-br from-slate-900 to-blue-950 text-white px-5 py-3.5 rounded-xl text-right font-mono tabular-nums border border-blue-900/40 shadow-sm">
               <div className="text-xs text-amber-300 font-semibold">
-                {isEn ? 'Permit Fee' : 'Montant du permis'}
+                {isEn ? 'Permit Fee' : 'Montant attendu'}
               </div>
               <div className="text-2xl font-bold">
                 {registration.baseFeeEur} €
@@ -1163,200 +1139,243 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
             </div>
           </div>
 
-          {formError && (
-            <div className="bg-red-50 border border-red-200 text-red-800 text-sm font-medium px-4 py-3 rounded-lg">
-              {formError}
-            </div>
-          )}
+          {isProofSubmitted ? (
+            <div className="space-y-5">
+              <div className="bg-amber-50 border border-amber-300 rounded-2xl p-6 space-y-4">
+                <div className="flex items-start gap-3">
+                  <Clock className="w-6 h-6 text-amber-700 shrink-0 mt-0.5" />
+                  <div className="space-y-1.5">
+                    <h4 className="font-display text-lg font-bold text-slate-900">
+                      {isEn
+                        ? `Payment Proof Submitted — Waiting for ${registration.baseFeeEur} € Receipt Confirmation`
+                        : `Preuve transmise — En attente de réception des fonds (${registration.baseFeeEur} €)`}
+                    </h4>
+                    <p className="text-sm text-slate-700 leading-relaxed">
+                      {isEn
+                        ? 'Your transaction proof has been logged in Firebase. As soon as our team receives the money, the triggered amount unlocks your 5 audio courses, official quiz, and PDF invoice automatically.'
+                        : `Votre preuve de règlement a été enregistrée. Dès réception réelle de l’argent (${registration.baseFeeEur} €), le déclenchement du montant débloquera automatiquement vos 5 cours audio, votre QCM officiel et votre facture PDF.`}
+                    </p>
+                  </div>
+                </div>
 
-          {/* Mode Télépaiement Officiel Card */}
-          <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white rounded-2xl p-6 space-y-5 border border-blue-900/50 shadow-md">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-5">
-              <div className="space-y-1.5">
-                <div className="inline-flex items-center gap-2 text-xs font-mono text-emerald-400 font-bold">
-                  <Send className="w-4 h-4" />
+                <div className="grid sm:grid-cols-3 gap-3 text-xs bg-white border border-amber-200 rounded-xl p-4">
+                  <div>
+                    <span className="text-slate-500 block">
+                      {isEn ? 'Transaction ID' : 'Référence transmise'}
+                    </span>
+                    <span className="font-mono font-bold text-slate-900">
+                      {justCompletedPayment?.transactionRef ||
+                        latestPayment?.transactionRef ||
+                        registration.latestPaymentId}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block">
+                      {isEn ? 'Expected Trigger Amount' : 'Montant à déclencher'}
+                    </span>
+                    <span className="font-mono font-bold text-blue-700">
+                      {registration.baseFeeEur} € (
+                      {formatLocalCurrency(registration.convertedAmount, country, lang)})
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block">
+                      {isEn ? 'Status' : 'Statut actuel'}
+                    </span>
+                    <span className="font-semibold text-amber-700">
+                      {isEn ? 'Awaiting funds confirmation' : 'En attente de confirmation des fonds'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                  <span className="text-xs text-slate-600">
+                    {isEn
+                      ? 'Notify Direction directly after sending the transfer:'
+                      : 'Signalez votre transfert via le lien direct pour un déclenchement rapide :'}
+                  </span>
+                  <a
+                    href={`${PARIS_HQ_CONTACT.whatsappUrl}?text=${encodeURIComponent(
+                      isEn
+                        ? `Hello DrivePro Academy, I submitted payment proof ${
+                            justCompletedPayment?.transactionRef ||
+                            latestPayment?.transactionRef ||
+                            ''
+                          } for Permit ${registration.licenseCategory} (#${registration.queueNumber}, ${registration.baseFeeEur} EUR). Please confirm funds receipt.`
+                        : `Bonjour DrivePro Academy, je viens de transmettre ma preuve de paiement ${
+                            justCompletedPayment?.transactionRef ||
+                            latestPayment?.transactionRef ||
+                            ''
+                          } pour le Permis ${registration.licenseCategory} (Dossier #${registration.queueNumber}, montant ${registration.baseFeeEur} €). Merci de déclencher mon accès dès réception.`
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg whitespace-nowrap"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    <span>
+                      {isEn ? 'Notify via Direct Link' : 'Notifier la Direction (Lien Direct)'}
+                    </span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleValidatePayment} className="space-y-6">
+              {formError && (
+                <div className="bg-red-50 border border-red-200 text-red-800 text-sm font-medium px-4 py-3 rounded-lg">
+                  {formError}
+                </div>
+              )}
+
+              {/* Mode Télépaiement Officiel Card */}
+              <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white rounded-2xl p-6 space-y-5 border border-blue-900/50 shadow-md">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-5">
+                  <div className="space-y-1.5">
+                    <div className="inline-flex items-center gap-2 text-xs font-mono text-emerald-400 font-bold">
+                      <Send className="w-4 h-4" />
+                      <span>
+                        {isEn ? 'OFFICIAL E-PAYMENT LINK' : 'LIEN DE TÉLÉPAIEMENT OFFICIEL'}
+                      </span>
+                    </div>
+                    <div className="text-xl font-display font-bold text-white">
+                      {isEn ? 'Payment' : 'Paiement'} · {registration.baseFeeEur} € (
+                      {formatLocalCurrency(registration.convertedAmount, country, lang)})
+                    </div>
+                    <div className="text-xs text-blue-200 font-medium">
+                      DrivePro Academy · {isEn ? country.nameEn : country.nameFr}
+                    </div>
+                  </div>
+
+                  <a
+                    href={tapTapLiveUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setLinkOpened(true)}
+                    className="inline-flex items-center justify-center gap-2.5 px-6 py-3.5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white text-sm font-bold rounded-xl whitespace-nowrap shrink-0 shadow-lg transition-all"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    <span>
+                      {isEn ? 'Pay Now (Official Link)' : 'Payer maintenant · Lien officiel'}
+                    </span>
+                  </a>
+                </div>
+
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  {isEn
+                    ? `Once your transfer of ${registration.baseFeeEur} € is completed on the official link, submit your real Transaction ID below. Your triggered amount unlocks your training as soon as funds are received.`
+                    : `Après avoir effectué le règlement de ${registration.baseFeeEur} € sur le lien officiel, transmettez votre véritable référence ci-dessous. Dès réception de l’argent, le montant déclenché active immédiatement votre accès.`}
+                </p>
+              </div>
+
+              {/* Real Payment Proof Inputs */}
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-5">
+                <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
+                  <Receipt className="w-4 h-4 text-blue-700 shrink-0" />
                   <span>
                     {isEn
-                      ? 'SECURE E-PAYMENT · VERIFIED'
-                      : 'TÉLÉPAIEMENT · PAIEMENT VÉRIFIÉ, SÉCURISÉ'}
+                      ? 'Submit Your Payment Proof to Trigger Confirmation'
+                      : 'Preuve de paiement réelle pour déclenchement'}
                   </span>
                 </div>
-                <div className="text-xl font-display font-bold text-white">
-                  {isEn ? 'Payment' : 'Paiement'} · {registration.baseFeeEur} €
+
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-sm font-semibold text-slate-800">
+                      {isEn ? 'Sender Full Name *' : 'Nom complet de l’expéditeur *'}
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={senderName}
+                      onChange={(e) => setSenderName(e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-sm font-semibold text-slate-800">
+                      {isEn ? 'Sender Phone *' : 'Numéro expéditeur *'}
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={senderPhone}
+                      onChange={(e) => setSenderPhone(e.target.value)}
+                      placeholder={`${country.dialCode} ...`}
+                      className="w-full px-3.5 py-2.5 text-sm font-mono text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-sm font-semibold text-slate-800">
+                      {isEn ? 'Real Transaction ID *' : 'ID réel de transaction *'}
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={txIdInput}
+                      onChange={(e) => setTxIdInput(e.target.value)}
+                      placeholder="Ex : TX928410K"
+                      className="w-full px-3.5 py-2.5 text-sm font-mono text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
+                    />
+                  </div>
                 </div>
-                <div className="text-xs text-blue-200 font-medium">
-                  Driveo Academy · Télépaiement vérifié
-                </div>
+
+                <label className="flex items-start gap-3 text-sm text-slate-800 cursor-pointer pt-1">
+                  <input
+                    type="checkbox"
+                    checked={transferConfirmed}
+                    onChange={(e) => setTransferConfirmed(e.target.checked)}
+                    className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-700 focus:ring-blue-700"
+                  />
+                  <span>
+                    {isEn
+                      ? `I certify that I completed the real transfer of ${registration.baseFeeEur} € and that any false declaration is rejected.`
+                      : `Je certifie avoir réellement envoyé ${registration.baseFeeEur} € (${formatLocalCurrency(registration.convertedAmount, country, lang)}) via le lien officiel.`}
+                  </span>
+                </label>
               </div>
 
-              <a
-                href={tapTapLiveUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setLinkOpened(true)}
-                className="inline-flex items-center justify-center gap-2.5 px-6 py-3.5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white text-sm font-bold rounded-xl whitespace-nowrap shrink-0 shadow-lg transition-all"
-              >
-                <ExternalLink className="w-4 h-4" />
-                <span>
-                  {isEn ? 'Pay Now (Official Link)' : 'Payer maintenant · Lien officiel'}
-                </span>
-              </a>
-            </div>
-
-            {/* Trigger Code Box (Concise) */}
-            <div className="bg-white/5 border border-white/15 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="space-y-0.5">
-                <div className="text-xs font-semibold text-amber-300">
-                  {isEn ? 'Receipt Code' : 'Code de vérification reçu'}
+              <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
+                <div className="flex items-center gap-2 text-sm text-slate-600">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>
+                    {isEn
+                      ? 'Unlocks automatically when funds receipt triggers the amount'
+                      : 'Déblocage automatique dès réception de l’argent et déclenchement du montant'}
+                  </span>
                 </div>
-                <div className="text-xs text-slate-300">
-                  {isEn
-                    ? 'Verified payment reference'
-                    : 'Paiement vérifié, sécurisé'}
-                </div>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <span className="px-4 py-2 bg-slate-950 border border-amber-400/50 rounded-lg font-mono text-base font-bold text-white tracking-wider">
-                  {expectedTriggerCode}
-                </span>
                 <button
-                  type="button"
-                  onClick={handleCopyTriggerCode}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg cursor-pointer"
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-bold rounded-lg transition-colors cursor-pointer"
                 >
-                  {copiedTrigger ? (
-                    <>
-                      <Check className="w-3.5 h-3.5" />
-                      <span>{isEn ? 'Copied' : 'Copié'}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5" />
-                      <span>{isEn ? 'Copy' : 'Copier'}</span>
-                    </>
-                  )}
+                  <Unlock className="w-4 h-4" />
+                  <span>{isSubmitting ? '...' : t.payAndUnlockBtn}</span>
                 </button>
               </div>
-            </div>
-          </div>
-
-          {/* Anti-Fake Real Payment Verification Inputs (Zero File/Photo Upload Required) */}
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-5">
-            <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
-              <Receipt className="w-4 h-4 text-blue-700 shrink-0" />
-              <span>
-                {isEn
-                  ? 'Confirm Verified Payment & Download Official PDF Invoice'
-                  : 'Validation du paiement & Émission de la Facture PDF'}
-              </span>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="block text-sm font-semibold text-slate-800">
-                  {isEn ? 'Your Full Name (Sender) *' : 'Votre nom complet (expéditeur) *'}
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={senderName}
-                  onChange={(e) => setSenderName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-sm font-semibold text-slate-800">
-                  {isEn ? 'Phone Number Used for Payment *' : 'Numéro utilisé pour le paiement *'}
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={senderPhone}
-                  onChange={(e) => setSenderPhone(e.target.value)}
-                  placeholder={`${country.dialCode} ...`}
-                  className="w-full px-3.5 py-2.5 text-sm font-mono text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-sm font-semibold text-slate-800">
-                  {isEn ? 'Payment Transaction ID *' : 'ID de transaction reçu *'}
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={txIdInput}
-                  onChange={(e) => setTxIdInput(e.target.value)}
-                  placeholder="Ex : TX928410K / PAY-884129"
-                  className="w-full px-3.5 py-2.5 text-sm font-mono text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-sm font-semibold text-slate-800">
-                  {isEn
-                    ? `Type Verification Trigger Code (${expectedTriggerCode}) *`
-                    : `Tapez le Code Déclencheur (${expectedTriggerCode}) *`}
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={triggerCodeInput}
-                  onChange={(e) => setTriggerCodeInput(e.target.value)}
-                  placeholder={expectedTriggerCode}
-                  className="w-full px-3.5 py-2.5 text-sm font-mono text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700 uppercase"
-                />
-              </div>
-            </div>
-
-            <label className="flex items-start gap-3 text-sm text-slate-800 cursor-pointer pt-1">
-              <input
-                type="checkbox"
-                checked={transferConfirmed}
-                onChange={(e) => setTransferConfirmed(e.target.checked)}
-                className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-700 focus:ring-blue-700"
-              />
-              <span>
-                {isEn
-                  ? 'I certify that I completed the real payment transfer and that any false declaration blocks license issuance.'
-                  : 'Je certifie avoir effectué le règlement réel (toute fausse simulation bloque le dossier).'}
-              </span>
-            </label>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
-            <div className="flex items-center gap-2 text-sm text-slate-600">
-              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>
-                {isEn
-                  ? 'Official invoice & courses unlock immediately upon verified submission'
-                  : 'Facture officielle envoyée & cours débloqués après validation'}
-              </span>
-            </div>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-bold rounded-lg transition-colors cursor-pointer"
-            >
-              <Unlock className="w-4 h-4" />
-              <span>{isSubmitting ? '...' : t.payAndUnlockBtn}</span>
-            </button>
-          </div>
-        </form>
+            </form>
+          )}
+        </div>
       )}
 
-      {/* Step 4: Unlocked + Direct Invoice Access */}
+      {/* Step 4: Unlocked + Triggered Amount + Direct Invoice Access */}
       {step === 4 && isUnlocked && registration && (
         <div className="bg-white/95 backdrop-blur border border-emerald-200 rounded-xl p-6 md:p-8 flex flex-col lg:flex-row lg:items-center justify-between gap-6 shadow-md">
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-emerald-700 text-sm font-bold">
+            <div className="flex flex-wrap items-center gap-3 text-emerald-700 text-sm font-bold">
               <CheckCircle2 className="w-5 h-5" />
               <span>
                 {isEn
-                  ? 'Payment Confirmed & Official PDF Invoice Ready'
-                  : 'Paiement validé & Facture PDF officielle générée'}
+                  ? `Montant déclenché : ${registration.triggeredAmountEur || registration.baseFeeEur} € — Official PDF Invoice Ready`
+                  : `Montant déclenché : ${registration.triggeredAmountEur || registration.baseFeeEur} € — Fonds confirmés & Facture PDF prête`}
               </span>
+              {registration.confirmationCode && (
+                <span className="font-mono text-xs bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded">
+                  {registration.confirmationCode}
+                </span>
+              )}
             </div>
             <h3 className="text-2xl font-bold text-slate-900">
               {isEn
@@ -1365,8 +1384,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
             </h3>
             <p className="text-[15px] text-slate-700 max-w-2xl leading-relaxed">
               {isEn
-                ? 'Download your official PDF invoice below, then study the 5 audio-guided courses and complete your quiz & physical tests.'
-                : 'Téléchargez votre facture officielle en PDF ci-contre, puis accédez à vos 5 cours audio illustrés, au QCM et au rendez-vous pour les épreuves physiques.'}
+                ? 'Download your official PDF invoice below, then study the 5 audio-guided courses and complete your quiz & physical test link.'
+                : 'Téléchargez votre facture officielle en PDF ci-contre, puis accédez à vos 5 cours audio illustrés, au QCM et au lien direct pour les épreuves physiques.'}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3 shrink-0">

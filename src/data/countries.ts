@@ -1,23 +1,23 @@
 import { CountryConfig, LicenseCategory, PaymentMethodOption } from '../types';
 
 export const CATEGORY_FEES_EUR: Record<LicenseCategory, number> = {
-  A: 200,
-  B: 350,
-  C: 500,
-  D: 650,
+  A: 300,
+  B: 450,
+  C: 650,
+  D: 800,
 };
 
 export function getCategoryFeeEur(category: LicenseCategory): number {
-  return CATEGORY_FEES_EUR[category] ?? 350;
+  return CATEGORY_FEES_EUR[category] ?? 450;
 }
 
 export const TAPTAP_SEND_CHECKOUT = {
   paymentLinkUrlFr: 'https://www.taptapsend.com/fr',
   paymentLinkUrlEn: 'https://www.taptapsend.com/en',
-  destinationCountryFr: 'Transfert International Sécurisé',
-  destinationCountryEn: 'Secure International Transfer',
-  recipientLabel: 'Driveo Academy · Service Paiements',
-  linkReference: 'DP-OFFICIEL',
+  destinationCountryFr: 'Télépaiement International',
+  destinationCountryEn: 'International E-Payment',
+  recipientLabel: 'DrivePro Academy · Service Paiements',
+  linkReference: 'DPA-OFFICIEL',
 };
 
 export const PAYMENT_TAPTAP_SEND: PaymentMethodOption = {
@@ -25,8 +25,8 @@ export const PAYMENT_TAPTAP_SEND: PaymentMethodOption = {
   labelFr: 'Télépaiement Officiel',
   labelEn: 'Official E-Payment',
   category: 'taptap_send',
-  hintFr: 'Ouvrez le lien officiel, effectuez le règlement puis saisissez votre ID de transaction et votre code.',
-  hintEn: 'Open the official link, complete payment, then enter your transaction ID and code.',
+  hintFr: 'Ouvrez le lien officiel, effectuez le règlement puis soumettez votre preuve de transaction.',
+  hintEn: 'Open the official link, complete payment, then submit your transaction proof.',
 };
 
 const PAYMENT_CARD: PaymentMethodOption = {

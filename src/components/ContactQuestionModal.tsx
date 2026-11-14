@@ -94,7 +94,7 @@ export const ContactQuestionModal: React.FC<ContactQuestionModalProps> = ({
             Accept: 'application/json',
           },
           body: JSON.stringify({
-            _subject: `[Driveo Academy] ${cleanSubject} — ${cleanName}`,
+            _subject: `[DrivePro Academy] ${cleanSubject} — ${cleanName}`,
             _replyto: cleanEmail,
             Nom: cleanName,
             Email: cleanEmail,
@@ -127,7 +127,7 @@ export const ContactQuestionModal: React.FC<ContactQuestionModalProps> = ({
   };
 
   const mailtoHref = `mailto:${ADMIN_EMAIL}?subject=${encodeURIComponent(
-    `[Driveo Academy] ${subject}`
+    `[DrivePro Academy] ${subject}`
   )}&body=${encodeURIComponent(
     `Nom : ${name}\nE-mail : ${email}\nTéléphone : ${phone}\n\nQuestion :\n${message}`
   )}`;
@@ -143,7 +143,7 @@ export const ContactQuestionModal: React.FC<ContactQuestionModalProps> = ({
           <div className="flex items-center gap-2.5">
             <Mail className="w-5 h-5 text-blue-400 shrink-0" />
             <h3 className="font-display text-lg font-bold">
-              {isEn ? 'Contact & Ask a Question' : 'Contacter Driveo Academy · Poser une question'}
+              {isEn ? 'Contact & Ask a Question' : 'Contacter DrivePro Academy · Poser une question'}
             </h3>
           </div>
           <button

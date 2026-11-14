@@ -5,6 +5,11 @@ import bgInstructorBriefing from './images/bg_instructor_briefing_1794576016795.
 import bgNightDashboard from './images/bg_night_dashboard_1794577768584.jpg';
 import bgStudentSuccess from './images/bg_student_success_1794577767390.jpg';
 import bgTheoryStudents from './images/bg_theory_students_1794576015291.jpg';
+import countryEuropeDriving from './images/country_europe_driving_1794667369397.jpg';
+import countryFranceDriving from './images/country_france_driving_1794667367690.jpg';
+import countryGermanyDriving from './images/country_germany_driving_1794667368175.jpg';
+import countryUsaDriving from './images/country_usa_driving_1794667368958.jpg';
+import countryWestAfricaDriving from './images/country_westafrica_driving_1794667368576.jpg';
 import courseHighwaySafety from './images/course_highway_safety_1794576016759.jpg';
 import courseSignsRoundabout from './images/course_signs_roundabout_1794576016919.jpg';
 import heroParisAcademy from './images/hero_paris_academy_1794569648868.jpg';
@@ -19,6 +24,11 @@ export const APP_MEDIA = {
   bgNightDashboard,
   bgStudentSuccess,
   bgTheoryStudents,
+  countryEuropeDriving,
+  countryFranceDriving,
+  countryGermanyDriving,
+  countryUsaDriving,
+  countryWestAfricaDriving,
   courseHighwaySafety,
   courseSignsRoundabout,
   heroParisAcademy,
@@ -27,9 +37,10 @@ export const APP_MEDIA = {
 };
 
 export const HERO_SHOWCASE_GALLERY = [
+  countryFranceDriving,
+  countryGermanyDriving,
+  countryWestAfricaDriving,
+  countryUsaDriving,
+  countryEuropeDriving,
   bgDrivingPractice,
-  bgCityIntersection,
-  bgHighwayLesson,
-  bgStudentSuccess,
-  heroParisAcademy,
 ];

@@ -7,10 +7,10 @@ import {
   BookOpen,
   CheckCircle2,
   Clock,
+  ExternalLink,
   FileText,
   Lock,
   MessageCircle,
-  Phone,
   PlusCircle,
   RotateCcw,
   ShieldCheck,
@@ -237,9 +237,13 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
             )}
           </h2>
           <p className="text-[15px] text-slate-700 leading-relaxed">
-            {isEn
-              ? 'Access to the live queue, sequential audio courses, official practice quiz, and physical test scheduling remains locked until your dossier and payment are validated.'
-              : 'Vous ne pouvez pas accéder à la file d’attente, aux cours audio animés, au QCM officiel ni à la prise de rendez-vous pour les épreuves physiques tant que votre dossier à fournir et votre paiement ne sont pas validés.'}
+            {registration && registration.dossierStatus === 'queue' && registration.paymentStatus === 'pending'
+              ? isEn
+                ? 'Your payment proof has been received. As soon as our team confirms receipt of funds, the triggered amount will unlock your courses automatically.'
+                : 'Votre preuve de paiement a été transmise. Dès réception de l’argent, le déclenchement de votre montant débloquera automatiquement vos cours audio et votre QCM.'
+              : isEn
+              ? 'Access to the live queue, sequential audio courses, official practice quiz, and physical test booking link remains locked until your dossier and payment trigger are confirmed.'
+              : 'Vous ne pouvez pas accéder aux cours audio animés, au QCM officiel ni au lien de rendez-vous pour les épreuves physiques tant que votre dossier et le déclenchement des fonds ne sont pas confirmés.'}
           </p>
         </div>
         <button
@@ -249,8 +253,12 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
         >
           <span>
             {registration && registration.paymentStatus === 'pending'
-              ? isEn
-                ? 'Complete Payment Now'
+              ? registration.dossierStatus === 'queue'
+                ? isEn
+                  ? 'View Payment Proof Status'
+                  : 'Suivre l’état de ma preuve'
+                : isEn
+                ? 'Submit Payment Proof Now'
                 : 'Finaliser mon paiement'
               : isEn
               ? 'Complete Dossier & Pay'
@@ -371,8 +379,8 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
 
   const whatsappText = encodeURIComponent(
     isEn
-      ? `Hello Driveo Academy Coordinator, I am ${registration.fullName} (${registration.countryName}, Dossier #${registration.queueNumber}, Permit ${registration.licenseCategory}, ID ${registration.idCardNumber || 'validated'}). I completed all 5 audio courses and passed the theory quiz (${registration.quizBestScore}%). I would like to schedule my final physical tests to obtain my license.`
-      : `Bonjour, je suis ${registration.fullName} (${registration.countryName}, Dossier #${registration.queueNumber}, Permis ${registration.licenseCategory}, Pièce ${registration.idCardNumber || 'validée'}). J’ai terminé les 5 cours audio séquentiels et réussi le QCM officiel avec ${registration.quizBestScore}%. Je souhaite fixer mon rendez-vous pour achever les épreuves physiques et recevoir mon permis.`
+      ? `Hello DrivePro Academy Coordinator, I am ${registration.fullName} (${registration.countryName}, Dossier #${registration.queueNumber}, Permit ${registration.licenseCategory}, ID ${registration.idCardNumber || 'validated'}). I completed all 5 audio courses and passed the theory quiz (${registration.quizBestScore}%). I would like to schedule my final physical tests via this direct link.`
+      : `Bonjour DrivePro Academy, je suis ${registration.fullName} (${registration.countryName}, Dossier #${registration.queueNumber}, Permis ${registration.licenseCategory}, Pièce ${registration.idCardNumber || 'validée'}). J’ai terminé les 5 cours audio séquentiels et réussi le QCM officiel avec ${registration.quizBestScore}%. Je souhaite fixer mon rendez-vous pour achever les épreuves physiques et recevoir mon permis.`
   );
 
   const activeModuleIndex = Math.max(
@@ -457,17 +465,14 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
           <div className="text-lg font-semibold text-emerald-700 mt-1 flex items-center gap-1.5">
             <ShieldCheck className="w-4 h-4 shrink-0" />
             <span>
-              {registration.paymentStatus === 'verified'
-                ? isEn
-                  ? 'Verified'
-                  : 'Vérifié & Approuvé'
-                : isEn
-                ? 'Paid & Unlocked'
-                : 'Payé & Débloqué'}
+              {isEn
+                ? `Triggered: ${registration.triggeredAmountEur || registration.baseFeeEur} €`
+                : `Montant déclenché : ${registration.triggeredAmountEur || registration.baseFeeEur} €`}
             </span>
           </div>
           <div className="text-xs font-mono text-slate-500 mt-1 tabular-nums">
-            {formatLocalCurrency(registration.convertedAmount, regCountry, lang)} ({registration.baseFeeEur} €)
+            {formatLocalCurrency(registration.convertedAmount, regCountry, lang)}
+            {registration.confirmationCode ? ` · ${registration.confirmationCode}` : ''}
           </div>
         </div>
 
@@ -492,8 +497,8 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
           <div className="text-xs text-slate-500 mt-1">
             {practicalUnlocked
               ? isEn
-                ? 'Physical tests booking unlocked'
-                : 'Rendez-vous épreuves physiques débloqué'
+                ? 'Physical tests link unlocked'
+                : 'Lien épreuves physiques débloqué'
               : isEn
               ? `${quizAttempts.length} attempt(s) · Target 75%`
               : `${quizAttempts.length} tentative(s) · Seuil 75 %`}
@@ -509,7 +514,7 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
           {
             id: 'instructor' as const,
             label: t.candidateTabInstructor,
-            icon: practicalUnlocked ? Phone : Lock,
+            icon: practicalUnlocked ? ExternalLink : Lock,
             locked: !practicalUnlocked,
           },
         ].map((tab) => {
@@ -584,17 +589,13 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
               },
               {
                 step: '03',
-                titleFr: practicalUnlocked
-                  ? `Épreuves physiques & RDV (${PARIS_HQ_CONTACT.displayPhone})`
-                  : 'Épreuves physiques & remise du permis',
-                titleEn: practicalUnlocked
-                  ? `Physical Tests & Booking (${PARIS_HQ_CONTACT.displayPhone})`
-                  : 'Final Physical Tests & License Issuance',
+                titleFr: 'Épreuves physiques & Lien direct',
+                titleEn: 'Final Physical Tests & Direct Link',
                 statusFr: practicalUnlocked
-                  ? 'Contact & WhatsApp débloqués'
+                  ? 'Lien direct débloqué'
                   : 'Débloqué uniquement après le QCM réussi',
                 statusEn: practicalUnlocked
-                  ? 'Phone & WhatsApp Unlocked'
+                  ? 'Direct Booking Link Unlocked'
                   : 'Unlocked strictly after passing Quiz',
                 done: practicalUnlocked,
               },
@@ -1119,39 +1120,32 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                       </div>
                     </div>
 
-                    {/* Sent automatically upon "Passer à l'étape suivante" OR score >= 75% */}
+                    {/* Sent automatically upon "Passer à l'étape suivante" OR score >= 75% (Direct Link Only — No Phone/Address) */}
                     {(proceedNextStep || currentScorePct >= 75) && (
                       <div className="bg-slate-900 text-white rounded-xl p-6 space-y-4 border border-slate-800">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                           <div className="space-y-1">
                             <div className="text-xs font-mono text-emerald-400 font-bold">
                               {isEn
-                                ? 'PHYSICAL TEST COORDINATOR ASSIGNED · DRIVEO ACADEMY'
-                                : 'RESPONSABLE ASSIGNÉ POUR VOS ÉPREUVES PHYSIQUES · DRIVEO ACADEMY'}
+                                ? 'PHYSICAL TEST COORDINATOR · DRIVEPRO ACADEMY'
+                                : 'LIEN DIRECT ÉPREUVES PHYSIQUES · DRIVEPRO ACADEMY'}
                             </div>
                             <h4 className="text-lg font-bold">
-                              {assignedInstructor.name} · {PARIS_HQ_CONTACT.displayPhone}
+                              {assignedInstructor.name}
                             </h4>
                             <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
                               {isEn
-                                ? 'To receive your driving license, contact Driveo Academy directly below to schedule your final physical driving tests. Review all exam corrections right underneath.'
-                                : 'Pour obtenir votre permis proprement dit, contactez directement ce responsable par appel ou WhatsApp pour fixer votre rendez-vous et achever vos épreuves physiques. Retrouvez aussi votre correction complète ci-dessous.'}
+                                ? 'To receive your driving license, open the direct booking link below to schedule your final physical tests. Review all exam corrections right underneath.'
+                                : 'Pour obtenir votre permis proprement dit, utilisez uniquement le lien direct ci-contre afin de fixer votre rendez-vous et achever vos épreuves physiques.'}
                             </p>
                           </div>
 
                           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
                             <a
-                              href={`tel:${PARIS_HQ_CONTACT.phone}`}
-                              className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg whitespace-nowrap"
-                            >
-                              <Phone className="w-4 h-4" />
-                              <span>{PARIS_HQ_CONTACT.displayPhone}</span>
-                            </a>
-                            <a
                               href={`${PARIS_HQ_CONTACT.whatsappUrl}?text=${whatsappText}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg whitespace-nowrap"
+                              className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg whitespace-nowrap"
                             >
                               <MessageCircle className="w-4 h-4" />
                               <span>{t.instructorWhatsappBtn}</span>
@@ -1267,15 +1261,15 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                 <span>{t.instructorUnlockedTitle}</span>
               </div>
 
-              {/* Simplified 3-step physical exam checklist */}
+              {/* Simplified 3-step physical exam checklist (Direct Link Only) */}
               <div className="grid sm:grid-cols-3 gap-4">
                 {[
                   {
                     n: '01',
-                    titleFr: 'Appelez ou écrivez',
-                    descFr: `Contactez ${assignedInstructor.name} au ${PARIS_HQ_CONTACT.displayPhone} ou sur WhatsApp.`,
-                    titleEn: 'Call or Message',
-                    descEn: `Contact ${assignedInstructor.name} on ${PARIS_HQ_CONTACT.displayPhone} or WhatsApp.`,
+                    titleFr: 'Ouvrez le lien direct',
+                    descFr: 'Cliquez sur le lien direct ci-dessous pour joindre votre coordinateur sans numéro public.',
+                    titleEn: 'Open Direct Link',
+                    descEn: 'Click the official direct link below to reach your physical exam coordinator.',
                   },
                   {
                     n: '02',
@@ -1321,7 +1315,7 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                     />
                   ) : (
                     <div className="w-20 h-20 rounded-xl bg-slate-900 text-white flex items-center justify-center font-display text-xl font-semibold shrink-0">
-                      DP
+                      DPA
                     </div>
                   )}
 
@@ -1333,32 +1327,21 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                       {isEn ? assignedInstructor.titleEn : assignedInstructor.titleFr}
                     </p>
                     <div className="text-xs text-slate-500 flex flex-wrap items-center gap-2">
-                      <span>{assignedInstructor.city}</span>
-                      <span aria-hidden="true">·</span>
                       <span>{assignedInstructor.certification}</span>
-                    </div>
-                    <div className="text-sm font-mono text-blue-800 pt-1 font-bold">
-                      {isEn ? 'Direct Appointment Line:' : 'Numéro direct rendez-vous :'}{' '}
-                      {PARIS_HQ_CONTACT.displayPhone}
+                      <span aria-hidden="true">·</span>
+                      <span>{isEn ? 'Direct Link Only' : 'Rendez-vous par lien direct uniquement'}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 w-full md:w-auto">
                   <a
-                    href={`tel:${PARIS_HQ_CONTACT.phone}`}
-                    className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-lg whitespace-nowrap transition-colors"
-                  >
-                    <Phone className="w-4 h-4" />
-                    <span>{t.instructorCallBtn}</span>
-                  </a>
-                  <a
                     href={`${PARIS_HQ_CONTACT.whatsappUrl}?text=${whatsappText}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg whitespace-nowrap transition-colors"
+                    className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg whitespace-nowrap transition-colors shadow-sm"
                   >
-                    <MessageCircle className="w-4 h-4" />
+                    <ExternalLink className="w-4 h-4" />
                     <span>{t.instructorWhatsappBtn}</span>
                   </a>
                 </div>
