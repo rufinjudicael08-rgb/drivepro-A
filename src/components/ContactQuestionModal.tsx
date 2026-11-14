@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { CheckCircle2, Mail, Send, X } from 'lucide-react';
+import { getTranslations } from '../data/i18n';
 import { ADMIN_EMAIL, db } from '../firebase';
 import { Language } from '../types';
 
@@ -10,6 +11,7 @@ interface ContactQuestionModalProps {
   defaultEmail?: string;
   defaultName?: string;
   defaultPhone?: string;
+  instituteName?: string;
   onClose: () => void;
 }
 
@@ -19,27 +21,23 @@ export const ContactQuestionModal: React.FC<ContactQuestionModalProps> = ({
   defaultEmail = '',
   defaultName = '',
   defaultPhone = '',
+  instituteName = 'DrivePro Academy',
   onClose,
 }) => {
-  const isFr = lang === 'fr';
-  const isRo = lang === 'ro';
-  const pick = (fr: string, ro: string, en: string) =>
-    isFr ? fr : isRo ? ro : en;
+  const t = getTranslations(lang);
 
   const [name, setName] = useState(defaultName);
   const [email, setEmail] = useState(defaultEmail);
   const [phone, setPhone] = useState(defaultPhone);
-  const [subject, setSubject] = useState(
-    pick(
-      'Question sur mon inscription / permis',
-      'Întrebare privind înscrierea / permisul',
-      'Question about my driver’s license'
-    )
-  );
+  const [subject, setSubject] = useState(t.contactDefaultSubject);
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sentSuccess, setSentSuccess] = useState(false);
+
+  useEffect(() => {
+    setSubject(t.contactDefaultSubject);
+  }, [t.contactDefaultSubject]);
 
   if (!isOpen) return null;
 
@@ -48,33 +46,15 @@ export const ContactQuestionModal: React.FC<ContactQuestionModalProps> = ({
     setError(null);
 
     if (name.trim().length < 2) {
-      setError(
-        pick(
-          'Veuillez saisir votre nom complet.',
-          'Introdu numele tău complet.',
-          'Please enter your full name.'
-        )
-      );
+      setError(t.contactErrName);
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setError(
-        pick(
-          'Veuillez saisir une adresse e-mail valide.',
-          'Introdu o adresă de e-mail validă.',
-          'Please enter a valid email address.'
-        )
-      );
+      setError(t.errInvalidEmail);
       return;
     }
     if (message.trim().length < 5) {
-      setError(
-        pick(
-          'Veuillez écrire votre question ou message.',
-          'Scrie întrebarea sau mesajul tău.',
-          'Please write your question or message.'
-        )
-      );
+      setError(t.contactErrMessage);
       return;
     }
 
@@ -82,7 +62,7 @@ export const ContactQuestionModal: React.FC<ContactQuestionModalProps> = ({
     const msgId = `msg_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     const cleanName = name.trim().slice(0, 100);
     const cleanEmail = email.trim().slice(0, 150);
-    const cleanPhone = (phone.trim() || 'Non renseigné').slice(0, 40);
+    const cleanPhone = (phone.trim() || '-').slice(0, 40);
     const cleanSubject = subject.trim().slice(0, 120);
     const cleanMessage = message.trim().slice(0, 1500);
 
@@ -106,7 +86,7 @@ export const ContactQuestionModal: React.FC<ContactQuestionModalProps> = ({
             Accept: 'application/json',
           },
           body: JSON.stringify({
-            _subject: `[DrivePro Academy] ${cleanSubject} — ${cleanName}`,
+            _subject: `[${instituteName}] ${cleanSubject} — ${cleanName}`,
             _replyto: cleanEmail,
             Nom: cleanName,
             Email: cleanEmail,
@@ -121,13 +101,7 @@ export const ContactQuestionModal: React.FC<ContactQuestionModalProps> = ({
 
       setSentSuccess(true);
     } catch {
-      setError(
-        pick(
-          'Impossible d’envoyer le message pour le moment. Veuillez réessayer.',
-          'Nu putem trimite mesajul acum. Încearcă din nou.',
-          'Unable to submit right now. Please try again.'
-        )
-      );
+      setError(t.contactErrFailed);
     } finally {
       setSending(false);
     }
@@ -148,21 +122,17 @@ export const ContactQuestionModal: React.FC<ContactQuestionModalProps> = ({
     >
       <div className="bg-white rounded-2xl border border-slate-200 max-w-lg w-full overflow-hidden shadow-2xl">
         <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 min-w-0">
             <Mail className="w-5 h-5 text-blue-400 shrink-0" />
-            <h3 className="font-display text-lg font-bold">
-              {pick(
-                'Contacter DrivePro Academy · Poser une question',
-                'Contact DrivePro Academy · Pune o întrebare',
-                'Contact & Ask a Question'
-              )}
+            <h3 className="font-display text-lg font-bold truncate">
+              {instituteName} · {t.contactModalTitle}
             </h3>
           </div>
           <button
             type="button"
             onClick={handleResetAndClose}
             className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer"
-            aria-label="Fermer"
+            aria-label={t.contactCloseBtn}
           >
             <X className="w-4 h-4" />
           </button>
@@ -176,18 +146,10 @@ export const ContactQuestionModal: React.FC<ContactQuestionModalProps> = ({
               </div>
               <div className="space-y-1.5">
                 <h4 className="font-display text-lg font-bold text-slate-900">
-                  {pick(
-                    'Votre message a bien été envoyé !',
-                    'Mesajul tău a fost trimis!',
-                    'Message Sent!'
-                  )}
+                  {t.contactSentTitle}
                 </h4>
                 <p className="text-sm text-slate-700 leading-relaxed">
-                  {pick(
-                    'Votre question a bien été transmise à notre équipe. Merci pour votre message — L’équipe DrivePro Academy vous répondra très rapidement.',
-                    'Întrebarea ta a fost transmisă echipei noastre. Mulțumim pentru mesaj — Echipa DrivePro Academy îți va răspunde rapid.',
-                    'Your question has been transmitted to our team. Thank you for your message — DrivePro Academy will reply shortly.'
-                  )}
+                  {t.contactSentDesc}
                 </p>
               </div>
               <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
@@ -196,7 +158,7 @@ export const ContactQuestionModal: React.FC<ContactQuestionModalProps> = ({
                   onClick={handleResetAndClose}
                   className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold rounded-lg cursor-pointer"
                 >
-                  {pick('Fermer', 'Închide', 'Close')}
+                  {t.contactCloseBtn}
                 </button>
               </div>
             </div>
@@ -211,20 +173,20 @@ export const ContactQuestionModal: React.FC<ContactQuestionModalProps> = ({
               <div className="grid sm:grid-cols-2 gap-3.5">
                 <div className="space-y-1">
                   <label className="block text-sm font-semibold text-slate-800">
-                    {pick('Nom complet *', 'Nume complet *', 'Full Name *')}
+                    {t.contactFullNameLabel}
                   </label>
                   <input
                     type="text"
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder={pick('Ex : Jean Dupont', 'Ex: Andrei Popescu', 'John Doe')}
+                    placeholder="Andrei Popescu"
                     className="w-full px-3.5 py-2.5 text-sm text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
                   />
                 </div>
                 <div className="space-y-1">
                   <label className="block text-sm font-semibold text-slate-800">
-                    {pick('Adresse e-mail *', 'Adresă e-mail *', 'Email Address *')}
+                    {t.contactEmailFieldLabel}
                   </label>
                   <input
                     type="email"
@@ -240,7 +202,7 @@ export const ContactQuestionModal: React.FC<ContactQuestionModalProps> = ({
               <div className="grid sm:grid-cols-2 gap-3.5">
                 <div className="space-y-1">
                   <label className="block text-sm font-semibold text-slate-800">
-                    {pick('Téléphone / WhatsApp', 'Telefon / WhatsApp', 'Phone / WhatsApp')}
+                    {t.contactPhoneFieldLabel}
                   </label>
                   <input
                     type="tel"
@@ -252,7 +214,7 @@ export const ContactQuestionModal: React.FC<ContactQuestionModalProps> = ({
                 </div>
                 <div className="space-y-1">
                   <label className="block text-sm font-semibold text-slate-800">
-                    {pick('Sujet de votre question', 'Subiect', 'Subject')}
+                    {t.contactSubjectFieldLabel}
                   </label>
                   <input
                     type="text"
@@ -265,41 +227,29 @@ export const ContactQuestionModal: React.FC<ContactQuestionModalProps> = ({
 
               <div className="space-y-1">
                 <label className="block text-sm font-semibold text-slate-800">
-                  {pick('Votre question ou message *', 'Întrebarea sau mesajul tău *', 'Your Question / Message *')}
+                  {t.contactMessageLabel}
                 </label>
                 <textarea
                   required
                   rows={4}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder={pick(
-                    'Écrivez votre question ici (permis, paiement, cours, rendez-vous)...',
-                    'Scrie întrebarea ta aici (permis, plată, cursuri, probe fizice)...',
-                    'Write your question here...'
-                  )}
+                  placeholder={t.contactMessagePlaceholder}
                   className="w-full px-3.5 py-2.5 text-sm text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
                 />
               </div>
 
               <div className="flex items-center justify-between gap-3 pt-1">
-                <span className="text-xs font-medium text-slate-600">
-                  {pick(
-                    'Merci pour votre message — DrivePro Academy',
-                    'Mulțumim pentru mesaj — DrivePro Academy',
-                    'Thank you for reaching out — DrivePro Academy'
-                  )}
+                <span className="text-xs font-medium text-slate-600 truncate">
+                  {t.contactThanksFooter} · {instituteName}
                 </span>
                 <button
                   type="submit"
                   disabled={sending}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white text-sm font-bold rounded-lg cursor-pointer"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white text-sm font-bold rounded-lg cursor-pointer shrink-0"
                 >
                   <Send className="w-4 h-4" />
-                  <span>
-                    {sending
-                      ? '...'
-                      : pick('Envoyer ma question', 'Trimite întrebarea', 'Send Question')}
-                  </span>
+                  <span>{sending ? '...' : t.contactSendBtn}</span>
                 </button>
               </div>
             </form>

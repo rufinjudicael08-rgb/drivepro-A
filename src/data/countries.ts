@@ -461,6 +461,14 @@ export function formatLocalCurrency(amount: number, country: CountryConfig, lang
   }
 }
 
+export function formatTariffForCountry(
+  amountEur: number,
+  country: CountryConfig,
+  lang: string
+): string {
+  return formatLocalCurrency(convertEurFee(amountEur, country), country, lang);
+}
+
 export function getCountryFlagEmoji(code: string): string {
   if (!code || code.length !== 2) return '';
   const codePoints = code

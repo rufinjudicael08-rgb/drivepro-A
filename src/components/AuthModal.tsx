@@ -22,12 +22,13 @@ import {
   UserPlus,
   X,
 } from 'lucide-react';
+import { getTranslations, normalizeLangCode } from '../data/i18n';
 import {
   ADMIN_EMAIL,
   auth,
   db,
   FIREBASE_AUTH_PROVIDERS_URL,
-  translateAuthErrorFr,
+  translateAuthError,
 } from '../firebase';
 import { Language, UserAccountRecord } from '../types';
 
@@ -37,6 +38,7 @@ interface AuthModalProps {
   resetOobCode?: string | null;
   lang: Language;
   defaultDialCode: string;
+  instituteName?: string;
   onClose: () => void;
   onAuthSuccess: (profile?: UserAccountRecord) => void;
 }
@@ -56,13 +58,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   resetOobCode = null,
   lang,
   defaultDialCode,
+  instituteName = 'DrivePro Academy',
   onClose,
   onAuthSuccess,
 }) => {
-  const isFr = lang === 'fr';
-  const isRo = lang === 'ro';
-  const pick = (fr: string, ro: string, en: string) =>
-    isFr ? fr : isRo ? ro : en;
+  const t = getTranslations(lang);
 
   const [mode, setMode] = useState<'register' | 'verify_signup' | 'login' | 'reset'>(
     initialMode
@@ -122,43 +122,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setInfoMsg(null);
 
     if (fullName.trim().length < 2) {
-      setErrorMsg(
-        pick(
-          'Veuillez saisir votre nom et prénom complets.',
-          'Introdu numele și prenumele complet.',
-          'Please enter your full name (at least 2 characters).'
-        )
-      );
+      setErrorMsg(t.authErrNameShort);
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setErrorMsg(
-        pick(
-          'Veuillez saisir une adresse e-mail valide.',
-          'Introdu o adresă de e-mail validă.',
-          'Please enter a valid email address.'
-        )
-      );
+      setErrorMsg(t.errInvalidEmail);
       return;
     }
     if (phone.trim().length < 5) {
-      setErrorMsg(
-        pick(
-          'Veuillez saisir votre numéro de téléphone.',
-          'Introdu numărul tău de telefon.',
-          'Please enter a valid phone number.'
-        )
-      );
+      setErrorMsg(t.errInvalidPhone);
       return;
     }
     if (password.length < 6) {
-      setErrorMsg(
-        pick(
-          'Le mot de passe doit contenir au moins 6 caractères.',
-          'Parola trebuie să conțină cel puțin 6 caractere.',
-          'Password must be at least 6 characters.'
-        )
-      );
+      setErrorMsg(t.authErrPassMin);
       return;
     }
 
@@ -196,17 +172,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setEnteredCode('');
       setPendingProfile(profileDoc);
       setMode('verify_signup');
-      setInfoMsg(
-        pick(
-          'Votre code de confirmation à 6 chiffres a été généré. Saisissez-le ci-dessous pour activer votre compte.',
-          'Codul tău de confirmare din 6 cifre a fost generat. Introdu-l mai jos pentru a activa contul.',
-          'Your 6-digit confirmation code has been generated. Enter it below to activate your account.'
-        )
-      );
+      setInfoMsg(t.authMsgCodeIssued);
     } catch (err) {
       const code = (err as { code?: string } | null)?.code || '';
       setIsProviderDisabledError(code === 'auth/operation-not-allowed');
-      setErrorMsg(translateAuthErrorFr(err));
+      setErrorMsg(translateAuthError(err, lang));
     } finally {
       setSubmitting(false);
     }
@@ -217,13 +187,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setErrorMsg(null);
     const cleaned = enteredCode.replace(/\D/g, '');
     if (cleaned.length !== 6 || cleaned !== issuedCode) {
-      setErrorMsg(
-        pick(
-          'Code à 6 chiffres incorrect. Vérifiez le code affiché et réessayez.',
-          'Cod de 6 cifre incorect. Verifică codul afișat și încearcă din nou.',
-          'Invalid 6-digit code. Please verify the code and try again.'
-        )
-      );
+      setErrorMsg(t.authErrCodeWrong);
       return;
     }
 
@@ -236,13 +200,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setIssuedCode(code);
     setEnteredCode('');
     setErrorMsg(null);
-    setInfoMsg(
-      pick(
-        'Nouveau code de confirmation à 6 chiffres généré.',
-        'Un nou cod de confirmare din 6 cifre a fost generat.',
-        'A new 6-digit confirmation code has been generated.'
-      )
-    );
+    setInfoMsg(t.authMsgCodeRefreshed);
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -252,13 +210,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setInfoMsg(null);
 
     if (!email.trim() || !password) {
-      setErrorMsg(
-        pick(
-          'Veuillez saisir votre adresse e-mail et votre mot de passe.',
-          'Introdu adresa de e-mail și parola.',
-          'Please enter both your email and password.'
-        )
-      );
+      setErrorMsg(t.authErrLoginMissing);
       return;
     }
 
@@ -270,7 +222,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     } catch (err) {
       const code = (err as { code?: string } | null)?.code || '';
       setIsProviderDisabledError(code === 'auth/operation-not-allowed');
-      setErrorMsg(translateAuthErrorFr(err));
+      setErrorMsg(translateAuthError(err, lang));
     } finally {
       setSubmitting(false);
     }
@@ -282,33 +234,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setInfoMsg(null);
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setErrorMsg(
-        pick(
-          'Saisissez votre adresse e-mail pour recevoir votre code à 6 chiffres.',
-          'Introdu adresa de e-mail pentru a primi codul din 6 cifre.',
-          'Enter your email address to receive your 6-digit confirmation code.'
-        )
-      );
+      setErrorMsg(t.authErrEmailReset);
       return;
     }
 
     setSubmitting(true);
     try {
-      auth.languageCode = isFr ? 'fr' : isRo ? 'ro' : 'en';
+      auth.languageCode = normalizeLangCode(lang);
       await sendPasswordResetEmail(auth, email.trim());
       const code = generateSixDigitCode();
       setIssuedCode(code);
       setEnteredCode('');
       setResetStep('code_entry');
-      setInfoMsg(
-        pick(
-          'Code de vérification à 6 chiffres généré et demande de réinitialisation envoyée par DrivePro Academy.',
-          'Cod de verificare din 6 cifre generat și cerere de resetare trimisă de DrivePro Academy.',
-          '6-digit verification code issued and reset request sent by DrivePro Academy.'
-        )
-      );
+      setInfoMsg(t.authMsgResetIssued);
     } catch (err) {
-      setErrorMsg(translateAuthErrorFr(err));
+      setErrorMsg(translateAuthError(err, lang));
     } finally {
       setSubmitting(false);
     }
@@ -321,56 +261,32 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     const cleaned = enteredCode.replace(/\D/g, '');
     if (cleaned.length !== 6 || cleaned !== issuedCode) {
-      setErrorMsg(
-        pick(
-          'Code de confirmation à 6 chiffres incorrect.',
-          'Cod de confirmare din 6 cifre incorect.',
-          'Incorrect 6-digit confirmation code.'
-        )
-      );
+      setErrorMsg(t.authErrCodeWrong);
       return;
     }
 
     if (resetOobCode) {
       if (newPassword.length < 6) {
-        setErrorMsg(
-          pick(
-            'Le nouveau mot de passe doit contenir au moins 6 caractères.',
-            'Noua parolă trebuie să conțină cel puțin 6 caractere.',
-            'New password must be at least 6 characters.'
-          )
-        );
+        setErrorMsg(t.authErrPassMin);
         return;
       }
       setSubmitting(true);
       try {
         await confirmPasswordReset(auth, resetOobCode, newPassword);
-        setInfoMsg(
-          pick(
-            'Mot de passe mis à jour avec succès ! Vous pouvez maintenant vous connecter.',
-            'Parola a fost actualizată! Te poți autentifica acum.',
-            'Password updated successfully! You can now sign in.'
-          )
-        );
+        setInfoMsg(t.authMsgPassUpdated);
         setTimeout(() => {
           setMode('login');
           setResetStep('request');
         }, 1400);
       } catch (err) {
-        setErrorMsg(translateAuthErrorFr(err));
+        setErrorMsg(translateAuthError(err, lang));
       } finally {
         setSubmitting(false);
       }
       return;
     }
 
-    setInfoMsg(
-      pick(
-        'Code à 6 chiffres confirmé ! Vérifiez votre boîte e-mail (et les Spams) pour finaliser votre nouveau mot de passe, puis reconnectez-vous.',
-        'Cod de 6 cifre confirmat! Verifică inbox-ul (și Spam) pentru a finaliza noua parolă, apoi autentifică-te.',
-        '6-digit code confirmed! Check your inbox (and Spam) to finalize your new password, then sign in.'
-      )
-    );
+    setInfoMsg(t.authMsgCheckInbox);
   };
 
   return (
@@ -383,28 +299,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         <div className="bg-slate-900 text-white px-6 py-5 flex items-start justify-between gap-4">
           <div className="space-y-1">
             <div className="text-xs font-mono text-blue-300 font-semibold">
-              DrivePro Academy ·{' '}
-              {pick('Compte Personnel', 'Cont Personal', 'Candidate Account')}
+              {instituteName} · {t.authAccountLabel}
             </div>
             <h2 className="font-display text-xl font-bold">
               {mode === 'register'
-                ? pick('Créer un compte', 'Creează un cont', 'Create an Account')
+                ? t.authCreateTitle
                 : mode === 'verify_signup'
-                ? pick(
-                    'Confirmation par code (6 chiffres)',
-                    'Confirmare prin cod (6 cifre)',
-                    '6-Digit Code Verification'
-                  )
+                ? t.authVerifyTitle
                 : mode === 'login'
-                ? pick('Se connecter', 'Autentificare', 'Sign In')
-                : pick('Mot de passe oublié', 'Resetare parolă', 'Reset Password')}
+                ? t.authLoginTitle
+                : t.authResetTitle}
             </h2>
           </div>
           <button
             type="button"
             onClick={onClose}
             className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer"
-            aria-label="Fermer"
+            aria-label={t.contactCloseBtn}
           >
             <X className="w-4 h-4" />
           </button>
@@ -424,7 +335,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              {pick('Créer un compte', 'Creează cont', 'Create Account')}
+              {t.authCreateTitle}
             </button>
             <button
               type="button"
@@ -438,7 +349,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              {pick('J’ai déjà un compte', 'Am deja cont', 'Sign In')}
+              {t.authHasAccountTab}
             </button>
           </div>
         )}
@@ -457,7 +368,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-700 hover:bg-red-800 text-white text-xs font-semibold rounded-lg"
                 >
-                  <span>Activer E-mail / Mot de passe dans Firebase</span>
+                  <span>Firebase Auth</span>
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>
               )}
@@ -475,7 +386,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <form onSubmit={handleRegister} className="space-y-3.5">
               <div className="space-y-1">
                 <label className="block text-sm font-semibold text-slate-800">
-                  {pick('Nom complet *', 'Nume complet *', 'Full Name *')}
+                  {t.fullNameLabel}
                 </label>
                 <div className="relative">
                   <UserIcon className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -484,7 +395,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     required
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    placeholder={pick('Ex : Jean Dupont', 'Ex: Andrei Popescu', 'e.g. John Doe')}
+                    placeholder="Alexandru Popescu"
                     className="w-full pl-9 pr-3 py-2.5 text-sm text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
                   />
                 </div>
@@ -492,7 +403,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
               <div className="space-y-1">
                 <label className="block text-sm font-semibold text-slate-800">
-                  {pick('Adresse e-mail *', 'Adresă de e-mail *', 'Email Address *')}
+                  {t.emailLabel} *
                 </label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -509,7 +420,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
               <div className="space-y-1">
                 <label className="block text-sm font-semibold text-slate-800">
-                  {pick('Numéro de téléphone *', 'Număr de telefon *', 'Phone Number *')}
+                  {t.phoneLabel} *
                 </label>
                 <div className="relative">
                   <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -526,7 +437,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
               <div className="space-y-1">
                 <label className="block text-sm font-semibold text-slate-800">
-                  {pick('Mot de passe (6 caractères min.) *', 'Parolă (min. 6 caractere) *', 'Password (min. 6 chars) *')}
+                  {t.authPasswordMinLabel}
                 </label>
                 <div className="relative">
                   <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -549,9 +460,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               >
                 <UserPlus className="w-4 h-4" />
                 <span>
-                  {submitting
-                    ? pick('Création du compte...', 'Se creează contul...', 'Creating account...')
-                    : pick('Créer mon compte', 'Creează contul meu', 'Create My Account')}
+                  {submitting ? t.authCreatingBtn : t.authCreateSubmitBtn}
                 </span>
               </button>
             </form>
@@ -561,15 +470,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <form onSubmit={handleConfirmSignupCode} className="space-y-4">
               <div className="bg-slate-900 text-white rounded-xl p-4 space-y-2 border border-slate-800">
                 <div className="flex items-center justify-between text-xs font-mono text-blue-300">
-                  <span>DrivePro Academy · OTP</span>
+                  <span>{instituteName} · OTP</span>
                   <span>{email}</span>
                 </div>
                 <div className="text-xs text-slate-300">
-                  {pick(
-                    'Code de confirmation à saisir :',
-                    'Cod de confirmare de introdus:',
-                    'Confirmation code to enter:'
-                  )}
+                  {t.authCodeToEnterLabel}
                 </div>
                 <div className="text-2xl font-mono font-extrabold tracking-[0.35em] text-amber-300 tabular-nums">
                   {issuedCode}
@@ -578,11 +483,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
               <div className="space-y-1.5">
                 <label className="block text-sm font-semibold text-slate-800">
-                  {pick(
-                    'Entrez votre code de confirmation à 6 chiffres *',
-                    'Introdu codul de confirmare din 6 cifre *',
-                    'Enter your 6-digit confirmation code *'
-                  )}
+                  {t.authEnter6DigitLabel}
                 </label>
                 <div className="relative">
                   <KeyRound className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -608,22 +509,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 hover:underline cursor-pointer"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
-                  <span>
-                    {pick('Nouveau code', 'Cod nou', 'New Code')}
-                  </span>
+                  <span>{t.authNewCodeBtn}</span>
                 </button>
                 <button
                   type="submit"
                   className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg cursor-pointer"
                 >
                   <ShieldCheck className="w-4 h-4" />
-                  <span>
-                    {pick(
-                      'Valider mon compte',
-                      'Validează contul',
-                      'Verify My Account'
-                    )}
-                  </span>
+                  <span>{t.authVerifyAccountBtn}</span>
                 </button>
               </div>
             </form>
@@ -633,7 +526,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <form onSubmit={handleLogin} className="space-y-3.5">
               <div className="space-y-1">
                 <label className="block text-sm font-semibold text-slate-800">
-                  {pick('Adresse e-mail *', 'Adresă de e-mail *', 'Email Address *')}
+                  {t.emailLabel} *
                 </label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -651,7 +544,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <label className="block text-sm font-semibold text-slate-800">
-                    {pick('Mot de passe *', 'Parolă *', 'Password *')}
+                    {t.authPasswordLabel}
                   </label>
                   <button
                     type="button"
@@ -663,7 +556,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     }}
                     className="text-xs text-blue-700 font-semibold hover:underline cursor-pointer"
                   >
-                    {pick('Mot de passe oublié ?', 'Ai uitat parola?', 'Forgot password?')}
+                    {t.authForgotPasswordBtn}
                   </button>
                 </div>
                 <div className="relative">
@@ -684,9 +577,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 disabled={submitting}
                 className="w-full py-3 bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white text-sm font-bold rounded-lg transition-colors cursor-pointer"
               >
-                {submitting
-                  ? pick('Connexion...', 'Autentificare...', 'Signing in...')
-                  : pick('Se connecter', 'Intră în cont', 'Sign In')}
+                {submitting ? t.authSigningInBtn : t.authSignInSubmitBtn}
               </button>
             </form>
           )}
@@ -695,7 +586,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <form onSubmit={handleRequestResetCode} className="space-y-4">
               <div className="space-y-1">
                 <label className="block text-sm font-semibold text-slate-800">
-                  {pick('Votre adresse e-mail *', 'Adresa ta de e-mail *', 'Your Account Email *')}
+                  {t.authYourEmailLabel}
                 </label>
                 <input
                   type="email"
@@ -706,11 +597,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   className="w-full px-3.5 py-2.5 text-sm text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
                 />
                 <p className="text-xs text-slate-600 pt-1">
-                  {pick(
-                    'Un code de confirmation à 6 chiffres et un message de réinitialisation sont générés au nom de « DrivePro Academy ».',
-                    'Un cod de confirmare din 6 cifre este generat de către DrivePro Academy.',
-                    'A 6-digit confirmation code and reset notification are issued under DrivePro Academy.'
-                  )}
+                  {t.authResetNote}
                 </p>
               </div>
 
@@ -720,20 +607,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   onClick={() => setMode('login')}
                   className="text-sm font-semibold text-slate-700 hover:text-slate-900 cursor-pointer"
                 >
-                  ← {pick('Retour connexion', 'Înapoi la autentificare', 'Back to Sign In')}
+                  ← {t.authBackToLogin}
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
                   className="px-5 py-2.5 bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white text-sm font-bold rounded-lg cursor-pointer"
                 >
-                  {submitting
-                    ? '...'
-                    : pick(
-                        'Recevoir le code (6 chiffres)',
-                        'Primește codul (6 cifre)',
-                        'Send 6-Digit Code'
-                      )}
+                  {submitting ? '...' : t.authSend6DigitBtn}
                 </button>
               </div>
             </form>
@@ -743,7 +624,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <form onSubmit={handleConfirmResetCode} className="space-y-4">
               <div className="bg-slate-900 text-white rounded-xl p-4 space-y-1.5 border border-slate-800">
                 <div className="text-xs font-mono text-blue-300">
-                  DrivePro Academy · {pick('Code de confirmation', 'Cod de confirmare', 'Confirmation Code')}
+                  {instituteName} · {t.authConfCodeTitle}
                 </div>
                 <div className="text-2xl font-mono font-extrabold tracking-[0.35em] text-amber-300 tabular-nums">
                   {issuedCode}
@@ -752,11 +633,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
               <div className="space-y-1.5">
                 <label className="block text-sm font-semibold text-slate-800">
-                  {pick(
-                    'Saisissez le code à 6 chiffres *',
-                    'Introdu codul din 6 cifre *',
-                    'Enter 6-digit confirmation code *'
-                  )}
+                  {t.authEnter6DigitLabel}
                 </label>
                 <input
                   type="text"
@@ -775,11 +652,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               {resetOobCode && (
                 <div className="space-y-1.5">
                   <label className="block text-sm font-semibold text-slate-800">
-                    {pick(
-                      'Nouveau mot de passe (6 caractères min.) *',
-                      'Parolă nouă (min. 6 caractere) *',
-                      'New Password (min. 6 chars) *'
-                    )}
+                    {t.authNewPassMinLabel}
                   </label>
                   <input
                     type="password"
@@ -802,20 +675,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   }}
                   className="text-sm font-semibold text-slate-700 hover:text-slate-900 cursor-pointer"
                 >
-                  ← {pick('Retour connexion', 'Înapoi la autentificare', 'Back to Sign In')}
+                  ← {t.authBackToLogin}
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
                   className="px-5 py-2.5 bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white text-sm font-bold rounded-lg cursor-pointer"
                 >
-                  {submitting
-                    ? '...'
-                    : pick(
-                        'Confirmer le code',
-                        'Confirmă codul',
-                        'Confirm Code'
-                      )}
+                  {submitting ? '...' : t.authConfirmCodeBtn}
                 </button>
               </div>
             </form>

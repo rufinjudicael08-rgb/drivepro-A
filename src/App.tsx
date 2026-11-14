@@ -37,18 +37,18 @@ import {
   InstituteCrestSvg,
   WhatsAppLogo,
 } from './components/CountryVisuals';
-import { DriveProLogo } from './components/DriveProLogo';
 import { LegalDocKey, LegalModal } from './components/LegalModals';
 import { PartnerLogos, SocialAccountsStrip } from './components/PartnerLogos';
 import { RegistrationFlow } from './components/RegistrationFlow';
 import {
   CATEGORY_FEES_EUR,
+  formatTariffForCountry,
   getCountryByCode,
   getCountryLocalizedName,
 } from './data/countries';
 import { getCountryTheme } from './data/countryThemes';
 import { PARIS_HQ_CONTACT } from './data/curriculum';
-import { getTranslations, isRtlLanguage } from './data/i18n';
+import { getTranslations, isRtlLanguage, normalizeLangCode } from './data/i18n';
 import {
   ADMIN_EMAIL,
   auth,
@@ -56,7 +56,7 @@ import {
   handleFirestoreError,
   OperationType,
   testFirestoreConnection,
-  translateAuthErrorFr,
+  translateAuthError,
 } from './firebase';
 import {
   ContactMessageRecord,
@@ -74,59 +74,6 @@ import {
 type ViewTab = 'home' | 'enroll' | 'candidate' | 'agent';
 
 const TRACKING_SESSION_KEY = 'drivepro_tracking_ctx_v4';
-
-const HERO_COURSE_SLIDES = [
-  {
-    code: '01',
-    titleFr: 'Signalisation & Panneau STOP',
-    titleRo: 'Indicatoare Rutiere & STOP',
-    titleEn: 'Road Signs & Mandatory STOP',
-    detailFr: 'Arrêt absolu devant la ligne · Explication audio multilingue',
-    detailRo: 'Oprire obligatorie la linie · Explicație audio multilingvă',
-    detailEn: 'Full stop at the line · Multilingual voice guidance',
-    badge: 'STOP',
-  },
-  {
-    code: '02',
-    titleFr: 'Giratoires & Priorité à Gauche',
-    titleRo: 'Sensuri Giratorii & Prioritate',
-    titleEn: 'Roundabouts & Yield Rules',
-    detailFr: 'Placement dans la voie · Clignotant droit avant sortie',
-    detailRo: 'Poziționare pe bandă · Semnalizare dreapta la ieșire',
-    detailEn: 'Lane positioning · Right turn signal before exit',
-    badge: '↻',
-  },
-  {
-    code: '03',
-    titleFr: 'Autoroute & Distance de Sécurité',
-    titleRo: 'Autostradă & Distanță de Siguranță',
-    titleEn: 'Highway & Safe Braking Distance',
-    detailFr: 'Règle des 2 secondes (90 m) · Voie de dépassement',
-    detailRo: 'Regula celor 2 secunde (90 m) · Banda de depășire',
-    detailEn: 'Two-second interval rule · Overtaking lane discipline',
-    badge: '130',
-  },
-  {
-    code: '04',
-    titleFr: 'Conduite Urbaine & Piétons',
-    titleRo: 'Conducere Urbană & Pietoni',
-    titleEn: 'Urban Driving & Pedestrians',
-    detailFr: 'Angles morts · Zones 30 & passages protégés',
-    detailRo: 'Unghiuri moarte · Zone 30 km/h & treceri de pietoni',
-    detailEn: 'Blind spots · 30 km/h urban zones & crosswalks',
-    badge: '50',
-  },
-  {
-    code: '05',
-    titleFr: 'QCM Officiel & Preuve Physique',
-    titleRo: 'Examen Oficial & Probă Fizică',
-    titleEn: 'Official Exam & Physical Proof',
-    detailFr: 'Correction complète + Lien direct épreuves physiques',
-    detailRo: 'Corectare completă + Link direct probe fizice',
-    detailEn: 'Full corrections + direct physical test booking link',
-    badge: '48H',
-  },
-];
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -234,6 +181,14 @@ export default function App() {
     setHeroImgFailed(false);
     setClassImgFailed(false);
   }, [selectedCountry.code]);
+
+  useEffect(() => {
+    const tCurrent = getTranslations(lang);
+    const themeCurrent = getCountryTheme(selectedCountry);
+    document.title = `${themeCurrent.authorityName} — ${tCurrent.heroTitle}`;
+    document.documentElement.lang = normalizeLangCode(lang);
+    document.documentElement.dir = isRtlLanguage(lang) ? 'rtl' : 'ltr';
+  }, [lang, selectedCountry]);
 
   useEffect(() => {
     const heroTimer = setInterval(() => {
@@ -565,7 +520,7 @@ export default function App() {
         'Un message de confirmation vient d’être envoyé à votre messagerie de Direction. Validez-le puis cliquez sur « Actualiser ».'
       );
     } catch (err) {
-      setAdminVerifyNotice(translateAuthErrorFr(err));
+      setAdminVerifyNotice(translateAuthError(err, lang));
     } finally {
       setAdminVerifySending(false);
     }
@@ -617,8 +572,6 @@ export default function App() {
   };
 
   const t = getTranslations(lang);
-  const pick = (fr: string, ro: string, en: string) =>
-    lang === 'fr' ? fr : lang === 'ro' ? ro : en;
 
   const localizedCountryName = getCountryLocalizedName(
     selectedCountry.code,
@@ -643,9 +596,15 @@ export default function App() {
     user?.displayName?.split(' ')[0] ||
     t.navSignOut;
 
+  const localizedSlides = [
+    { code: '01', badge: 'STOP', title: t.slide01Title, detail: t.slide01Detail },
+    { code: '02', badge: '↻', title: t.slide02Title, detail: t.slide02Detail },
+    { code: '03', badge: '130', title: t.slide03Title, detail: t.slide03Detail },
+    { code: '04', badge: '50', title: t.slide04Title, detail: t.slide04Detail },
+    { code: '05', badge: '48H', title: t.slide05Title, detail: t.slide05Detail },
+  ];
   const currentHeroCourse =
-    HERO_COURSE_SLIDES[heroSlideIdx % HERO_COURSE_SLIDES.length] ||
-    HERO_COURSE_SLIDES[0];
+    localizedSlides[heroSlideIdx % localizedSlides.length] || localizedSlides[0];
   const heroGalleryImages = countryTheme.galleryImages;
   const communityGalleryImages = [
     ...countryTheme.galleryImages.slice(1),
@@ -682,10 +641,16 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setActiveView('home')}
-                className="cursor-pointer whitespace-nowrap shrink-0"
-                aria-label="DrivePro Academy"
+                className="flex items-center gap-2.5 cursor-pointer whitespace-nowrap shrink-0 min-w-0"
+                aria-label={countryTheme.authorityName}
               >
-                <DriveProLogo size="md" />
+                <InstituteCrestSvg
+                  theme={countryTheme}
+                  className="w-9 h-9 shrink-0"
+                />
+                <span className="font-display text-base sm:text-lg font-extrabold text-slate-900 truncate max-w-[230px] sm:max-w-[360px]">
+                  {countryTheme.authorityName}
+                </span>
               </button>
 
               <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
@@ -840,21 +805,6 @@ export default function App() {
                 <section className="grid lg:grid-cols-12 gap-7 items-stretch">
                   <div className="lg:col-span-6 bg-white/95 backdrop-blur border border-slate-200 rounded-2xl p-7 md:p-9 flex flex-col justify-between gap-6 shadow-lg">
                     <div className="space-y-4">
-                      {/* Per-Country Institute Header ONLY (with official Crest SVG — NO SIM, NO clock, NO MapPin) */}
-                      <div
-                        className="inline-flex items-center gap-3 rounded-xl px-4 py-2.5 border text-sm font-bold text-slate-900"
-                        style={{
-                          backgroundColor: countryTheme.surfaceTintHex,
-                          borderColor: `${countryTheme.primaryHex}33`,
-                        }}
-                      >
-                        <InstituteCrestSvg
-                          theme={countryTheme}
-                          className="w-8 h-8 shrink-0"
-                        />
-                        <span>{countryTheme.authorityName}</span>
-                      </div>
-
                       <h1
                         className="font-display text-3xl sm:text-4xl lg:text-[2.75rem] font-extrabold tracking-tight text-slate-900 leading-[1.12]"
                         style={{ textWrap: 'balance' }}
@@ -904,7 +854,8 @@ export default function App() {
                       </div>
                       <div className="flex flex-wrap items-center justify-between gap-2 text-sm font-mono tabular-nums text-slate-700 pt-2 border-t border-slate-100">
                         <span className="font-semibold">
-                          {t.permitLabel} {category} : {baseEur} €
+                          {t.permitLabel} {category} :{' '}
+                          {formatTariffForCountry(baseEur, selectedCountry, lang)}
                         </span>
                         <span
                           className="font-bold"
@@ -1009,18 +960,10 @@ export default function App() {
                                     </span>
                                   </div>
                                   <div className="text-sm sm:text-base font-display font-bold truncate mt-0.5">
-                                    {pick(
-                                      currentHeroCourse.titleFr,
-                                      currentHeroCourse.titleRo,
-                                      currentHeroCourse.titleEn
-                                    )}
+                                    {currentHeroCourse.title}
                                   </div>
                                   <div className="text-xs text-slate-300 truncate">
-                                    {pick(
-                                      currentHeroCourse.detailFr,
-                                      currentHeroCourse.detailRo,
-                                      currentHeroCourse.detailEn
-                                    )}
+                                    {currentHeroCourse.detail}
                                   </div>
                                 </div>
                               </div>
@@ -1070,30 +1013,30 @@ export default function App() {
                       <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center text-white bg-gradient-to-br from-slate-900 to-blue-950">
                         <CarFront className="w-12 h-12 text-blue-400 mb-3" />
                         <div className="font-display text-xl font-semibold">
-                          DrivePro Academy International
+                          {countryTheme.authorityName}
                         </div>
                       </div>
                     )}
                   </div>
                 </section>
 
-                {/* Full-Width 4-Column Tariff Strip (Strict Euro Rates: 300 / 450 / 650 € + Physical Proof) */}
+                {/* Full-Width 4-Column Tariff Strip (Dynamic Local Currency Conversion) */}
                 <section className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {[
                     {
-                      metric: '300 €',
+                      metric: formatTariffForCountry(300, selectedCountry, lang),
                       color: countryTheme.primaryHex,
                       title: t.tariffATitle,
                       desc: t.tariffADesc,
                     },
                     {
-                      metric: '450 €',
+                      metric: formatTariffForCountry(450, selectedCountry, lang),
                       color: '#0F172A',
                       title: t.tariffBTitle,
                       desc: t.tariffBDesc,
                     },
                     {
-                      metric: '650 €',
+                      metric: formatTariffForCountry(650, selectedCountry, lang),
                       color: '#047857',
                       title: t.tariffCTitle,
                       desc: t.tariffCDesc,
@@ -1377,14 +1320,20 @@ export default function App() {
               <div className="grid md:grid-cols-12 gap-8 items-start">
                 <div className="md:col-span-7 space-y-3.5">
                   <div className="flex flex-wrap items-center gap-3">
-                    <DriveProLogo dark size="sm" />
+                    <InstituteCrestSvg
+                      theme={countryTheme}
+                      className="w-8 h-8 shrink-0"
+                    />
+                    <span className="font-display text-lg font-bold text-white">
+                      {countryTheme.authorityName}
+                    </span>
                     <CountryFlagSvg
                       theme={countryTheme}
                       className="w-7 h-5"
                     />
                   </div>
                   <div className="text-slate-300 leading-relaxed">
-                    DrivePro Academy ·{' '}
+                    {countryTheme.authorityName} ·{' '}
                     <span className="text-white font-semibold">
                       {localizedCountryName}
                     </span>{' '}
@@ -1398,7 +1347,7 @@ export default function App() {
                       className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold whitespace-nowrap transition-colors"
                     >
                       <WhatsAppLogo className="w-4 h-4" />
-                      <span>{t.footerWhatsappBtn}</span>
+                      <span>WhatsApp</span>
                     </a>
                     <button
                       type="button"
@@ -1452,7 +1401,7 @@ export default function App() {
 
               <div className="border-t border-slate-800 pt-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-400">
                 <div>
-                  © {new Date().getFullYear()} DrivePro Academy · {t.footerRights}
+                  © {new Date().getFullYear()} {countryTheme.authorityName} · {t.footerRights}
                 </div>
                 <div className="flex flex-wrap items-center gap-4">
                   <button
@@ -1498,6 +1447,7 @@ export default function App() {
           resetOobCode={resetOobCode}
           lang={lang}
           defaultDialCode={selectedCountry.dialCode}
+          instituteName={countryTheme.authorityName}
           onClose={() => {
             setAuthModalOpen(false);
             setResetOobCode(null);
@@ -1514,6 +1464,7 @@ export default function App() {
         <LegalModal
           activeDoc={legalDocOpen}
           lang={lang}
+          country={selectedCountry}
           onClose={() => setLegalDocOpen(null)}
         />
 
@@ -1521,6 +1472,7 @@ export default function App() {
         <ContactQuestionModal
           isOpen={contactModalOpen}
           lang={lang}
+          instituteName={countryTheme.authorityName}
           defaultName={userProfile?.fullName || user?.displayName || ''}
           defaultEmail={user?.email || ''}
           defaultPhone={userProfile?.phone || ''}

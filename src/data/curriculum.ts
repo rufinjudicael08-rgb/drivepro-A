@@ -1,6 +1,11 @@
 import { APP_MEDIA } from '../assets/media';
 import { InstructorProfile } from '../types';
+import { EXTRA_MODULES_MAP, EXTRA_QUIZ_MAP } from './curriculumExtra';
 import { RO_MODULES_MAP, RO_QUIZ_MAP } from './curriculumRo';
+
+function normCurriculumLang(lang: string): string {
+  return (lang || 'en').toLowerCase().trim().split(/[-_]/)[0];
+}
 
 export const PARIS_HQ_CONTACT = {
   accreditation: 'E-24-075-0891',
@@ -715,28 +720,33 @@ export function getLocalizedModule(
   mod: CodeLessonModule,
   lang: string
 ): LocalizedModuleView {
-  if (lang === 'ro' && RO_MODULES_MAP[mod.id]) {
-    const ro = RO_MODULES_MAP[mod.id];
+  const code = normCurriculumLang(lang);
+  const localizedOverride =
+    code === 'ro'
+      ? RO_MODULES_MAP[mod.id]
+      : EXTRA_MODULES_MAP[code]?.[mod.id];
+
+  if (localizedOverride) {
     return {
       id: mod.id,
       number: mod.number,
       isStudyGuide: mod.isStudyGuide,
       animationType: mod.animationType,
       visualUrl: mod.visualUrl,
-      visualCaption: ro.visualCaption,
+      visualCaption: localizedOverride.visualCaption,
       speakerName: mod.speakerName,
-      speakerRole: ro.speakerRole,
+      speakerRole: localizedOverride.speakerRole,
       speakerAvatarUrl: mod.speakerAvatarUrl,
-      audioScript: ro.audioScript,
-      title: ro.title,
+      audioScript: localizedOverride.audioScript,
+      title: localizedOverride.title,
       durationMin: mod.durationMin,
-      summary: ro.summary,
-      chapters: ro.chapters,
-      keyRules: ro.keyRules,
+      summary: localizedOverride.summary,
+      chapters: localizedOverride.chapters,
+      keyRules: localizedOverride.keyRules,
     };
   }
 
-  const useFr = lang === 'fr';
+  const useFr = code === 'fr';
   return {
     id: mod.id,
     number: mod.number,
@@ -774,20 +784,23 @@ export function getLocalizedQuizQuestion(
   q: QuizQuestion,
   lang: string
 ): LocalizedQuizView {
-  if (lang === 'ro' && RO_QUIZ_MAP[q.id]) {
-    const ro = RO_QUIZ_MAP[q.id];
+  const code = normCurriculumLang(lang);
+  const localizedQuiz =
+    code === 'ro' ? RO_QUIZ_MAP[q.id] : EXTRA_QUIZ_MAP[code]?.[q.id];
+
+  if (localizedQuiz) {
     return {
       id: q.id,
       signType: q.signType,
-      category: ro.category,
-      question: ro.question,
-      options: ro.options,
+      category: localizedQuiz.category,
+      question: localizedQuiz.question,
+      options: localizedQuiz.options,
       correctIndex: q.correctIndex,
-      explanation: ro.explanation,
+      explanation: localizedQuiz.explanation,
     };
   }
 
-  const useFr = lang === 'fr';
+  const useFr = code === 'fr';
   return {
     id: q.id,
     signType: q.signType,

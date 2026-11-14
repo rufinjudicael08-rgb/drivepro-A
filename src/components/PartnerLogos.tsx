@@ -137,7 +137,6 @@ export const PartnerLogos: React.FC<PartnerLogosProps> = ({
           {scrollingItems.map((p, idx) => (
             <div
               key={`${p.id}-${idx}`}
-              style={{ borderLeftColor: theme.accentHex, borderLeftWidth: '3px' }}
               className={`inline-flex items-center gap-3 px-4 py-2.5 rounded-lg border shrink-0 whitespace-nowrap ${
                 dark
                   ? 'bg-slate-800/85 border-slate-700 text-slate-100'

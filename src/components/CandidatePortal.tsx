@@ -28,7 +28,11 @@ import {
   PARIS_HQ_CONTACT,
   QuizQuestion,
 } from '../data/curriculum';
-import { getCountryByCode, getCountryLocalizedName } from '../data/countries';
+import {
+  formatTariffForCountry,
+  getCountryByCode,
+  getCountryLocalizedName,
+} from '../data/countries';
 import { getCountryTheme } from '../data/countryThemes';
 import { getTranslations } from '../data/i18n';
 import { db, handleFirestoreError, OperationType } from '../firebase';
@@ -174,8 +178,6 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
   onGoToRegistration,
 }) => {
   const t = getTranslations(lang);
-  const pick = (fr: string, ro: string, en: string) =>
-    lang === 'fr' ? fr : lang === 'ro' ? ro : en;
 
   const [activeTab, setActiveTab] = useState<'queue' | 'code' | 'instructor'>('code');
   const [completedModules, setCompletedModules] = useState<string[]>(
@@ -492,8 +494,12 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
           <div className="text-lg font-bold text-emerald-700 mt-1 flex items-center gap-1.5">
             <ShieldCheck className="w-4 h-4 shrink-0" />
             <span>
-              {registration.triggeredAmountEur || registration.baseFeeEur} € ·{' '}
-              {t.triggeredAmountLabel}
+              {formatTariffForCountry(
+                registration.triggeredAmountEur || registration.baseFeeEur,
+                regCountry,
+                lang
+              )}{' '}
+              · {t.triggeredAmountLabel}
             </span>
           </div>
           {registration.confirmationCode && (
@@ -1129,7 +1135,7 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                           <div className="space-y-1">
                             <div className="text-xs font-mono text-emerald-400 font-bold">
-                              {t.physicalProofLabel.toUpperCase()} · DRIVEPRO ACADEMY
+                              {t.physicalProofLabel.toUpperCase()} · {countryTheme.authorityCode}
                             </div>
                             <h4 className="text-lg font-bold">
                               {assignedInstructor.name}
@@ -1147,7 +1153,7 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                               className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-lg whitespace-nowrap"
                             >
                               <WhatsAppLogo className="w-4 h-4" />
-                              <span>{t.instructorWhatsappBtn}</span>
+                              <span>WhatsApp</span>
                             </a>
                             <button
                               type="button"
@@ -1336,7 +1342,7 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
                     className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg whitespace-nowrap transition-colors shadow-sm"
                   >
                     <WhatsAppLogo className="w-4 h-4" />
-                    <span>{t.instructorWhatsappBtn}</span>
+                    <span>WhatsApp</span>
                   </a>
                 </div>
               </div>
@@ -1349,6 +1355,7 @@ export const CandidatePortal: React.FC<CandidatePortalProps> = ({
         <InvoiceReceiptModal
           isOpen={invoiceModalOpen}
           lang={lang}
+          country={regCountry}
           registration={registration}
           payment={latestPayment}
           onClose={() => setInvoiceModalOpen(false)}

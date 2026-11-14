@@ -1,9 +1,8 @@
-export interface LanguageOption {
-  code: string;
-  nativeName: string;
-  labelFr: string;
-  rtl?: boolean;
-}
+import { EUROPE_TRANSLATIONS } from './i18nLangs';
+import { GLOBAL_TRANSLATIONS } from './i18nLangs2';
+import { LanguageOption, TranslationKeys } from './i18nTypes';
+
+export type { LanguageOption, TranslationKeys };
 
 const MAJOR_LANGUAGES: LanguageOption[] = [
   { code: 'fr', nativeName: 'Français', labelFr: 'Français' },
@@ -65,193 +64,7 @@ export const WORLD_LANGUAGES: LanguageOption[] = [
   }),
 ];
 
-export type TranslationKeys = {
-  navHome: string;
-  navEnroll: string;
-  navCandidate: string;
-  navAgent: string;
-  navContact: string;
-  navSignIn: string;
-  navLogin: string;
-  navSignOut: string;
-  askQuestionBtn: string;
-  hqLabel: string;
-  heroTitleLead: string;
-  heroTitleAccent: string;
-  heroTitle: string;
-  heroSubtitle: string;
-  heroCtaPrimary: string;
-  heroCtaSecondary: string;
-  openBtn: string;
-  activeAudioLabel: string;
-  permitLabel: string;
-  openFunnelBtn: string;
-  openCreatorConsoleBtn: string;
-  countryBarTitle: string;
-  countryBarHint: string;
-  searchCountryPlaceholder: string;
-  searchLangPlaceholder: string;
-  fixedFeeLabel: string;
-  baseReferenceLabel: string;
-  tariffATitle: string;
-  tariffADesc: string;
-  tariffBTitle: string;
-  tariffBDesc: string;
-  tariffCTitle: string;
-  tariffCDesc: string;
-  physicalProofLabel: string;
-  physicalProofDesc: string;
-  pathwayTitleLead: string;
-  pathwayTitleAccent: string;
-  path01Title: string;
-  path01Desc: string;
-  path02Title: string;
-  path02Desc: string;
-  path03Title: string;
-  path03Desc: string;
-  path04Title: string;
-  path04Desc: string;
-  step1Title: string;
-  step2Title: string;
-  step3Title: string;
-  step4Title: string;
-  lockedNoticeTitle: string;
-  lockedNoticeBody: string;
-  step1Heading: string;
-  step1Subheading: string;
-  continueToStep2: string;
-  catATitle: string;
-  catADesc: string;
-  catBTitle: string;
-  catBDesc: string;
-  catCTitle: string;
-  catCDesc: string;
-  catDTitle: string;
-  catDDesc: string;
-  step2Heading: string;
-  lastNameLabel: string;
-  firstNameLabel: string;
-  fullNameLabel: string;
-  emailLabel: string;
-  phoneLabel: string;
-  addressLabel: string;
-  cityLabel: string;
-  categoryLabel: string;
-  idSectionTitle: string;
-  idTypeLabel: string;
-  idNumberLabel: string;
-  idUploadLabel: string;
-  idChooseFile: string;
-  wifiConfirmLabel: string;
-  termsConfirmLabel: string;
-  backBtn: string;
-  saveDossierBtn: string;
-  paymentTitle: string;
-  paymentStepHeading: string;
-  payNowLinkBtn: string;
-  paymentProofCardTitle: string;
-  senderNameLabel: string;
-  senderPhoneLabel: string;
-  txIdLabel: string;
-  receiptUploadLabel: string;
-  receiptUploadBtn: string;
-  receiptUploadHint: string;
-  receiptRequiredErr: string;
-  transferCertifyLabel: string;
-  payAndUnlockBtn: string;
-  proofSubmittedTitle: string;
-  proofSubmittedDesc: string;
-  statusLabel: string;
-  awaitingConfirmationLabel: string;
-  notifyDirectBtn: string;
-  authRequiredTitle: string;
-  authRequiredDesc: string;
-  candidateLockedTitle: string;
-  candidateLockedDesc: string;
-  candidateLockedBtn: string;
-  candidateTabQueue: string;
-  candidateTabCode: string;
-  candidateTabInstructor: string;
-  queuePositionLabel: string;
-  dossierStatusLabel: string;
-  codeProgressLabel: string;
-  quizBestLabel: string;
-  triggeredAmountLabel: string;
-  invoiceBtn: string;
-  reEnrollBtn: string;
-  skipCoursesBtn: string;
-  skipExamsBtn: string;
-  coursesHeaderTitle: string;
-  coursesHeaderDesc: string;
-  modulesValidatedLabel: string;
-  validateCourseBtn: string;
-  validateLastCourseBtn: string;
-  moduleValidatedBadge: string;
-  listenBtn: string;
-  listenImageBtn: string;
-  visualAnalysisPrefix: string;
-  keyTakeawaysTitle: string;
-  quizTitle: string;
-  quizDesc: string;
-  quizLockedTitle: string;
-  quizStartBtn: string;
-  quizSubmitBtn: string;
-  quizRetryBtn: string;
-  quizPrevBtn: string;
-  quizNextBtn: string;
-  quizDoneTitle: string;
-  quizDoneDesc: string;
-  quizProceedBtn: string;
-  quizCorrectionsTitle: string;
-  correctAnswerPrefix: string;
-  correctWord: string;
-  incorrectWord: string;
-  instructorUnlockedTitle: string;
-  instructorCallBtn: string;
-  instructorWhatsappBtn: string;
-  directLinkOnlyLabel: string;
-  physStep1Title: string;
-  physStep1Desc: string;
-  physStep2Title: string;
-  physStep2Desc: string;
-  physStep3Title: string;
-  physStep3Desc: string;
-  audioPlay: string;
-  audioPause: string;
-  audioReadyIn: string;
-  audioActiveIn: string;
-  audioShowScript: string;
-  audioHideScript: string;
-  audioBackToModule: string;
-  audioUnsupported: string;
-  audioAdaptedPrefix: string;
-  officialPartnersTitle: string;
-  governmentLabel: string;
-  nationalFlagLabel: string;
-  nationalInstituteLabel: string;
-  euPartner: string;
-  idpPartner: string;
-  viennaPartner: string;
-  irfPartner: string;
-  rsiPartner: string;
-  footerDirectDesc: string;
-  footerWhatsappBtn: string;
-  footerRights: string;
-  policyUsage: string;
-  policyTerms: string;
-  policyPrivacy: string;
-  policyCookies: string;
-  policySecurity: string;
-  policyContact: string;
-  agentModuleTitle: string;
-  adminModuleTitle: string;
-  exportAppsCsv: string;
-  exportAppsExcel: string;
-  exportPaymentsCsv: string;
-  exportPaymentsExcel: string;
-};
-
-const FR_BASE: TranslationKeys = {
+export const FR_BASE: TranslationKeys = {
   navHome: 'Accueil',
   navEnroll: 'Inscription',
   navCandidate: 'Espace Candidat',
@@ -261,7 +74,7 @@ const FR_BASE: TranslationKeys = {
   navLogin: 'Se connecter',
   navSignOut: 'Déconnexion',
   askQuestionBtn: 'Poser une question',
-  hqLabel: 'DrivePro Academy · Agrément E-24-075-0891',
+  hqLabel: 'Agrément E-24-075-0891',
   heroTitleLead: 'Votre permis international',
   heroTitleAccent: 'en moins de 48 heures.',
   heroTitle: 'Votre permis international en moins de 48 heures.',
@@ -279,12 +92,11 @@ const FR_BASE: TranslationKeys = {
   searchCountryPlaceholder: 'Rechercher un pays...',
   searchLangPlaceholder: 'Rechercher une langue...',
   fixedFeeLabel: 'Frais de permis',
-  baseReferenceLabel: 'Permis A: 300 € · B: 450 € · C: 650 € · D: 800 €',
-  tariffATitle: 'Permis A · 300 €',
+  tariffATitle: 'Permis A · Moto',
   tariffADesc: 'Moto · Dossier complet, cours audio & facture PDF officielle.',
-  tariffBTitle: 'Permis B · 450 €',
+  tariffBTitle: 'Permis B · Voiture',
   tariffBDesc: 'Voiture · Réinscription rapide & suivi personnalisé.',
-  tariffCTitle: 'Permis C · 650 €',
+  tariffCTitle: 'Permis C · Poids Lourd',
   tariffCDesc: 'Poids lourd · Formation complète & épreuves physiques.',
   physicalProofLabel: 'Preuve physique',
   physicalProofDesc: 'Suivez vos cours, passez le QCM et accédez au lien direct.',
@@ -303,10 +115,9 @@ const FR_BASE: TranslationKeys = {
   step3Title: '03. Paiement',
   step4Title: '04. Cours & QCM',
   lockedNoticeTitle: 'Profil verrouillé',
-  lockedNoticeBody:
-    'Veuillez compléter votre dossier et terminer votre candidature.',
+  lockedNoticeBody: 'Veuillez compléter votre dossier et terminer votre candidature.',
   step1Heading: 'Étape 1 — Choisissez votre catégorie de permis',
-  step1Subheading: 'Sélectionnez votre permis : A (300 €), B (450 €), C (650 €) ou D (800 €).',
+  step1Subheading: 'Sélectionnez votre catégorie de permis A, B, C ou D.',
   continueToStep2: 'Continuer vers le dossier à fournir',
   catATitle: 'Permis A — Moto',
   catADesc: 'Formation accélérée, épreuves physiques & permis officiel.',
@@ -330,6 +141,9 @@ const FR_BASE: TranslationKeys = {
   idNumberLabel: 'Numéro de la pièce *',
   idUploadLabel: 'Photo ou scan de la carte *',
   idChooseFile: 'Joindre CNI (JPG/PNG/PDF)',
+  idTypeCni: 'Carte Nationale d’Identité (CNI)',
+  idTypePassport: 'Passeport officiel',
+  idTypeResidence: 'Titre de séjour / Carte résident',
   wifiConfirmLabel: 'Je confirme disposer d’une connexion Wi-Fi / Internet active pour suivre les cours audio et le QCM.',
   termsConfirmLabel: 'Je certifie l’exactitude des informations de mon dossier et de ma pièce d’identité.',
   backBtn: 'Retour',
@@ -351,7 +165,7 @@ const FR_BASE: TranslationKeys = {
   proofSubmittedDesc: 'Votre justificatif et votre référence ont été enregistrés. Dès réception des fonds, votre accès complet est activé automatiquement.',
   statusLabel: 'Statut',
   awaitingConfirmationLabel: 'En attente de confirmation',
-  notifyDirectBtn: 'Lien direct',
+  notifyDirectBtn: 'WhatsApp',
   authRequiredTitle: 'Créez votre compte (Nom, E-mail & Téléphone) pour enregistrer votre dossier',
   authRequiredDesc: 'Créez votre compte personnel afin de sauvegarder votre dossier et votre progression.',
   candidateLockedTitle: 'Profil verrouillé',
@@ -359,7 +173,7 @@ const FR_BASE: TranslationKeys = {
   candidateLockedBtn: 'Compléter mon dossier',
   candidateTabQueue: 'File d’attente',
   candidateTabCode: 'Cours audio animés & QCM',
-  candidateTabInstructor: 'Preuve physique · Lien direct',
+  candidateTabInstructor: 'Preuve physique · WhatsApp',
   queuePositionLabel: 'Position actuelle en file',
   dossierStatusLabel: 'Statut du dossier',
   codeProgressLabel: 'Cours séquentiels',
@@ -388,15 +202,15 @@ const FR_BASE: TranslationKeys = {
   quizPrevBtn: 'Précédente',
   quizNextBtn: 'Question suivante',
   quizDoneTitle: 'Examen terminé ! Choisissez votre étape suivante',
-  quizDoneDesc: 'Vous pouvez recommencer l’examen blanc ou passer directement aux corrections et au lien des preuves physiques.',
+  quizDoneDesc: 'Vous pouvez recommencer l’examen blanc ou passer directement aux corrections et aux preuves physiques.',
   quizProceedBtn: 'Passer à l’étape suivante (Preuve physique)',
   quizCorrectionsTitle: 'Correction complète des 12 questions',
   correctAnswerPrefix: 'Bonne réponse :',
   correctWord: 'Correct',
   incorrectWord: 'Incorrect',
-  instructorUnlockedTitle: 'Preuve physique — Ouvrez le lien direct pour fixer vos épreuves',
-  instructorCallBtn: 'Ouvrir le lien direct',
-  instructorWhatsappBtn: 'Lien direct · Preuve physique',
+  instructorUnlockedTitle: 'Preuve physique — Ouvrez WhatsApp pour fixer vos épreuves',
+  instructorCallBtn: 'WhatsApp',
+  instructorWhatsappBtn: 'WhatsApp',
   directLinkOnlyLabel: 'Rendez-vous par lien direct uniquement',
   physStep1Title: 'Ouvrez le lien direct',
   physStep1Desc: 'Accédez directement au service des examens sans numéro public.',
@@ -423,7 +237,7 @@ const FR_BASE: TranslationKeys = {
   irfPartner: 'Fédération Internationale de la Route',
   rsiPartner: 'Sécurité Routière Internationale',
   footerDirectDesc: 'Accompagnement 100 % par lien direct, cours audio en ligne & preuve physique',
-  footerWhatsappBtn: 'Lien Direct',
+  footerWhatsappBtn: 'WhatsApp',
   footerRights: 'Tous droits réservés.',
   policyUsage: 'Politique d’utilisation',
   policyTerms: 'Conditions d’utilisation',
@@ -437,9 +251,168 @@ const FR_BASE: TranslationKeys = {
   exportAppsExcel: 'Exporter Dossiers (Excel)',
   exportPaymentsCsv: 'Exporter Paiements (CSV)',
   exportPaymentsExcel: 'Exporter Paiements (Excel)',
+  slide01Title: 'Signalisation & Panneau STOP',
+  slide01Detail: 'Arrêt absolu devant la ligne · Explication audio multilingue',
+  slide02Title: 'Giratoires & Priorité à Gauche',
+  slide02Detail: 'Placement dans la voie · Clignotant droit avant sortie',
+  slide03Title: 'Autoroute & Distance de Sécurité',
+  slide03Detail: 'Règle des 2 secondes (90 m) · Voie de dépassement',
+  slide04Title: 'Conduite Urbaine & Piétons',
+  slide04Detail: 'Angles morts · Zones 30 & passages protégés',
+  slide05Title: 'QCM Officiel & Preuve Physique',
+  slide05Detail: 'Correction complète + Lien direct épreuves physiques',
+  dossiersBarTitle: 'Vos dossiers de permis (Réinscription multi-permis disponible)',
+  dossierPendingBadge: 'Dossier déjà créé (Paiement en attente)',
+  dossierEnrolledBadge: 'Déjà inscrit pour cette catégorie',
+  unlockedBannerTitle: 'Permis validé — Cours audio débloqués',
+  unlockedBannerDesc: 'Votre dossier et votre facture PDF officielle sont confirmés. Suivez les 5 modules, passez le QCM et ouvrez votre lien d’épreuves physiques.',
+  step4DownloadDesc: 'Téléchargez votre facture officielle en PDF ci-contre, puis accédez à vos 5 cours audio illustrés, au QCM et aux épreuves physiques.',
+  errPdfTooLarge: 'Le fichier PDF dépasse 420 Ko. Compressez-le ou joignez une capture d’écran (JPG/PNG).',
+  errInvalidFileFormat: 'Format non pris en charge. Veuillez joindre un fichier PDF, JPG ou PNG.',
+  errFullNamePair: 'Veuillez renseigner obligatoirement votre Nom de famille et votre Prénom.',
+  errInvalidEmail: 'Veuillez saisir une adresse e-mail valide.',
+  errInvalidPhone: 'Veuillez saisir un numéro de téléphone WhatsApp valide.',
+  errInvalidAddress: 'Veuillez saisir votre adresse complète de résidence.',
+  errInvalidCity: 'Veuillez indiquer votre ville de résidence.',
+  errWifiConfirm: 'Veuillez confirmer votre accès Internet pour suivre les cours audio en ligne.',
+  errIdMandatory: 'Pièce d’identité obligatoire : saisissez le numéro ET joignez la photo ou le scan de votre carte.',
+  errAcceptPolicy: 'Vous devez confirmer l’exactitude des informations de votre dossier.',
+  errCreateAccountFirst: 'Veuillez d’abord créer votre compte (ou vous connecter) ci-dessus pour enregistrer votre dossier.',
+  errDossierMissing: 'Dossier introuvable. Veuillez recommencer l’étape 2.',
+  errOpenPayLinkFirst: 'Veuillez d’abord ouvrir le lien officiel de paiement et confirmer votre règlement.',
+  errSenderRequired: 'Veuillez saisir votre nom complet et votre numéro d’expéditeur.',
+  errTxIdInvalid: 'ID de transaction invalide. Saisissez la référence réelle reçue après paiement (minimum 6 caractères).',
+  authAccountLabel: 'Compte Personnel',
+  authCreateTitle: 'Créer un compte',
+  authVerifyTitle: 'Confirmation par code (6 chiffres)',
+  authLoginTitle: 'Se connecter',
+  authResetTitle: 'Mot de passe oublié',
+  authHasAccountTab: 'J’ai déjà un compte',
+  authPasswordLabel: 'Mot de passe *',
+  authPasswordMinLabel: 'Mot de passe (6 caractères min.) *',
+  authForgotPasswordBtn: 'Mot de passe oublié ?',
+  authCreatingBtn: 'Création du compte...',
+  authCreateSubmitBtn: 'Créer mon compte',
+  authSigningInBtn: 'Connexion...',
+  authSignInSubmitBtn: 'Se connecter',
+  authCodeToEnterLabel: 'Code de confirmation à saisir :',
+  authEnter6DigitLabel: 'Entrez votre code de confirmation à 6 chiffres *',
+  authNewCodeBtn: 'Nouveau code',
+  authVerifyAccountBtn: 'Valider mon compte',
+  authYourEmailLabel: 'Votre adresse e-mail *',
+  authResetNote: 'Un code de confirmation à 6 chiffres et un message de réinitialisation sont générés pour votre compte.',
+  authBackToLogin: 'Retour connexion',
+  authSend6DigitBtn: 'Recevoir le code (6 chiffres)',
+  authConfCodeTitle: 'Code de confirmation',
+  authNewPassMinLabel: 'Nouveau mot de passe (6 caractères min.) *',
+  authConfirmCodeBtn: 'Confirmer le code',
+  authErrNameShort: 'Veuillez saisir votre nom et prénom complets.',
+  authErrPassMin: 'Le mot de passe doit contenir au moins 6 caractères.',
+  authErrLoginMissing: 'Veuillez saisir votre adresse e-mail et votre mot de passe.',
+  authErrEmailReset: 'Saisissez votre adresse e-mail pour recevoir votre code à 6 chiffres.',
+  authErrCodeWrong: 'Code de confirmation à 6 chiffres incorrect.',
+  authMsgCodeIssued: 'Votre code de confirmation à 6 chiffres a été généré. Saisissez-le ci-dessous pour activer votre compte.',
+  authMsgCodeRefreshed: 'Nouveau code de confirmation à 6 chiffres généré.',
+  authMsgResetIssued: 'Code de vérification à 6 chiffres généré et lien envoyé sur votre boîte e-mail.',
+  authMsgPassUpdated: 'Mot de passe mis à jour avec succès ! Vous pouvez maintenant vous connecter.',
+  authMsgCheckInbox: 'Code confirmé ! Vérifiez votre boîte e-mail (et les Spams) pour finaliser votre nouveau mot de passe.',
+  authErrAlreadyInUse: 'Un compte existe déjà avec cette adresse e-mail. Cliquez sur « Se connecter ».',
+  authErrInvalidCred: 'Adresse e-mail ou mot de passe incorrect.',
+  authErrTooManyReq: 'Trop de tentatives consécutives. Patientez quelques instants.',
+  authErrOpNotAllowed: 'L’authentification e-mail doit être activée dans Firebase Authentication.',
+  authErrNetwork: 'Erreur réseau lors de la connexion. Vérifiez votre connexion Internet.',
+  contactModalTitle: 'Poser une question',
+  contactDefaultSubject: 'Question sur mon inscription / permis',
+  contactSentTitle: 'Votre message a bien été envoyé !',
+  contactSentDesc: 'Votre question a bien été transmise à notre équipe qui vous répondra très rapidement.',
+  contactCloseBtn: 'Fermer',
+  contactFullNameLabel: 'Nom complet *',
+  contactEmailFieldLabel: 'Adresse e-mail *',
+  contactPhoneFieldLabel: 'Téléphone / WhatsApp',
+  contactSubjectFieldLabel: 'Sujet de votre question',
+  contactMessageLabel: 'Votre question ou message *',
+  contactMessagePlaceholder: 'Écrivez votre question ici (permis, paiement, cours, rendez-vous)...',
+  contactThanksFooter: 'Merci pour votre message',
+  contactSendBtn: 'Envoyer ma question',
+  contactErrName: 'Veuillez saisir votre nom complet.',
+  contactErrMessage: 'Veuillez écrire votre question ou message.',
+  contactErrFailed: 'Impossible d’envoyer le message pour le moment. Veuillez réessayer.',
+  legalPolicyP1: 'Plateforme internationale de formation théorique et pratique au permis de conduire (Catégories A, B, C, D).',
+  legalPolicyP2: 'Toute inscription nécessite un compte authentifié, un dossier complet avec pièce d’identité officielle et la transmission du justificatif de paiement (PDF ou image).',
+  legalTermsP1Prefix: 'Les frais administratifs et pédagogiques selon la catégorie choisie sont :',
+  legalTermsP2: 'Les cours audio séquentiels, le QCM officiel ainsi que le lien de rendez-vous pour les épreuves physiques sont accessibles dès confirmation du dossier et du paiement.',
+  legalPrivacyP1: 'Conformément au RGPD, vos données d’état civil, pièces d’identité (CNI / Passeport) et justificatifs de paiement sont chiffrés et stockés de manière sécurisée.',
+  legalPrivacyP2: 'Vos coordonnées ne sont jamais revendues ni partagées à des tiers commerciaux.',
+  legalCookieEssential: 'Cookies strictement nécessaires',
+  legalCookieEssentialDesc: 'Session compte & sécurité.',
+  legalCookiePrefs: 'Cookies de langue & pays',
+  legalCookiePrefsDesc: 'Mémorise votre pays et votre langue.',
+  legalCookieSaved: 'Préférences enregistrées.',
+  legalCookieSaveBtn: 'Enregistrer mes préférences',
+  legalSecurityBadge: 'Contrôle d’identité & reçu PDF/Image vérifié.',
+  legalSecurityP1: 'Chaque paiement est accompagné d’une référence de transaction et d’un justificatif PDF ou image contrôlé avant validation.',
+  legalContactDesc: 'Assistance par lien direct uniquement',
+  invoiceHeaderSub: 'FACTURE OFFICIELLE & REÇU DE PAIEMENT',
+  invoiceTitle: 'FACTURE & REÇU OFFICIEL',
+  invoiceNumberLabel: 'Numéro de Facture',
+  invoiceCandidateLabel: 'Candidat',
+  invoiceCountryLabel: 'Pays du Dossier',
+  invoicePermitLabel: 'Catégorie de Permis',
+  invoicePayModeLabel: 'Mode de Règlement',
+  invoicePayModeValue: 'Télépaiement Officiel',
+  invoiceTxRefLabel: 'Référence Preuve',
+  invoiceConfCodeLabel: 'Code Confirmation',
+  invoiceAmountLabel: 'Montant Validé',
+  invoiceConfirmedByDir: 'Confirmé par la Direction',
+  invoiceRecordedStatus: 'Enregistré',
+  invoiceCertifyBanner: 'Cette facture officielle PDF certifie votre paiement et ouvre l’accès à vos cours et au lien des épreuves physiques.',
+  invoicePrintBtn: 'Imprimer',
+  invoiceDownloadBtn: 'Télécharger Facture (PDF)',
+  invoiceFooterNote: 'Document officiel généré automatiquement.',
+  animHierarchyTag: 'Animation interactive · Hiérarchie',
+  animHierarchyTitle: 'Agent de police vs Feu tricolore vert',
+  animOfficerStopBtn: 'Agent : Bras levé (Arrêt obligatoire)',
+  animNoOfficerBtn: 'Agent absent : Feu vert actif',
+  animOfficerStopDesc: 'Même avec le feu vert allumé, la voiture s’arrête devant la ligne blanche car l’agent prime sur toute signalisation.',
+  animNoOfficerDesc: 'Sans agent, le feu vert reprend le commandement et autorise le passage.',
+  animRoundaboutTag: 'Animation interactive · Giratoire',
+  animRoundaboutTitle: 'Trajectoire et priorité dans l’anneau',
+  animRightStraightBtn: 'Droite / Tout droit',
+  animLeftUTurnBtn: 'Gauche / Demi-tour',
+  animPriorityRing: 'Prioritaire (anneau)',
+  animOuterLane: 'Voie extérieure',
+  animInnerLane: 'Voie intérieure',
+  animRoundaboutRightDesc: 'Pour sortir à droite ou tout droit : restez sur la voie extérieure et activez votre clignotant droit avant de quitter l’anneau.',
+  animRoundaboutLeftDesc: 'Pour aller à gauche ou faire demi-tour : engagez-vous sur la voie intérieure (clignotant gauche), puis rabattez-vous à droite avec clignotant droit avant votre sortie.',
+  animBrakingTag: 'Simulateur physique · Distances d’arrêt',
+  animSpeedPrefix: 'Vitesse',
+  animWetRoadBtn: 'Chaussée mouillée (×2)',
+  animDryRoadBtn: 'Sol sec',
+  animRunBtn: 'Simuler',
+  animReactionLabel: 'Réaction (1s) :',
+  animBrakingLabel: 'Freinage :',
+  animTotalStopLabel: 'Distance totale d’arrêt :',
+  animSafetyTag: 'Animation interactive · Éco-conduite & Sécurité',
+  animSafetyTitle: 'Régime moteur optimal & Zone de sécurité',
+  animEcoBtn: 'Éco-conduite : 2 000 tr/min (-18% CO₂)',
+  animHighRpmBtn: 'Sur-régime : 3 900 tr/min (+25% conso)',
+  animEcoDesc: 'Rapport passé tôt : frein moteur actif, zéro injection en décélération.',
+  animHighRpmDesc: 'Rapport trop bas : surconsommation, bruit et usure accélérée.',
+  animBreakdownTitle: 'Panne sur autoroute',
+  animBreakdownSteps: 'Gilet haute visibilité mis à bord → Sortie côté droit → Tous les passagers derrière la glissière de sécurité.',
+  animMethodTag: 'Méthode officielle animée · 20 secondes par question',
+  animStep1Title: '1. Rétroviseurs',
+  animStep1Desc: 'Vérifiez qui vous suit ou vous dépasse avant toute manœuvre.',
+  animStep2Title: '2. Panneaux & Sol',
+  animStep2Desc: 'Repérez feux, panneaux, vitesse et lignes continues.',
+  animStep3Title: '3. Usagers vulnérables',
+  animStep3Desc: 'Piétons, cyclistes et motos cachés dans les angles.',
+  animListenDiagram: 'Écouter ce schéma',
+  animAudioGuideLabel: 'Explication audio · Schéma',
+  payOnlineLabel: 'Télépaiement Officiel',
 };
 
-const EN_BASE: TranslationKeys = {
+export const EN_BASE: TranslationKeys = {
   navHome: 'Overview',
   navEnroll: 'Registration',
   navCandidate: 'Candidate Portal',
@@ -449,7 +422,7 @@ const EN_BASE: TranslationKeys = {
   navLogin: 'Sign In',
   navSignOut: 'Sign Out',
   askQuestionBtn: 'Ask a Question',
-  hqLabel: 'DrivePro Academy · License E-24-075-0891',
+  hqLabel: 'Accreditation E-24-075-0891',
   heroTitleLead: 'Your international driver’s license',
   heroTitleAccent: 'in under 48 hours.',
   heroTitle: 'Your international driver’s license in under 48 hours.',
@@ -467,12 +440,11 @@ const EN_BASE: TranslationKeys = {
   searchCountryPlaceholder: 'Search country...',
   searchLangPlaceholder: 'Search language...',
   fixedFeeLabel: 'Permit fee',
-  baseReferenceLabel: 'Permit A: €300 · B: €450 · C: €650 · D: €800',
-  tariffATitle: 'Permit A · 300 €',
+  tariffATitle: 'Permit A · Motorcycle',
   tariffADesc: 'Motorcycle · Complete dossier, audio courses & official PDF invoice.',
-  tariffBTitle: 'Permit B · 450 €',
+  tariffBTitle: 'Permit B · Passenger Car',
   tariffBDesc: 'Passenger car · Fast re-enrollment & dedicated tracking.',
-  tariffCTitle: 'Permit C · 650 €',
+  tariffCTitle: 'Permit C · Heavy Truck',
   tariffCDesc: 'Heavy truck · Complete training & physical tests.',
   physicalProofLabel: 'Physical Proof',
   physicalProofDesc: 'Study courses, take the quiz and open your direct booking link.',
@@ -491,10 +463,9 @@ const EN_BASE: TranslationKeys = {
   step3Title: '03. Payment',
   step4Title: '04. Courses & Quiz',
   lockedNoticeTitle: 'Profile Locked',
-  lockedNoticeBody:
-    'Please complete your dossier and finish your application.',
+  lockedNoticeBody: 'Please complete your dossier and finish your application.',
   step1Heading: 'Step 1 — Choose your Permit Category',
-  step1Subheading: 'Select your permit: A (300 €), B (450 €), C (650 €), or D (800 €).',
+  step1Subheading: 'Select your license category: A, B, C, or D.',
   continueToStep2: 'Continue to Required Dossier',
   catATitle: 'Category A — Motorcycle',
   catADesc: 'Fast-track theory, physical tests & official permit.',
@@ -518,6 +489,9 @@ const EN_BASE: TranslationKeys = {
   idNumberLabel: 'ID Number *',
   idUploadLabel: 'ID Photo / Scan *',
   idChooseFile: 'Attach ID (JPG/PNG/PDF)',
+  idTypeCni: 'National Identity Card',
+  idTypePassport: 'Official Passport',
+  idTypeResidence: 'Residence Permit Card',
   wifiConfirmLabel: 'I confirm I have reliable Internet connectivity to follow online audio courses and the quiz.',
   termsConfirmLabel: 'I certify that the dossier information and ID card submitted are authentic.',
   backBtn: 'Back',
@@ -539,7 +513,7 @@ const EN_BASE: TranslationKeys = {
   proofSubmittedDesc: 'Your receipt and transaction reference are saved. Full access unlocks automatically once confirmed.',
   statusLabel: 'Status',
   awaitingConfirmationLabel: 'Awaiting confirmation',
-  notifyDirectBtn: 'Direct Link',
+  notifyDirectBtn: 'WhatsApp',
   authRequiredTitle: 'Create your account (Name, Email & Phone) to save your dossier',
   authRequiredDesc: 'Create your personal account to secure your dossier and course progress.',
   candidateLockedTitle: 'Profile Locked',
@@ -547,7 +521,7 @@ const EN_BASE: TranslationKeys = {
   candidateLockedBtn: 'Complete My Dossier',
   candidateTabQueue: 'Queue Status',
   candidateTabCode: 'Audio Courses & Quiz',
-  candidateTabInstructor: 'Physical Proof · Direct Link',
+  candidateTabInstructor: 'Physical Proof · WhatsApp',
   queuePositionLabel: 'Current Queue Position',
   dossierStatusLabel: 'Dossier Status',
   codeProgressLabel: 'Sequential Courses',
@@ -582,9 +556,9 @@ const EN_BASE: TranslationKeys = {
   correctAnswerPrefix: 'Correct answer:',
   correctWord: 'Correct',
   incorrectWord: 'Incorrect',
-  instructorUnlockedTitle: 'Physical Proof — Open the Direct Link to Schedule Your Tests',
-  instructorCallBtn: 'Open Direct Link',
-  instructorWhatsappBtn: 'Direct Link · Physical Proof',
+  instructorUnlockedTitle: 'Physical Proof — Open WhatsApp to Schedule Your Tests',
+  instructorCallBtn: 'WhatsApp',
+  instructorWhatsappBtn: 'WhatsApp',
   directLinkOnlyLabel: 'Direct appointment link only',
   physStep1Title: 'Open Direct Link',
   physStep1Desc: 'Reach the exam coordination desk directly with no public phone number.',
@@ -611,7 +585,7 @@ const EN_BASE: TranslationKeys = {
   irfPartner: 'International Road Federation',
   rsiPartner: 'Global Road Safety Council',
   footerDirectDesc: '100% direct-link support, online audio courses & physical proof scheduling',
-  footerWhatsappBtn: 'Direct Link',
+  footerWhatsappBtn: 'WhatsApp',
   footerRights: 'All rights reserved.',
   policyUsage: 'Usage Policy',
   policyTerms: 'Terms of Service',
@@ -625,10 +599,168 @@ const EN_BASE: TranslationKeys = {
   exportAppsExcel: 'Export Applications (Excel)',
   exportPaymentsCsv: 'Export Payments (CSV)',
   exportPaymentsExcel: 'Export Payments (Excel)',
+  slide01Title: 'Road Signs & Mandatory STOP',
+  slide01Detail: 'Full stop at the line · Multilingual voice guidance',
+  slide02Title: 'Roundabouts & Yield Rules',
+  slide02Detail: 'Lane positioning · Right turn signal before exit',
+  slide03Title: 'Highway & Safe Braking Distance',
+  slide03Detail: 'Two-second interval rule · Overtaking lane discipline',
+  slide04Title: 'Urban Driving & Pedestrians',
+  slide04Detail: 'Blind spots · 30 km/h urban zones & crosswalks',
+  slide05Title: 'Official Exam & Physical Proof',
+  slide05Detail: 'Full corrections + direct physical test booking link',
+  dossiersBarTitle: 'Your Active Permit Dossiers (Re-enrollment supported)',
+  dossierPendingBadge: 'Dossier saved (Pending payment)',
+  dossierEnrolledBadge: 'Already enrolled',
+  unlockedBannerTitle: 'Permit Validated — Audio Courses Unlocked',
+  unlockedBannerDesc: 'Your payment and PDF invoice are confirmed. Study all 5 modules, pass the quiz, or open your physical test booking link.',
+  step4DownloadDesc: 'Download your official PDF invoice below, then study the 5 audio-guided courses and complete your quiz & physical test link.',
+  errPdfTooLarge: 'PDF exceeds 420 KB. Please compress it or upload an image screenshot (JPG/PNG).',
+  errInvalidFileFormat: 'Unsupported file format. Please upload a PDF, JPG, or PNG file.',
+  errFullNamePair: 'Please enter both your Last Name and First Name.',
+  errInvalidEmail: 'Please provide a valid email address.',
+  errInvalidPhone: 'Please provide a valid WhatsApp phone number.',
+  errInvalidAddress: 'Please provide your full residential street address.',
+  errInvalidCity: 'Please enter your city of residence.',
+  errWifiConfirm: 'Please confirm Internet connectivity for online audio courses.',
+  errIdMandatory: 'Mandatory ID check: enter your ID number AND upload a photo/scan of your National ID or Passport.',
+  errAcceptPolicy: 'You must confirm the accuracy of your dossier information.',
+  errCreateAccountFirst: 'Please create your account (or sign in) first above to save your dossier.',
+  errDossierMissing: 'Dossier missing. Please complete Step 2 first.',
+  errOpenPayLinkFirst: 'Please open the official payment link and confirm your transfer first.',
+  errSenderRequired: 'Please enter your full sender name and phone number.',
+  errTxIdInvalid: 'Invalid Transaction ID. Enter the real transfer reference from your payment receipt (minimum 6 characters).',
+  authAccountLabel: 'Candidate Account',
+  authCreateTitle: 'Create an Account',
+  authVerifyTitle: '6-Digit Code Verification',
+  authLoginTitle: 'Sign In',
+  authResetTitle: 'Reset Password',
+  authHasAccountTab: 'Sign In',
+  authPasswordLabel: 'Password *',
+  authPasswordMinLabel: 'Password (min. 6 chars) *',
+  authForgotPasswordBtn: 'Forgot password?',
+  authCreatingBtn: 'Creating account...',
+  authCreateSubmitBtn: 'Create My Account',
+  authSigningInBtn: 'Signing in...',
+  authSignInSubmitBtn: 'Sign In',
+  authCodeToEnterLabel: 'Confirmation code to enter:',
+  authEnter6DigitLabel: 'Enter your 6-digit confirmation code *',
+  authNewCodeBtn: 'New Code',
+  authVerifyAccountBtn: 'Verify My Account',
+  authYourEmailLabel: 'Your Account Email *',
+  authResetNote: 'A 6-digit confirmation code and reset notification are issued for your account.',
+  authBackToLogin: 'Back to Sign In',
+  authSend6DigitBtn: 'Send 6-Digit Code',
+  authConfCodeTitle: 'Confirmation Code',
+  authNewPassMinLabel: 'New Password (min. 6 chars) *',
+  authConfirmCodeBtn: 'Confirm Code',
+  authErrNameShort: 'Please enter your full name (at least 2 characters).',
+  authErrPassMin: 'Password must be at least 6 characters.',
+  authErrLoginMissing: 'Please enter both your email and password.',
+  authErrEmailReset: 'Enter your email address to receive your 6-digit confirmation code.',
+  authErrCodeWrong: 'Incorrect 6-digit confirmation code.',
+  authMsgCodeIssued: 'Your 6-digit confirmation code has been generated. Enter it below to activate your account.',
+  authMsgCodeRefreshed: 'A new 6-digit confirmation code has been generated.',
+  authMsgResetIssued: '6-digit verification code issued and reset request sent.',
+  authMsgPassUpdated: 'Password updated successfully! You can now sign in.',
+  authMsgCheckInbox: '6-digit code confirmed! Check your inbox (and Spam) to finalize your new password, then sign in.',
+  authErrAlreadyInUse: 'An account already exists with this email. Click "Sign In" to access your portal.',
+  authErrInvalidCred: 'Incorrect email or password.',
+  authErrTooManyReq: 'Too many attempts. Please wait a moment and try again.',
+  authErrOpNotAllowed: 'Email/Password sign-in must be enabled in Firebase Authentication.',
+  authErrNetwork: 'Network connection error. Check your internet connection and retry.',
+  contactModalTitle: 'Ask a Question',
+  contactDefaultSubject: 'Question about my driver’s license',
+  contactSentTitle: 'Message Sent!',
+  contactSentDesc: 'Your question has been transmitted to our team. We will reply shortly.',
+  contactCloseBtn: 'Close',
+  contactFullNameLabel: 'Full Name *',
+  contactEmailFieldLabel: 'Email Address *',
+  contactPhoneFieldLabel: 'Phone / WhatsApp',
+  contactSubjectFieldLabel: 'Subject',
+  contactMessageLabel: 'Your Question / Message *',
+  contactMessagePlaceholder: 'Write your question here...',
+  contactThanksFooter: 'Thank you for reaching out',
+  contactSendBtn: 'Send Question',
+  contactErrName: 'Please enter your full name.',
+  contactErrMessage: 'Please write your question or message.',
+  contactErrFailed: 'Unable to submit right now. Please try again.',
+  legalPolicyP1: 'International online driver education and physical licensing coordination platform (Categories A, B, C, D).',
+  legalPolicyP2: 'Every enrollment requires an authenticated account, a complete dossier with official ID, and submission of your payment receipt (PDF or image).',
+  legalTermsP1Prefix: 'Administrative and training fees by license category are:',
+  legalTermsP2: 'Audio courses, the official practice exam, and the physical test booking link become available once your dossier and payment are confirmed.',
+  legalPrivacyP1: 'Under GDPR, your personal details, identity documents, and payment receipts are encrypted and stored securely.',
+  legalPrivacyP2: 'Your details are never sold or shared with third parties.',
+  legalCookieEssential: 'Strictly Necessary Cookies',
+  legalCookieEssentialDesc: 'Account session & security.',
+  legalCookiePrefs: 'Language & Country Preferences',
+  legalCookiePrefsDesc: 'Remembers your chosen country and language.',
+  legalCookieSaved: 'Preferences saved.',
+  legalCookieSaveBtn: 'Save Preferences',
+  legalSecurityBadge: 'ID & PDF/Image receipt verification.',
+  legalSecurityP1: 'Every payment requires a valid transaction ID and a PDF or image receipt verified before activation.',
+  legalContactDesc: 'Direct link support only',
+  invoiceHeaderSub: 'OFFICIAL INVOICE & PAYMENT RECEIPT',
+  invoiceTitle: 'OFFICIAL INVOICE & RECEIPT',
+  invoiceNumberLabel: 'Invoice Number',
+  invoiceCandidateLabel: 'Candidate',
+  invoiceCountryLabel: 'Country',
+  invoicePermitLabel: 'Permit Category',
+  invoicePayModeLabel: 'Payment Mode',
+  invoicePayModeValue: 'Official E-Payment',
+  invoiceTxRefLabel: 'Transaction Reference',
+  invoiceConfCodeLabel: 'Confirmation Code',
+  invoiceAmountLabel: 'Confirmed Amount',
+  invoiceConfirmedByDir: 'Confirmed by Direction',
+  invoiceRecordedStatus: 'Recorded',
+  invoiceCertifyBanner: 'This official PDF invoice certifies your payment and unlocks online courses and physical test scheduling.',
+  invoicePrintBtn: 'Print',
+  invoiceDownloadBtn: 'Download PDF Invoice',
+  invoiceFooterNote: 'Official document generated automatically.',
+  animHierarchyTag: 'Interactive Animation · Hierarchy',
+  animHierarchyTitle: 'Police Officer vs Green Traffic Light',
+  animOfficerStopBtn: 'Officer: Raised Arm (Must Stop)',
+  animNoOfficerBtn: 'No Officer: Green Light Active',
+  animOfficerStopDesc: 'Even with a green signal, the vehicle stops at the line because the police officer overrides traffic lights.',
+  animNoOfficerDesc: 'Without an officer directing traffic, the green signal governs passage.',
+  animRoundaboutTag: 'Interactive Animation · Roundabout',
+  animRoundaboutTitle: 'Lane Choice & Ring Priority',
+  animRightStraightBtn: 'Right / Straight',
+  animLeftUTurnBtn: 'Left / U-Turn',
+  animPriorityRing: 'Priority (in ring)',
+  animOuterLane: 'Outer lane',
+  animInnerLane: 'Inner lane',
+  animRoundaboutRightDesc: 'For right or straight exits: stay in the outer lane and signal right before exiting.',
+  animRoundaboutLeftDesc: 'For left or U-turns: enter the inner lane with left indicator, then shift right with right indicator before your exit.',
+  animBrakingTag: 'Physics Simulator · Stopping Distance',
+  animSpeedPrefix: 'Speed',
+  animWetRoadBtn: 'Wet Road (2×)',
+  animDryRoadBtn: 'Dry Road',
+  animRunBtn: 'Run',
+  animReactionLabel: 'Reaction (1s):',
+  animBrakingLabel: 'Braking:',
+  animTotalStopLabel: 'Total stopping distance:',
+  animSafetyTag: 'Interactive Visual · Eco & Safety',
+  animSafetyTitle: 'Optimal Engine RPM & Motorway Safety',
+  animEcoBtn: 'Eco-Driving: 2,000 RPM (-18% CO₂)',
+  animHighRpmBtn: 'High RPM: 3,900 RPM (+25% fuel)',
+  animEcoDesc: 'Early upshift: smooth engine braking, zero fuel injection on deceleration.',
+  animHighRpmDesc: 'Delayed shifting: high fuel burn and excess wear.',
+  animBreakdownTitle: 'Motorway Breakdown',
+  animBreakdownSteps: 'High-vis vest inside cabin → Exit right side → Wait behind the safety guardrail.',
+  animMethodTag: 'Animated Exam Method · 20 Seconds Per Question',
+  animStep1Title: '1. Mirrors',
+  animStep1Desc: 'Check who is following or overtaking before acting.',
+  animStep2Title: '2. Signs & Lines',
+  animStep2Desc: 'Identify signals, speed limits, and solid lines.',
+  animStep3Title: '3. Vulnerable Users',
+  animStep3Desc: 'Spot pedestrians, cyclists, and motorcycles.',
+  animListenDiagram: 'Listen to Diagram',
+  animAudioGuideLabel: 'Audio Guide · Diagram',
+  payOnlineLabel: 'Official E-Payment',
 };
 
-// Complete native Romanian translation dictionary
-const RO_BASE: TranslationKeys = {
+export const RO_BASE: TranslationKeys = {
   navHome: 'Acasă',
   navEnroll: 'Înscriere',
   navCandidate: 'Portal Candidat',
@@ -638,7 +770,7 @@ const RO_BASE: TranslationKeys = {
   navLogin: 'Autentificare',
   navSignOut: 'Deconectare',
   askQuestionBtn: 'Pune o întrebare',
-  hqLabel: 'DrivePro Academy · Autorizație E-24-075-0891',
+  hqLabel: 'Autorizație E-24-075-0891',
   heroTitleLead: 'Permisul tău internațional',
   heroTitleAccent: 'în mai puțin de 48 de ore.',
   heroTitle: 'Permisul tău internațional în mai puțin de 48 de ore.',
@@ -656,12 +788,11 @@ const RO_BASE: TranslationKeys = {
   searchCountryPlaceholder: 'Caută o țară...',
   searchLangPlaceholder: 'Caută o limbă...',
   fixedFeeLabel: 'Taxă permis',
-  baseReferenceLabel: 'Permis A: 300 € · B: 450 € · C: 650 € · D: 800 €',
-  tariffATitle: 'Permis A · 300 €',
+  tariffATitle: 'Permis A · Motocicletă',
   tariffADesc: 'Motocicletă · Dosar complet, cursuri audio și factură PDF oficială.',
-  tariffBTitle: 'Permis B · 450 €',
+  tariffBTitle: 'Permis B · Autoturism',
   tariffBDesc: 'Autoturism · Reînscriere rapidă și urmărire dedicată.',
-  tariffCTitle: 'Permis C · 650 €',
+  tariffCTitle: 'Permis C · Camion',
   tariffCDesc: 'Camion · Pregătire completă și probe fizice.',
   physicalProofLabel: 'Probă fizică',
   physicalProofDesc: 'Urmează cursurile, susține chestionarul și accesează linkul direct.',
@@ -680,10 +811,9 @@ const RO_BASE: TranslationKeys = {
   step3Title: '03. Plată',
   step4Title: '04. Cursuri & Test',
   lockedNoticeTitle: 'Profil blocat',
-  lockedNoticeBody:
-    'Vă rugăm să completați dosarul și să finalizați candidatura.',
+  lockedNoticeBody: 'Vă rugăm să completați dosarul și să finalizați candidatura.',
   step1Heading: 'Pasul 1 — Alege categoria de permis',
-  step1Subheading: 'Selectează permisul dorit: A (300 €), B (450 €), C (650 €) sau D (800 €).',
+  step1Subheading: 'Selectează categoria dorită: A, B, C sau D.',
   continueToStep2: 'Continuă către dosarul de înscriere',
   catATitle: 'Permis A — Motocicletă',
   catADesc: 'Pregătire accelerată, probe fizice și permis oficial.',
@@ -707,6 +837,9 @@ const RO_BASE: TranslationKeys = {
   idNumberLabel: 'Număr act / Serie *',
   idUploadLabel: 'Fotografie sau scan act *',
   idChooseFile: 'Atașează carte identitate (JPG/PNG/PDF)',
+  idTypeCni: 'Carte de Identitate (CI)',
+  idTypePassport: 'Pașaport oficial',
+  idTypeResidence: 'Permis de ședere / Rezident',
   wifiConfirmLabel: 'Confirm că dispun de conexiune Internet / Wi-Fi activă pentru cursurile audio și chestionar.',
   termsConfirmLabel: 'Confirm exactitatea datelor din dosar și autenticitatea actului de identitate.',
   backBtn: 'Înapoi',
@@ -728,7 +861,7 @@ const RO_BASE: TranslationKeys = {
   proofSubmittedDesc: 'Dovada ta de plată și referința au fost înregistrate. Accesul complet se activează automat după confirmare.',
   statusLabel: 'Status',
   awaitingConfirmationLabel: 'În așteptarea confirmării',
-  notifyDirectBtn: 'Link direct',
+  notifyDirectBtn: 'WhatsApp',
   authRequiredTitle: 'Creează-ți contul (Nume, E-mail și Telefon) pentru a salva dosarul',
   authRequiredDesc: 'Creează un cont personal pentru a salva dosarul și progresul tău la cursuri.',
   candidateLockedTitle: 'Profil blocat',
@@ -736,7 +869,7 @@ const RO_BASE: TranslationKeys = {
   candidateLockedBtn: 'Completează dosarul',
   candidateTabQueue: 'Ordine de așteptare',
   candidateTabCode: 'Cursuri audio & Chestionar',
-  candidateTabInstructor: 'Probă fizică · Link direct',
+  candidateTabInstructor: 'Probă fizică · WhatsApp',
   queuePositionLabel: 'Poziția curentă în coadă',
   dossierStatusLabel: 'Starea dosarului',
   codeProgressLabel: 'Cursuri secvențiale',
@@ -771,9 +904,9 @@ const RO_BASE: TranslationKeys = {
   correctAnswerPrefix: 'Răspuns corect:',
   correctWord: 'Corect',
   incorrectWord: 'Incorect',
-  instructorUnlockedTitle: 'Probă fizică — Deschide linkul direct pentru programarea probelor',
-  instructorCallBtn: 'Deschide linkul direct',
-  instructorWhatsappBtn: 'Link direct · Probă fizică',
+  instructorUnlockedTitle: 'Probă fizică — Deschide WhatsApp pentru programarea probelor',
+  instructorCallBtn: 'WhatsApp',
+  instructorWhatsappBtn: 'WhatsApp',
   directLinkOnlyLabel: 'Programare exclusiv prin link direct',
   physStep1Title: 'Deschide linkul direct',
   physStep1Desc: 'Contactează direct serviciul de examinare fără număr public.',
@@ -800,7 +933,7 @@ const RO_BASE: TranslationKeys = {
   irfPartner: 'Federația Internațională a Drumurilor',
   rsiPartner: 'Consiliul Internațional de Siguranță Rutieră',
   footerDirectDesc: 'Suport 100% prin link direct, cursuri audio online și programare probă fizică',
-  footerWhatsappBtn: 'Link Direct',
+  footerWhatsappBtn: 'WhatsApp',
   footerRights: 'Toate drepturile rezervate.',
   policyUsage: 'Politică de utilizare',
   policyTerms: 'Termeni și condiții',
@@ -814,315 +947,192 @@ const RO_BASE: TranslationKeys = {
   exportAppsExcel: 'Export Dosare (Excel)',
   exportPaymentsCsv: 'Export Plăți (CSV)',
   exportPaymentsExcel: 'Export Plăți (Excel)',
+  slide01Title: 'Indicatoare Rutiere & STOP',
+  slide01Detail: 'Oprire obligatorie la linie · Explicație audio multilingvă',
+  slide02Title: 'Sensuri Giratorii & Prioritate',
+  slide02Detail: 'Poziționare pe bandă · Semnalizare dreapta la ieșire',
+  slide03Title: 'Autostradă & Distanță de Siguranță',
+  slide03Detail: 'Regula celor 2 secunde (90 m) · Banda de depășire',
+  slide04Title: 'Conducere Urbană & Pietoni',
+  slide04Detail: 'Unghiuri moarte · Zone 30 km/h & treceri de pietoni',
+  slide05Title: 'Examen Oficial & Probă Fizică',
+  slide05Detail: 'Corectare completă + Link direct probe fizice',
+  dossiersBarTitle: 'Dosarele dvs. de permis (Reînscriere multi-categorie disponibilă)',
+  dossierPendingBadge: 'Dosar salvat (Plată în așteptare)',
+  dossierEnrolledBadge: 'Deja înscris pentru această categorie',
+  unlockedBannerTitle: 'Permis validat — Cursuri audio deblocate',
+  unlockedBannerDesc: 'Dosarul și factura PDF oficială sunt confirmate. Parcurgeți cele 5 module, susțineți testul și accesați linkul pentru probele fizice.',
+  step4DownloadDesc: 'Descărcați factura oficială PDF mai jos, apoi accesați cele 5 cursuri audio ilustrate, testul grilă și probele fizice.',
+  errPdfTooLarge: 'Fișierul PDF depășește 420 KB. Comprimați-l sau atașați o captură de ecran (JPG/PNG).',
+  errInvalidFileFormat: 'Format neacceptat. Vă rugăm să atașați un fișier PDF, JPG sau PNG.',
+  errFullNamePair: 'Vă rugăm să completați numele de familie și prenumele.',
+  errInvalidEmail: 'Vă rugăm să introduceți o adresă de e-mail validă.',
+  errInvalidPhone: 'Vă rugăm să introduceți un număr de telefon WhatsApp valid.',
+  errInvalidAddress: 'Vă rugăm să introduceți adresa completă de domiciliu.',
+  errInvalidCity: 'Vă rugăm să indicați orașul de reședință.',
+  errWifiConfirm: 'Vă rugăm să confirmați accesul la internet pentru cursurile audio online.',
+  errIdMandatory: 'Act de identitate obligatoriu: introduceți numărul și atașați fotografia/scanarea.',
+  errAcceptPolicy: 'Trebuie să confirmați exactitatea datelor din dosar.',
+  errCreateAccountFirst: 'Creați-vă mai întâi contul (sau autentificați-vă) mai sus pentru a salva dosarul.',
+  errDossierMissing: 'Dosar negăsit. Reveniți la pasul 2.',
+  errOpenPayLinkFirst: 'Deschideți mai întâi linkul oficial de plată și confirmați transferul.',
+  errSenderRequired: 'Introduceți numele complet și numărul expeditorului.',
+  errTxIdInvalid: 'ID de tranzacție invalid. Introduceți referința reală primită după plată (minim 6 caractere).',
+  authAccountLabel: 'Cont Personal',
+  authCreateTitle: 'Creează un cont',
+  authVerifyTitle: 'Confirmare prin cod (6 cifre)',
+  authLoginTitle: 'Autentificare',
+  authResetTitle: 'Resetare parolă',
+  authHasAccountTab: 'Am deja cont',
+  authPasswordLabel: 'Parolă *',
+  authPasswordMinLabel: 'Parolă (min. 6 caractere) *',
+  authForgotPasswordBtn: 'Ai uitat parola?',
+  authCreatingBtn: 'Se creează contul...',
+  authCreateSubmitBtn: 'Creează contul meu',
+  authSigningInBtn: 'Autentificare...',
+  authSignInSubmitBtn: 'Intră în cont',
+  authCodeToEnterLabel: 'Cod de confirmare de introdus:',
+  authEnter6DigitLabel: 'Introdu codul de confirmare din 6 cifre *',
+  authNewCodeBtn: 'Cod nou',
+  authVerifyAccountBtn: 'Validează contul',
+  authYourEmailLabel: 'Adresa ta de e-mail *',
+  authResetNote: 'Un cod de confirmare din 6 cifre este generat pentru contul tău.',
+  authBackToLogin: 'Înapoi la autentificare',
+  authSend6DigitBtn: 'Primește codul (6 cifre)',
+  authConfCodeTitle: 'Cod de confirmare',
+  authNewPassMinLabel: 'Parolă nouă (min. 6 caractere) *',
+  authConfirmCodeBtn: 'Confirmă codul',
+  authErrNameShort: 'Introdu numele și prenumele complet.',
+  authErrPassMin: 'Parola trebuie să conțină cel puțin 6 caractere.',
+  authErrLoginMissing: 'Introdu adresa de e-mail și parola.',
+  authErrEmailReset: 'Introdu adresa de e-mail pentru a primi codul din 6 cifre.',
+  authErrCodeWrong: 'Cod de confirmare din 6 cifre incorect.',
+  authMsgCodeIssued: 'Codul tău de confirmare din 6 cifre a fost generat. Introdu-l mai jos pentru a activa contul.',
+  authMsgCodeRefreshed: 'Un nou cod de confirmare din 6 cifre a fost generat.',
+  authMsgResetIssued: 'Cod de verificare din 6 cifre generat și cerere de resetare trimisă.',
+  authMsgPassUpdated: 'Parola a fost actualizată! Te poți autentifica acum.',
+  authMsgCheckInbox: 'Cod de 6 cifre confirmat! Verifică inbox-ul (și Spam) pentru a finaliza noua parolă, apoi autentifică-te.',
+  authErrAlreadyInUse: 'Există deja un cont cu această adresă de e-mail.',
+  authErrInvalidCred: 'Adresă de e-mail sau parolă incorectă.',
+  authErrTooManyReq: 'Prea multe încercări consecutive. Așteaptă câteva momente.',
+  authErrOpNotAllowed: 'Autentificarea prin e-mail trebuie activată în Firebase Authentication.',
+  authErrNetwork: 'Eroare de rețea. Verifică conexiunea la internet.',
+  contactModalTitle: 'Pune o întrebare',
+  contactDefaultSubject: 'Întrebare privind înscrierea / permisul',
+  contactSentTitle: 'Mesajul tău a fost trimis!',
+  contactSentDesc: 'Întrebarea ta a fost transmisă echipei noastre care îți va răspunde rapid.',
+  contactCloseBtn: 'Închide',
+  contactFullNameLabel: 'Nume complet *',
+  contactEmailFieldLabel: 'Adresă e-mail *',
+  contactPhoneFieldLabel: 'Telefon / WhatsApp',
+  contactSubjectFieldLabel: 'Subiect',
+  contactMessageLabel: 'Întrebarea sau mesajul tău *',
+  contactMessagePlaceholder: 'Scrie întrebarea ta aici (permis, plată, cursuri, probe fizice)...',
+  contactThanksFooter: 'Mulțumim pentru mesaj',
+  contactSendBtn: 'Trimite întrebarea',
+  contactErrName: 'Introdu numele tău complet.',
+  contactErrMessage: 'Scrie întrebarea sau mesajul tău.',
+  contactErrFailed: 'Nu putem trimite mesajul acum. Încearcă din nou.',
+  legalPolicyP1: 'Platformă internațională de pregătire teoretică și coordonare practică pentru permisul de conducere (Categoriile A, B, C, D).',
+  legalPolicyP2: 'Orice înscriere necesită un cont autentificat, un dosar complet cu act de identitate oficial și încărcarea dovezii de plată (PDF sau imagine).',
+  legalTermsP1Prefix: 'Taxele administrative și de pregătire pentru categoriile de permis sunt:',
+  legalTermsP2: 'Cursurile audio, chestionarul oficial și linkul direct pentru proba fizică sunt disponibile imediat după confirmarea dosarului și a plății.',
+  legalPrivacyP1: 'Conform GDPR european, datele tale personale, actul de identitate și dovada plății sunt criptate și stocate securizat.',
+  legalPrivacyP2: 'Datele tale nu sunt niciodată vândute sau partajate către terți.',
+  legalCookieEssential: 'Cookie-uri esențiale',
+  legalCookieEssentialDesc: 'Sesiune cont și securitate.',
+  legalCookiePrefs: 'Preferințe limbă și țară',
+  legalCookiePrefsDesc: 'Reține țara și limba selectată.',
+  legalCookieSaved: 'Preferințe salvate.',
+  legalCookieSaveBtn: 'Salvează preferințele',
+  legalSecurityBadge: 'Verificare identitate și chitanță PDF/Imagine.',
+  legalSecurityP1: 'Fiecare plată este însoțită de referința tranzacției și dovada în format PDF sau imagine.',
+  legalContactDesc: 'Asistență exclusiv prin link direct',
+  invoiceHeaderSub: 'FACTURA OFICIALA & CHITANTA DE PLATA',
+  invoiceTitle: 'FACTURĂ & CHITANȚĂ OFICIALĂ',
+  invoiceNumberLabel: 'Număr Factură',
+  invoiceCandidateLabel: 'Candidat',
+  invoiceCountryLabel: 'Țara Dosarului',
+  invoicePermitLabel: 'Categorie Permis',
+  invoicePayModeLabel: 'Metodă de Plată',
+  invoicePayModeValue: 'Plată Oficială',
+  invoiceTxRefLabel: 'Referință Tranzacție',
+  invoiceConfCodeLabel: 'Cod Confirmare',
+  invoiceAmountLabel: 'Sumă Confirmată',
+  invoiceConfirmedByDir: 'Confirmat de Direcție',
+  invoiceRecordedStatus: 'Înregistrat',
+  invoiceCertifyBanner: 'Această factură oficială PDF certifică plata și deschide accesul la cursuri și la linkul pentru proba fizică.',
+  invoicePrintBtn: 'Tipărește',
+  invoiceDownloadBtn: 'Descarcă Factura (PDF)',
+  invoiceFooterNote: 'Document oficial generat automat.',
+  animHierarchyTag: 'Animație interactivă · Ierarhie',
+  animHierarchyTitle: 'Agent de poliție vs Semafor verde',
+  animOfficerStopBtn: 'Polițist: Braț ridicat (Oprire obligatorie)',
+  animNoOfficerBtn: 'Fără polițist: Semafor verde activ',
+  animOfficerStopDesc: 'Chiar dacă semaforul este verde, mașina oprește înaintea liniei albe deoarece semnalele polițistului anulează orice semafor.',
+  animNoOfficerDesc: 'Fără agent de circulație, semaforul verde preia comanda și permite trecerea.',
+  animRoundaboutTag: 'Animație interactivă · Sens giratoriu',
+  animRoundaboutTitle: 'Traiectoria și prioritatea în sensul giratoriu',
+  animRightStraightBtn: 'Dreapta / Înainte',
+  animLeftUTurnBtn: 'Stânga / Întoarcere',
+  animPriorityRing: 'Prioritate (în inel)',
+  animOuterLane: 'Banda exterioară',
+  animInnerLane: 'Banda interioară',
+  animRoundaboutRightDesc: 'Pentru ieșire la dreapta sau înainte: rămâi pe banda exterioară și semnalizează dreapta înainte de a părăsi giratoriul.',
+  animRoundaboutLeftDesc: 'Pentru stânga sau întoarcere: încadrează-te pe banda interioară (semnal stânga), apoi treci spre dreapta cu semnal dreapta la ieșire.',
+  animBrakingTag: 'Simulator fizic · Distanțe de oprire',
+  animSpeedPrefix: 'Viteză',
+  animWetRoadBtn: 'Asfalt umed (×2)',
+  animDryRoadBtn: 'Asfalt uscat',
+  animRunBtn: 'Simulează',
+  animReactionLabel: 'Reacție (1s):',
+  animBrakingLabel: 'Frânare:',
+  animTotalStopLabel: 'Distanță totală oprire:',
+  animSafetyTag: 'Animație interactivă · Eco & Siguranță',
+  animSafetyTitle: 'Turație optimă și Zonă de siguranță',
+  animEcoBtn: 'Condus eco: 2.000 RPM (-18% CO₂)',
+  animHighRpmBtn: 'Turație ridicată: 3.900 RPM (+25%)',
+  animEcoDesc: 'Schimbare timpurie: frână de motor eficientă, consum minim.',
+  animHighRpmDesc: 'Treaptă prea mică: consum ridicat și uzură accelerată.',
+  animBreakdownTitle: 'Pană pe autostradă',
+  animBreakdownSteps: 'Vestă reflectorizantă în mașină → Ieșire pe partea dreaptă → Toți pasagerii după parapetul de protecție.',
+  animMethodTag: 'Metodă oficială animată · 20 de secunde pe întrebare',
+  animStep1Title: '1. Oglinzi',
+  animStep1Desc: 'Verifică cine te urmărește sau depășește înainte de manevră.',
+  animStep2Title: '2. Indicatoare & Marcaje',
+  animStep2Desc: 'Identifică semafoare, semne, limite și linii continue.',
+  animStep3Title: '3. Participanți vulnerabili',
+  animStep3Desc: 'Pietoni, bicicliști și motociclete în unghiul mort.',
+  animListenDiagram: 'Ascultă această diagramă',
+  animAudioGuideLabel: 'Ghid audio · Diagramă',
+  payOnlineLabel: 'Plată Oficială',
 };
 
-const EXTRA_TRANSLATIONS: Record<string, Partial<TranslationKeys>> = {
+const ALL_TRANSLATION_PACKS: Record<string, TranslationKeys> = {
+  fr: FR_BASE,
+  en: EN_BASE,
   ro: RO_BASE,
-  es: {
-    navHome: 'Inicio',
-    navEnroll: 'Inscripción',
-    navCandidate: 'Espacio Candidato',
-    navContact: 'Contacto / Pregunta',
-    navSignIn: 'Crear cuenta',
-    navLogin: 'Iniciar sesión',
-    navSignOut: 'Salir',
-    askQuestionBtn: 'Hacer una pregunta',
-    heroTitleLead: 'Tu permiso internacional',
-    heroTitleAccent: 'en menos de 48 horas.',
-    heroTitle: 'Tu permiso internacional en menos de 48 horas.',
-    heroSubtitle: 'Cursos de audio multilingües, examen oficial y coordinación para pruebas físicas.',
-    heroCtaPrimary: 'Iniciar inscripción',
-    heroCtaSecondary: 'Abrir mi espacio',
-    openBtn: 'Abrir',
-    permitLabel: 'Permiso',
-    countryBarTitle: 'País e Idioma',
-    countryBarHint: 'Elige tu idioma y país',
-    step1Title: '01. Elección del permiso',
-    step2Title: '02. Expediente',
-    step3Title: '03. Pago',
-    step4Title: '04. Cursos y Test',
-    paymentTitle: 'Pago',
-    paymentStepHeading: 'Paso 3 — Pago',
-    payNowLinkBtn: 'Pago',
-    payAndUnlockBtn: 'Pago',
-    path02Title: 'Pago',
-    path04Title: 'Prueba física',
-    physicalProofLabel: 'Prueba física',
-    saveDossierBtn: 'Validar mi expediente',
-    skipCoursesBtn: 'Saltar todos los cursos',
-    skipExamsBtn: 'Saltar los exámenes para ir directamente a contactar para las pruebas físicas',
-    instructorCallBtn: 'Abrir enlace directo',
-    instructorWhatsappBtn: 'Enlace directo · Prueba física',
-    officialPartnersTitle: 'Socios Oficiales e Instituciones Reconocidas',
-    governmentLabel: 'Gobierno Oficial',
-    nationalFlagLabel: 'Bandera Nacional',
-    nationalInstituteLabel: 'Instituto Nacional de Licencias',
-    footerWhatsappBtn: 'Enlace directo',
-  },
-  de: {
-    navHome: 'Startseite',
-    navEnroll: 'Anmeldung',
-    navCandidate: 'Kandidatenbereich',
-    navContact: 'Kontakt / Frage',
-    navSignIn: 'Konto erstellen',
-    navLogin: 'Anmelden',
-    navSignOut: 'Abmelden',
-    askQuestionBtn: 'Frage stellen',
-    heroTitleLead: 'Ihr internationaler Führerschein',
-    heroTitleAccent: 'in unter 48 Stunden.',
-    heroTitle: 'Ihr internationaler Führerschein in unter 48 Stunden.',
-    heroSubtitle: 'Mehrsprachige Audiokurse, offizielle Prüfungsvorbereitung und Termin für den Praxistest.',
-    heroCtaPrimary: 'Anmeldung starten',
-    heroCtaSecondary: 'Zum Bereich',
-    openBtn: 'Öffnen',
-    permitLabel: 'Führerschein',
-    countryBarTitle: 'Land & Sprache',
-    countryBarHint: 'Wählen Sie Ihr Land und Ihre Sprache',
-    step1Title: '01. Führerscheinwahl',
-    step2Title: '02. Unterlagen',
-    step3Title: '03. Zahlung',
-    step4Title: '04. Kurse & Prüfung',
-    paymentTitle: 'Zahlung',
-    paymentStepHeading: 'Schritt 3 — Zahlung',
-    payNowLinkBtn: 'Zahlung',
-    payAndUnlockBtn: 'Zahlung',
-    path02Title: 'Zahlung',
-    path04Title: 'Praktischer Nachweis',
-    physicalProofLabel: 'Praktischer Nachweis',
-    saveDossierBtn: 'Akte bestätigen',
-    skipCoursesBtn: 'Alle Kurse überspringen',
-    skipExamsBtn: 'Prüfungen überspringen und direkt für den Praxistest kontaktieren',
-    instructorCallBtn: 'Direktlink öffnen',
-    instructorWhatsappBtn: 'Direktlink · Praktischer Nachweis',
-    officialPartnersTitle: 'Offizielle Partner & Anerkannte Behörden',
-    governmentLabel: 'Offizielle Regierung',
-    nationalFlagLabel: 'Nationalflagge',
-    nationalInstituteLabel: 'Nationales Führerscheininstitut',
-    footerWhatsappBtn: 'Direktlink',
-  },
-  pt: {
-    navHome: 'Início',
-    navEnroll: 'Inscrição',
-    navCandidate: 'Área do Candidato',
-    navSignIn: 'Criar conta',
-    navSignOut: 'Sair',
-    heroTitleLead: 'A sua carta internacional',
-    heroTitleAccent: 'em menos de 48 horas.',
-    heroTitle: 'A sua carta internacional em menos de 48 horas.',
-    heroCtaPrimary: 'Iniciar inscrição',
-    heroCtaSecondary: 'Abrir portal',
-    step3Title: '03. Pagamento',
-    paymentTitle: 'Pagamento',
-    payNowLinkBtn: 'Pagamento',
-    payAndUnlockBtn: 'Pagamento',
-    path02Title: 'Pagamento',
-    path04Title: 'Prova física',
-    physicalProofLabel: 'Prova física',
-    skipCoursesBtn: 'Saltar todos os cursos',
-    skipExamsBtn: 'Saltar os exames para ir diretamente contactar para fazer as provas físicas',
-    saveDossierBtn: 'Validar o meu dossiê',
-  },
-  it: {
-    navHome: 'Home',
-    navEnroll: 'Iscrizione',
-    navCandidate: 'Area Candidato',
-    navSignIn: 'Crea account',
-    navSignOut: 'Esci',
-    heroTitleLead: 'La tua patente internazionale',
-    heroTitleAccent: 'in meno di 48 ore.',
-    heroTitle: 'La tua patente internazionale in meno di 48 ore.',
-    heroCtaPrimary: 'Inizia iscrizione',
-    heroCtaSecondary: 'Apri area',
-    step3Title: '03. Pagamento',
-    paymentTitle: 'Pagamento',
-    payNowLinkBtn: 'Pagamento',
-    payAndUnlockBtn: 'Pagamento',
-    path02Title: 'Pagamento',
-    path04Title: 'Prova fisica',
-    physicalProofLabel: 'Prova fisica',
-    skipCoursesBtn: 'Salta tutti i corsi',
-    skipExamsBtn: 'Salta gli esami per contattare direttamente per le prove fisiche',
-  },
-  pl: {
-    navHome: 'Start',
-    navEnroll: 'Rejestracja',
-    navCandidate: 'Panel Kandydata',
-    navSignIn: 'Utwórz konto',
-    navSignOut: 'Wyloguj',
-    heroTitleLead: 'Międzynarodowe prawo jazdy',
-    heroTitleAccent: 'w mniej niż 48 godzin.',
-    heroTitle: 'Międzynarodowe prawo jazdy w mniej niż 48 godzin.',
-    heroCtaPrimary: 'Rozpocznij rejestrację',
-    heroCtaSecondary: 'Otwórz panel',
-    step3Title: '03. Płatność',
-    paymentTitle: 'Płatność',
-    payNowLinkBtn: 'Płatność',
-    payAndUnlockBtn: 'Płatność',
-    path02Title: 'Płatność',
-    path04Title: 'Egzamin praktyczny',
-    physicalProofLabel: 'Egzamin praktyczny',
-    skipCoursesBtn: 'Pomiń wszystkie kursy',
-    skipExamsBtn: 'Pomiń egzaminy i przejdź bezpośrednio do kontaktu w sprawie testów praktycznych',
-  },
-  bg: {
-    navHome: 'Начало',
-    navEnroll: 'Регистрация',
-    navCandidate: 'Кандидатски портал',
-    navSignIn: 'Създаване на профил',
-    navSignOut: 'Изход',
-    heroTitleLead: 'Международна шофьорска книжка',
-    heroTitleAccent: 'за по-малко от 48 часа.',
-    heroTitle: 'Международна шофьорска книжка за по-малко от 48 часа.',
-    heroCtaPrimary: 'Започни регистрация',
-    heroCtaSecondary: 'Отвори портала',
-    step3Title: '03. Плащане',
-    paymentTitle: 'Плащане',
-    payNowLinkBtn: 'Плащане',
-    payAndUnlockBtn: 'Плащане',
-    path02Title: 'Плащане',
-    path04Title: 'Физически изпит',
-    physicalProofLabel: 'Физически изпит',
-    skipCoursesBtn: 'Прескочи всички курсове',
-    skipExamsBtn: 'Прескочи изпитите и се свържи директно за физическите тестове',
-  },
-  da: {
-    navHome: 'Forside',
-    navEnroll: 'Tilmelding',
-    navCandidate: 'Kandidatportal',
-    navSignIn: 'Opret konto',
-    navSignOut: 'Log ud',
-    heroTitleLead: 'Dit internationale kørekort',
-    heroTitleAccent: 'på under 48 timer.',
-    heroTitle: 'Dit internationale kørekort på under 48 timer.',
-    heroCtaPrimary: 'Start tilmelding',
-    heroCtaSecondary: 'Åbn portal',
-    step3Title: '03. Betaling',
-    paymentTitle: 'Betaling',
-    payNowLinkBtn: 'Betaling',
-    payAndUnlockBtn: 'Betaling',
-    path02Title: 'Betaling',
-    path04Title: 'Fysisk prøve',
-    physicalProofLabel: 'Fysisk prøve',
-    skipCoursesBtn: 'Spring alle kurser over',
-    skipExamsBtn: 'Spring prøverne over og gå direkte til kontakt for fysisk køreprøve',
-  },
-  nl: {
-    navHome: 'Start',
-    navEnroll: 'Inschrijving',
-    navCandidate: 'Kandidaatportaal',
-    heroTitleLead: 'Uw internationaal rijbewijs',
-    heroTitleAccent: 'in minder dan 48 uur.',
-    heroTitle: 'Uw internationaal rijbewijs in minder dan 48 uur.',
-    paymentTitle: 'Betaling',
-    physicalProofLabel: 'Praktijkbewijs',
-    skipCoursesBtn: 'Alle cursussen overslaan',
-    skipExamsBtn: 'Examens overslaan en direct contact opnemen voor praktijktesten',
-  },
-  tr: {
-    navHome: 'Ana Sayfa',
-    navEnroll: 'Kayıt',
-    navCandidate: 'Aday Portalı',
-    heroTitleLead: 'Uluslararası ehliyetiniz',
-    heroTitleAccent: '48 saatten kısa sürede.',
-    heroTitle: '48 saatten kısa sürede uluslararası ehliyetiniz.',
-    paymentTitle: 'Ödeme',
-    physicalProofLabel: 'Fiziki Sınav',
-    skipCoursesBtn: 'Tüm dersleri atla',
-    skipExamsBtn: 'Sınavları atla ve fiziki testler için doğrudan iletişime geç',
-  },
-  ru: {
-    navHome: 'Главная',
-    navEnroll: 'Регистрация',
-    navCandidate: 'Кабинет кандидата',
-    heroTitleLead: 'Международные права',
-    heroTitleAccent: 'менее чем за 48 часов.',
-    heroTitle: 'Международные права менее чем за 48 часов.',
-    paymentTitle: 'Оплата',
-    physicalProofLabel: 'Практический экзамен',
-    skipCoursesBtn: 'Пропустить все курсы',
-    skipExamsBtn: 'Пропустить экзамены и сразу перейти к контакту для практического теста',
-  },
-  ar: {
-    navHome: 'الرئيسية',
-    navEnroll: 'التسجيل',
-    navCandidate: 'بوابة المرشح',
-    navSignIn: 'إنشاء حساب',
-    heroTitleLead: 'رخصة القيادة الدولية الخاصة بك',
-    heroTitleAccent: 'في أقل من 48 ساعة.',
-    heroTitle: 'رخصة القيادة الدولية الخاصة بك في أقل من 48 ساعة.',
-    heroCtaPrimary: 'ابدأ التسجيل',
-    heroCtaSecondary: 'دخول البوابة',
-    paymentTitle: 'الدفع',
-    payNowLinkBtn: 'الدفع',
-    payAndUnlockBtn: 'الدفع',
-    physicalProofLabel: 'الاختبار العملي',
-    skipCoursesBtn: 'تخطي جميع الدروس',
-    skipExamsBtn: 'تخطي الاختبارات والانتقال مباشرة للتواصل لإجراء الاختبار العملي',
-  },
-  zh: {
-    navHome: '首页',
-    navEnroll: '报名注册',
-    navCandidate: '学员中心',
-    heroTitleLead: '48小时内快速获得',
-    heroTitleAccent: '您的国际驾照。',
-    heroTitle: '48小时内快速获得您的国际驾照。',
-    paymentTitle: '支付',
-    physicalProofLabel: '实地路考证明',
-    skipCoursesBtn: '跳过所有课程',
-    skipExamsBtn: '跳过考试并直接联系预约实地路考',
-  },
-  ja: {
-    navHome: 'ホーム',
-    navEnroll: '登録',
-    navCandidate: '受講者ポータル',
-    heroTitleLead: '48時間以内に',
-    heroTitleAccent: '国際運転免許を取得。',
-    heroTitle: '48時間以内に国際運転免許を取得。',
-    paymentTitle: 'お支払い',
-    physicalProofLabel: '実技試験証明',
-    skipCoursesBtn: 'すべてのコースをスキップ',
-    skipExamsBtn: '試験をスキップして実技試験の予約へ直接進む',
-  },
-  ko: {
-    navHome: '홈',
-    navEnroll: '등록',
-    navCandidate: '수강생 포털',
-    heroTitleLead: '48시간 이내에',
-    heroTitleAccent: '국제 운전면허 취득.',
-    heroTitle: '48시간 이내에 국제 운전면허를 취득하세요.',
-    paymentTitle: '결제',
-    physicalProofLabel: '실기 시험 증명',
-    skipCoursesBtn: '모든 강좌 건너뛰기',
-    skipExamsBtn: '시험을 건너뛰고 실기 시험 예약을 위해 바로 연락하기',
-  },
-  hi: {
-    navHome: 'मुख्य पृष्ठ',
-    navEnroll: 'पंजीकरण',
-    navCandidate: 'उम्मीदवार पोर्टल',
-    heroTitleLead: '48 घंटों से कम समय में',
-    heroTitleAccent: 'आपका अंतर्राष्ट्रीय ड्राइविंग लाइसेंस।',
-    heroTitle: '48 घंटों से कम समय में आपका अंतर्राष्ट्रीय ड्राइविंग लाइसेंस।',
-    paymentTitle: 'भुगतान',
-    physicalProofLabel: 'शारीरिक परीक्षा प्रमाण',
-    skipCoursesBtn: 'सभी पाठ्यक्रम छोड़ें',
-    skipExamsBtn: 'परीक्षा छोड़ें और सीधे शारीरिक परीक्षण के लिए संपर्क करें',
-  },
+  ...EUROPE_TRANSLATIONS,
+  ...GLOBAL_TRANSLATIONS,
 };
+
+export function normalizeLangCode(lang: string): string {
+  const raw = (lang || 'en').toLowerCase().trim();
+  if (ALL_TRANSLATION_PACKS[raw]) return raw;
+  const base = raw.split(/[-_]/)[0];
+  if (base === 'no' || base === 'nn') return 'nb';
+  if (ALL_TRANSLATION_PACKS[base]) return base;
+  return 'en';
+}
 
 export function getTranslations(lang: string): TranslationKeys {
-  const norm = (lang || 'fr').toLowerCase();
-  if (norm === 'fr') return FR_BASE;
-  if (norm === 'en') return EN_BASE;
-  if (norm === 'ro') return RO_BASE;
-  const partial = EXTRA_TRANSLATIONS[norm];
-  if (partial) {
-    return { ...EN_BASE, ...partial };
-  }
-  return EN_BASE;
+  const code = normalizeLangCode(lang);
+  return ALL_TRANSLATION_PACKS[code] || EN_BASE;
 }
 
 export function isRtlLanguage(lang: string): boolean {
-  return ['ar', 'he', 'fa', 'ur', 'ps', 'sd'].includes((lang || '').toLowerCase());
+  const code = normalizeLangCode(lang);
+  return ['ar', 'he', 'fa', 'ur', 'ps', 'sd'].includes(code);
 }
 
 export const TRANSLATIONS: Record<'fr' | 'en' | 'ro', TranslationKeys> = {

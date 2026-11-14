@@ -22,6 +22,7 @@ import { WhatsAppLogo } from './CountryVisuals';
 import {
   CATEGORY_FEES_EUR,
   convertEurFee,
+  formatTariffForCountry,
   getCategoryFeeEur,
   getCountryLocalizedName,
   TAPTAP_SEND_CHECKOUT,
@@ -169,8 +170,6 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
   onStepChange,
 }) => {
   const t = getTranslations(lang);
-  const pick = (fr: string, ro: string, en: string) =>
-    lang === 'fr' ? fr : lang === 'ro' ? ro : en;
   const countryTheme = getCountryTheme(country);
   const localizedCountryName = getCountryLocalizedName(
     country.code,
@@ -336,16 +335,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
     if (!file) return;
     const { dataUrl, error } = await encodePaymentProofFile(
       file,
-      pick(
-        'Le fichier PDF dépasse 420 Ko. Compressez-le ou joignez une capture d’écran (JPG/PNG).',
-        'Fișierul PDF depășește 420 KB. Comprimați-l sau atașați o captură de ecran (JPG/PNG).',
-        'PDF exceeds 420 KB. Please compress it or upload an image screenshot (JPG/PNG).'
-      ),
-      pick(
-        'Format non pris en charge. Veuillez joindre un fichier PDF, JPG ou PNG.',
-        'Format neacceptat. Vă rugăm să atașați un fișier PDF, JPG sau PNG.',
-        'Unsupported file format. Please upload a PDF, JPG, or PNG file.'
-      )
+      t.errPdfTooLarge,
+      t.errInvalidFileFormat
     );
     if (error || !dataUrl) {
       setReceiptFileName('');
@@ -363,94 +354,40 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
 
     const combinedFullName = `${firstName.trim()} ${lastName.trim()}`.trim();
     if (lastName.trim().length < 2 || firstName.trim().length < 2) {
-      setFormError(
-        pick(
-          'Veuillez renseigner obligatoirement votre Nom de famille et votre Prénom.',
-          'Vă rugăm să completați numele de familie și prenumele.',
-          'Please enter both your Last Name and First Name.'
-        )
-      );
+      setFormError(t.errFullNamePair);
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setFormError(
-        pick(
-          'Veuillez saisir une adresse e-mail valide.',
-          'Vă rugăm să introduceți o adresă de e-mail validă.',
-          'Please provide a valid email address.'
-        )
-      );
+      setFormError(t.errInvalidEmail);
       return;
     }
     if (phone.trim().length < 6) {
-      setFormError(
-        pick(
-          'Veuillez saisir un numéro de téléphone WhatsApp valide.',
-          'Vă rugăm să introduceți un număr de telefon WhatsApp valid.',
-          'Please provide a valid WhatsApp phone number.'
-        )
-      );
+      setFormError(t.errInvalidPhone);
       return;
     }
     if (address.trim().length < 4) {
-      setFormError(
-        pick(
-          'Veuillez saisir votre adresse complète de résidence.',
-          'Vă rugăm să introduceți adresa completă de domiciliu.',
-          'Please provide your full residential street address.'
-        )
-      );
+      setFormError(t.errInvalidAddress);
       return;
     }
     if (city.trim().length < 2) {
-      setFormError(
-        pick(
-          'Veuillez indiquer votre ville de résidence.',
-          'Vă rugăm să indicați orașul de reședință.',
-          'Please enter your city of residence.'
-        )
-      );
+      setFormError(t.errInvalidCity);
       return;
     }
     if (!wifiReady) {
-      setFormError(
-        pick(
-          'Veuillez confirmer votre accès Internet pour suivre les cours audio en ligne.',
-          'Vă rugăm să confirmați accesul la internet pentru cursurile audio online.',
-          'Please confirm Internet connectivity for online audio courses.'
-        )
-      );
+      setFormError(t.errWifiConfirm);
       return;
     }
     if (idCardNumber.trim().length < 4 || idCardFileName.trim().length < 3) {
-      setFormError(
-        pick(
-          'Pièce d’identité obligatoire : saisissez le numéro ET joignez la photo ou le scan de votre carte.',
-          'Act de identitate obligatoriu: introduceți numărul și atașați fotografia/scanarea.',
-          'Mandatory ID check: enter your ID number AND upload a photo/scan of your National ID or Passport.'
-        )
-      );
+      setFormError(t.errIdMandatory);
       return;
     }
     if (!acceptedTerms) {
-      setFormError(
-        pick(
-          'Vous devez confirmer l’exactitude des informations de votre dossier.',
-          'Trebuie să confirmați exactitatea datelor din dosar.',
-          'You must accept the DrivePro Academy enrollment policy.'
-        )
-      );
+      setFormError(t.errAcceptPolicy);
       return;
     }
 
     if (!user) {
-      setFormError(
-        pick(
-          'Veuillez d’abord créer votre compte (ou vous connecter) ci-dessus pour enregistrer votre dossier.',
-          'Creați-vă mai întâi contul (sau autentificați-vă) mai sus pentru a salva dosarul.',
-          'Please create your account (or sign in) first above to save your dossier.'
-        )
-      );
+      setFormError(t.errCreateAccountFirst);
       return;
     }
 
@@ -518,35 +455,17 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
     setFormError(null);
 
     if (!user || !registration) {
-      setFormError(
-        pick(
-          'Dossier introuvable. Veuillez recommencer l’étape 2.',
-          'Dosar negăsit. Reveniți la pasul 2.',
-          'Dossier missing. Please complete Step 2 first.'
-        )
-      );
+      setFormError(t.errDossierMissing);
       return;
     }
 
     if (!linkOpened && !transferConfirmed) {
-      setFormError(
-        pick(
-          'Veuillez d’abord ouvrir le lien officiel de paiement et confirmer votre règlement.',
-          'Deschideți mai întâi linkul oficial de plată și confirmați transferul.',
-          'Please open the official payment link and confirm your transfer first.'
-        )
-      );
+      setFormError(t.errOpenPayLinkFirst);
       return;
     }
 
     if (senderName.trim().length < 2 || senderPhone.trim().length < 5) {
-      setFormError(
-        pick(
-          'Veuillez saisir votre nom complet et votre numéro d’expéditeur.',
-          'Introduceți numele complet și numărul expeditorului.',
-          'Please enter your full sender name and phone number.'
-        )
-      );
+      setFormError(t.errSenderRequired);
       return;
     }
 
@@ -558,13 +477,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
       isRepeatedChars ||
       FAKE_TX_PATTERNS.has(rawTx.toLowerCase())
     ) {
-      setFormError(
-        pick(
-          'ID de transaction invalide. Saisissez la référence réelle reçue après paiement (minimum 6 caractères).',
-          'ID de tranzacție invalid. Introduceți referința reală primită după plată (minim 6 caractere).',
-          'Invalid Transaction ID. Enter the real transfer reference from your payment receipt (minimum 6 characters).'
-        )
-      );
+      setFormError(t.errTxIdInvalid);
       return;
     }
 
@@ -654,11 +567,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
         <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
           <div className="space-y-1.5">
             <div className="text-sm font-semibold text-slate-700">
-              {pick(
-                'Vos dossiers de permis (Réinscription multi-permis disponible)',
-                'Dosarele dvs. de permis (Reînscriere multi-categorie disponibilă)',
-                'Your Active Permit Dossiers (Re-enrollment supported)'
-              )}
+              {t.dossiersBarTitle}
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {allMyRegistrations.map((r) => {
@@ -723,31 +632,21 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
           <div className="space-y-1">
             <h3 className="text-lg font-bold">
               {isUnlocked
-                ? pick(
-                    `Permis ${registration.licenseCategory} validé — Cours audio débloqués`,
-                    `Permis ${registration.licenseCategory} validat — Cursuri audio deblocate`,
-                    `Permit ${registration.licenseCategory} Validated — Audio Courses Unlocked`
-                  )
+                ? `${t.unlockedBannerTitle} (${t.permitLabel} ${registration.licenseCategory})`
                 : t.lockedNoticeTitle}
             </h3>
             <p className="text-sm text-slate-200 max-w-3xl leading-relaxed">
-              {isUnlocked
-                ? pick(
-                    'Votre dossier et votre facture PDF officielle sont confirmés. Suivez les 5 modules, passez le QCM et ouvrez votre lien d’épreuves physiques.',
-                    'Dosarul și factura PDF oficială sunt confirmate. Parcurgeți cele 5 module, susțineți testul și accesați linkul pentru probele fizice.',
-                    'Your payment and PDF invoice are confirmed. Study all 5 modules, pass the quiz, or open your physical test booking link.'
-                  )
-                : t.lockedNoticeBody}
+              {isUnlocked ? t.unlockedBannerDesc : t.lockedNoticeBody}
             </p>
           </div>
         </div>
         <div className="shrink-0 text-left md:text-right">
           <div className="text-xs text-slate-300">{t.fixedFeeLabel}</div>
           <div className="text-2xl font-mono font-bold tabular-nums text-white">
-            {baseFeeEur} €
+            {formatTariffForCountry(baseFeeEur, country, lang)}
           </div>
           <div className="text-xs font-mono text-blue-300 tabular-nums">
-            {t.baseReferenceLabel}
+            A {formatTariffForCountry(300, country, lang)} · B {formatTariffForCountry(450, country, lang)} · C {formatTariffForCountry(650, country, lang)} · D {formatTariffForCountry(800, country, lang)}
           </div>
         </div>
       </div>
@@ -901,16 +800,8 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                     {alreadyReg && (
                       <div className="text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded">
                         {alreadyReg.paymentStatus === 'pending'
-                          ? pick(
-                              'Dossier déjà créé (Paiement en attente)',
-                              'Dosar salvat (Plată în așteptare)',
-                              'Dossier saved (Pending payment)'
-                            )
-                          : pick(
-                              'Déjà inscrit pour cette catégorie',
-                              'Deja înscris pentru această categorie',
-                              'Already enrolled'
-                            )}
+                          ? t.dossierPendingBadge
+                          : t.dossierEnrolledBadge}
                       </div>
                     )}
                   </div>
@@ -919,10 +810,10 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                       className="text-2xl font-mono font-bold tabular-nums"
                       style={{ color: countryTheme.primaryHex }}
                     >
-                      {feeEur} €
+                      {formatTariffForCountry(feeEur, country, lang)}
                     </span>
                     <span className="text-xs font-semibold text-slate-600 uppercase">
-                      EUR
+                      {country.currency}
                     </span>
                   </div>
                 </button>
@@ -956,7 +847,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                 {t.step2Heading}
               </h3>
               <p className="text-[15px] text-slate-700 mt-1 font-medium">
-                {t.permitLabel} {category} · {CATEGORY_FEES_EUR[category]} €
+                {t.permitLabel} {category} · {formatTariffForCountry(CATEGORY_FEES_EUR[category], country, lang)}
               </p>
             </div>
             {referralCode && (
@@ -1096,23 +987,9 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                   onChange={(e) => setIdCardType(e.target.value as IdCardType)}
                   className="w-full px-3.5 py-2.5 text-sm text-slate-900 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-700"
                 >
-                  <option value="CNI">
-                    {pick(
-                      'Carte Nationale d’Identité (CNI)',
-                      'Carte de Identitate (CI)',
-                      'National Identity Card'
-                    )}
-                  </option>
-                  <option value="Passeport">
-                    {pick('Passeport officiel', 'Pașaport oficial', 'Official Passport')}
-                  </option>
-                  <option value="Titre de séjour">
-                    {pick(
-                      'Titre de séjour / Carte résident',
-                      'Permis de ședere / Rezident',
-                      'Residence Permit Card'
-                    )}
-                  </option>
+                  <option value="CNI">{t.idTypeCni}</option>
+                  <option value="Passeport">{t.idTypePassport}</option>
+                  <option value="Titre de séjour">{t.idTypeResidence}</option>
                 </select>
               </div>
 
@@ -1239,7 +1116,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                 {t.fixedFeeLabel}
               </div>
               <div className="text-2xl font-bold">
-                {registration.baseFeeEur} €
+                {formatTariffForCountry(registration.baseFeeEur, country, lang)}
               </div>
             </div>
           </div>
@@ -1278,7 +1155,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                       className="font-mono font-bold"
                       style={{ color: countryTheme.primaryHex }}
                     >
-                      {registration.baseFeeEur} €
+                      {formatTariffForCountry(registration.baseFeeEur, country, lang)}
                     </span>
                   </div>
                   <div>
@@ -1316,7 +1193,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                     className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg whitespace-nowrap"
                   >
                     <WhatsAppLogo className="w-4 h-4" />
-                    <span>{t.notifyDirectBtn}</span>
+                    <span>WhatsApp</span>
                   </a>
                 </div>
               </div>
@@ -1338,10 +1215,10 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
                       <span>{t.paymentTitle.toUpperCase()}</span>
                     </div>
                     <div className="text-2xl font-display font-bold text-white">
-                      {t.paymentTitle} · {registration.baseFeeEur} €
+                      {t.paymentTitle} · {formatTariffForCountry(registration.baseFeeEur, country, lang)}
                     </div>
                     <div className="text-sm text-slate-300">
-                      DrivePro Academy · {localizedCountryName}
+                      {countryTheme.authorityName} · {localizedCountryName}
                     </div>
                   </div>
 
@@ -1501,8 +1378,12 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
             <div className="flex flex-wrap items-center gap-3 text-emerald-700 text-sm font-bold">
               <CheckCircle2 className="w-5 h-5" />
               <span>
-                {registration.triggeredAmountEur || registration.baseFeeEur} € ·{' '}
-                {t.triggeredAmountLabel}
+                {formatTariffForCountry(
+                  registration.triggeredAmountEur || registration.baseFeeEur,
+                  country,
+                  lang
+                )}{' '}
+                · {t.triggeredAmountLabel}
               </span>
               {registration.confirmationCode && (
                 <span className="font-mono text-xs bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded">
@@ -1515,11 +1396,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
               {registration.licenseCategory} (#{registration.queueNumber})
             </h3>
             <p className="text-[15px] text-slate-700 max-w-2xl leading-relaxed">
-              {pick(
-                'Téléchargez votre facture officielle en PDF ci-contre, puis accédez à vos 5 cours audio illustrés, au QCM et au lien direct pour les épreuves physiques.',
-                'Descărcați factura oficială PDF mai jos, apoi accesați cele 5 cursuri audio ilustrate, testul grilă și linkul direct pentru probele fizice.',
-                'Download your official PDF invoice below, then study the 5 audio-guided courses and complete your quiz & physical test link.'
-              )}
+              {t.step4DownloadDesc}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3 shrink-0">
@@ -1548,6 +1425,7 @@ export const RegistrationFlow: React.FC<RegistrationFlowProps> = ({
         <InvoiceReceiptModal
           isOpen={invoiceModalOpen}
           lang={lang}
+          country={country}
           registration={registration}
           payment={justCompletedPayment || latestPayment || null}
           onClose={() => setInvoiceModalOpen(false)}

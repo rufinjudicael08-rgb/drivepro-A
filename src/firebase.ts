@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { doc, getDocFromServer, getFirestore } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
+import { getTranslations } from './data/i18n';
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
@@ -14,37 +15,30 @@ export const FIRESTORE_CONSOLE_URL = `https://console.firebase.google.com/projec
 export const FIREBASE_AUTH_PROVIDERS_URL = `https://console.firebase.google.com/project/${firebaseConfig.projectId}/authentication/providers`;
 export const FIREBASE_AUTH_TEMPLATES_URL = `https://console.firebase.google.com/project/${firebaseConfig.projectId}/authentication/emails`;
 
-export function translateAuthErrorFr(error: unknown): string {
+export function translateAuthError(error: unknown, lang = 'fr'): string {
+  const t = getTranslations(lang);
   const errObj = error as { code?: string; message?: string } | null;
   const code = errObj?.code || '';
   const msg = errObj?.message || String(error);
 
-  if (code === 'auth/email-already-in-use') {
-    return 'Un compte existe déjà avec cette adresse e-mail. Cliquez sur « Se connecter » pour accéder à votre espace.';
-  }
+  if (code === 'auth/email-already-in-use') return t.authErrAlreadyInUse;
   if (
     code === 'auth/invalid-credential' ||
     code === 'auth/wrong-password' ||
     code === 'auth/user-not-found'
   ) {
-    return 'Adresse e-mail ou mot de passe incorrect. Vérifiez vos identifiants ou cliquez sur « Mot de passe oublié ? ».';
+    return t.authErrInvalidCred;
   }
-  if (code === 'auth/weak-password') {
-    return 'Le mot de passe doit contenir au moins 6 caractères.';
-  }
-  if (code === 'auth/invalid-email') {
-    return 'Adresse e-mail invalide. Veuillez vérifier le format (ex: nom@domaine.com).';
-  }
-  if (code === 'auth/too-many-requests') {
-    return 'Trop de tentatives consécutives. Patientez quelques instants avant de réessayer.';
-  }
-  if (code === 'auth/operation-not-allowed') {
-    return 'L’authentification E-mail / Mot de passe doit être activée une fois dans Firebase Console → Authentication → Sign-in method → Email/Password.';
-  }
-  if (code === 'auth/network-request-failed') {
-    return 'Erreur réseau lors de la connexion. Vérifiez votre Wi-Fi ou connexion Internet et réessayer.';
-  }
+  if (code === 'auth/weak-password') return t.authErrPassMin;
+  if (code === 'auth/invalid-email') return t.errInvalidEmail;
+  if (code === 'auth/too-many-requests') return t.authErrTooManyReq;
+  if (code === 'auth/operation-not-allowed') return t.authErrOpNotAllowed;
+  if (code === 'auth/network-request-failed') return t.authErrNetwork;
   return msg;
+}
+
+export function translateAuthErrorFr(error: unknown): string {
+  return translateAuthError(error, 'fr');
 }
 
 export enum OperationType {
